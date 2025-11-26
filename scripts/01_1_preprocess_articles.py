@@ -84,6 +84,9 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.drop_duplicates(subset=['autores', 'titulo', 'resumen', 'cuil', 'lugar_de_trabajo'])
     duplicates_removed = initial_count - len(df)
 
+    # Rename columns
+    df = df.rename(columns={'cuil': 'cuit'})
+
     if duplicates_removed > 0:
         print(f"  - Removed {duplicates_removed} duplicate records")
 

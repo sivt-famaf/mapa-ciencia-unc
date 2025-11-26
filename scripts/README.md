@@ -118,3 +118,80 @@ python scripts/01_2_preprocess_projects_and_calls.py \
   --output-file data/processed/projects_calls.parquet
 ```
 
+---
+
+### 01_3_filter_enrolled_users.py
+
+This script filters articles and projects data to include only enrolled users. It performs left joins to keep all enrolled users even if they don't have corresponding articles or projects. The script also cleans HTML-like content from text columns in all output files.
+
+**Usage:**
+```bash
+python scripts/01_3_filter_enrolled_users.py \
+  --enrollment-file <enrollment_csv> \
+  --articles-file <articles_file> \
+  --projects-file <projects_file> \
+  --sample-size <ratio> \
+  --output-directory <output_dir>
+```
+
+**Arguments:**
+- `--enrollment-file`: Path to enrollment CSV file containing "CUIL (sin guiones)" column
+- `--articles-file`: Path to articles data file (supports .csv, .parquet, .json)
+- `--projects-file`: Path to projects data file (supports .csv, .parquet, .json)
+- `--sample-size`: (Optional) Ratio of enrollment data to use (0.0-1.0, default: 1.0). Use values < 1.0 for sampling/testing
+- `--remove-academic-unit`: (Optional) Comma-separated list of academic units to exclude (e.g., "Unit A,Unit B")
+- `--output-directory`: Directory where filtered files will be saved
+
+**Processing Steps:**
+1. Reads enrollment file and renames "CUIL (sin guiones)" to "cuit"
+2. If `--sample-size` < 1.0, randomly samples that fraction of enrollment data
+3. If `--remove-academic-unit` is specified, filters out CUITs from those academic units
+4. Performs left join: `enrollment LEFT JOIN articles ON cuit`
+5. Cleans HTML-like content from article text columns (`titulo`, `resumen`)
+6. Saves filtered articles as `articles.json` in output directory
+7. Performs left join: `enrollment LEFT JOIN projects ON cuit`
+8. Cleans HTML-like content from project text columns (`tema_periodo`, `tema_periodo_ingles`, `titulo_proyecto`, `resumen_proyecto`)
+9. Saves filtered projects as `projects.json` in output directory
+10. Cleans HTML-like content from enrollment text columns (`research_area`, `last_project_title`)
+11. Saves enrollment data as `enrollment.json` in output directory
+
+**Join Behavior:**
+- Left joins preserve all enrollment records
+- Enrolled users without articles/projects will have NULL values in those fields
+- Articles/projects without matching enrollment are excluded
+
+**Text Cleaning:**
+The script applies HTML cleaning to remove:
+- HTML tags and malformed markup
+- LaTeX fragments
+- Unicode anomalies
+- Reference patterns
+
+This is applied to all text columns in enrollment, articles, and projects data.
+
+**Output Files:**
+- `articles.json`: JSON Lines format with enrolled users and their articles (text cleaned)
+- `projects.json`: JSON Lines format with enrolled users and their projects (text cleaned)
+- `enrollment.json`: JSON Lines format with enrollment data (text cleaned)
+
+**Examples:**
+
+Filter with all enrolled users:
+```bash
+python scripts/01_3_filter_enrolled_users.py \
+  --enrollment-file data/enrollment.csv \
+  --articles-file data/processed/articles.parquet \
+  --projects-file data/processed/projects_calls.parquet \
+  --output-directory data/filtered/
+```
+
+Filter with 10% sample for testing:
+```bash
+python scripts/01_3_filter_enrolled_users.py \
+  --enrollment-file data/enrollment.csv \
+  --articles-file data/processed/articles.parquet \
+  --projects-file data/processed/projects_calls.parquet \
+  --sample-size 0.1 \
+  --output-directory data/filtered_sample/
+```
+
