@@ -129,7 +129,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --input-dir data/raw/ --output-file data/processed/articles.parquet
+  %(prog)s --input-dir data/raw/ --output-file data/processed/articles.csv
         """
     )
 

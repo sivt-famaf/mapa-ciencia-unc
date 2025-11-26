@@ -86,10 +86,13 @@ calls_directory/
 - `tema_periodo`: Period theme
 - `tema_periodo_ingles`: Period theme (English)
 - `especialidad`: Specialty
+- `cuit`: CUIT identifier (extracted from filename)
+
+**Note**: The CUIT for each project is automatically extracted from the filename pattern `proyectos_<cuit>.csv` and added as a new column.
 
 **Calls CSV columns** (semicolon-separated):
-- `CUIL`: CUIL identifier
-- `Cód. Trámite`: Transaction code
+- `CUIL`: CUIL identifier (renamed to `cuit`)
+- `Cód. Trámite`: Transaction code (renamed to `codigo_tramite`)
 - `Fecha Alta`: Registration date
 - `Estado Trám.`: Transaction status
 - `Convocatoria`: Call name
@@ -102,7 +105,8 @@ calls_directory/
 - `tipo_archivo`: File type
 
 **Join condition**: Projects and calls are joined using:
-- `df_projects["convocatoria_id"]` == `df_calls["Cód. Trámite"]`
+- `df_projects["cuit"]` == `df_calls["cuit"]`
+- AND `df_projects["codigo_tramite"]` == `df_calls["codigo_tramite"]`
 
 **Output format**: Same as 01_1 script (supports .csv, .parquet, .json)
 

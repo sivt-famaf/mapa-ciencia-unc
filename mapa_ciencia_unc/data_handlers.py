@@ -11,7 +11,8 @@ import pandas as pd
 
 
 def read_csv_file(
-    local_path: str, separator: Optional[str] = ";"
+    local_path: str, separator: Optional[str] = ";",
+    quotechar: Optional[str] = '"'
 ) -> pd.DataFrame:
     """
     Attempts to read a CSV file using several common encodings.
@@ -25,12 +26,13 @@ def read_csv_file(
     for enc in encodings_to_try:
         try:
             df = pd.read_csv(
-                local_path, sep=separator, encoding=enc, dtype=str, low_memory=False
+                local_path, sep=separator,
+                quotechar=quotechar,
+                encoding=enc, dtype=str, low_memory=False
             )
-            print(f"Read file with encoding: {enc}")
             break
         except Exception as e:
-            print(f"Failed with encoding {enc}: {e}")
+            pass
     else:
         # If none worked, stop execution
         raise RuntimeError(
