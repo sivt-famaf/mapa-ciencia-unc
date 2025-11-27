@@ -1,13 +1,13 @@
 from pathlib import Path
 
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from mapa_ciencia_unc.auth import login
 from fastapi.security import OAuth2PasswordRequestForm
 
 from mapa_ciencia_unc.db import init_db
-from mapa_ciencia_unc.routers import api, frontend
+from mapa_ciencia_unc.routers import api, frontend, researchers, projects, articles
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -48,3 +48,6 @@ def login_route(form: OAuth2PasswordRequestForm = Depends()):
 
 app.include_router(frontend.router)
 app.include_router(api.router)
+app.include_router(researchers.router)
+app.include_router(projects.router)
+app.include_router(articles.router)

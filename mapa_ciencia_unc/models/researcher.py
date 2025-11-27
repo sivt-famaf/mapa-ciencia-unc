@@ -17,38 +17,35 @@ class Embedding(BaseModel):
     )
 
 
-class Researcher(Document):
+class ResearcherBase(BaseModel):
     cuit: str = Field(
         ...,
-        examples=["20123456789"],
-        description="Unique CUIT identifier",
         min_length=CUIT_LENGTH,
         max_length=CUIT_LENGTH,
     )
+    email: str
+    name: str
+    last_name: str
+    orcid_number: str
+    gender: str
+    academic_unit: str
+    highest_position: str
+    languages: str
+    research_center: str
+    research_area: str
+    last_project_title: str
+    ods: str
+    maturity_level: str
+    international_research_links: str
     embeddings: List[Embedding] = Field(
         ...,
-        description="List of embeddings associated with the researcher",
         default_factory=list,
     )
 
 
-class ResearcherCreate(BaseModel):
-    cuit: str = Field(
-        ...,
-        examples=["20123456789"],
-        description="Unique CUIT identifier",
-        min_length=CUIT_LENGTH,
-        max_length=CUIT_LENGTH,
-    )
-    embeddings: Optional[List[Embedding]] = Field(
-        None,
-        description="Initial list of embeddings for the researcher",
-    )
+class ResearcherCreate(ResearcherBase):
+    pass
 
 
-class ResearcherUpdateEmbedding(BaseModel):
-    embedding: List[float] = Field(
-        ...,
-        description="New embedding vector to add",
-        min_items=1,
-    )
+class Researcher(ResearcherBase, Document):
+    created_at: datetime = Field(default_factory=datetime.now)
