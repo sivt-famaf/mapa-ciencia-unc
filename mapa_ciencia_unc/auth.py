@@ -7,10 +7,6 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 
-# -----------------------
-# Load static users
-# -----------------------
-
 USERNAME = os.getenv("BASIC_AUTH_USERNAME")
 PASSWORD = os.getenv("BASIC_AUTH_PASSWORD")
 JWT_SECRET = os.getenv("JWT_SECRET")
@@ -29,15 +25,8 @@ USERS = {
     }
 }
 
-# -----------------------
-# OAuth2 (JWT bearer token)
-# -----------------------
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
-
-# -----------------------
-# JWT helpers
-# -----------------------
 
 
 def create_jwt_token(username: str) -> str:
@@ -71,11 +60,6 @@ def verify_jwt_token(token: str) -> str:
         )
 
 
-# -----------------------
-# Login endpoint (username/password → JWT token)
-# -----------------------
-
-
 def login(form: OAuth2PasswordRequestForm = Depends()):
     username = form.username
     password = form.password
@@ -92,11 +76,6 @@ def login(form: OAuth2PasswordRequestForm = Depends()):
         "access_token": access_token,
         "token_type": "bearer",
     }
-
-
-# -----------------------
-# Protected dependency (uses JWT)
-# -----------------------
 
 
 def require_auth(token: str = Depends(oauth2_scheme)):
