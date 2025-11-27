@@ -4,11 +4,11 @@ from datetime import datetime
 
 
 class ArticleBase(BaseModel):
-    autores: str
-    titulo: str
-    resumen: str
-    cuit: str
-    lugar_de_trabajo: str
+    cuit: str = None
+    autores: str | None = None
+    titulo: str | None = None
+    resumen: str | None = None
+    lugar_de_trabajo: str | None = None
 
 
 class ArticleCreate(ArticleBase):
