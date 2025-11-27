@@ -1,0 +1,39 @@
+from pathlib import Path
+
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+from mapa_ciencia_unc.controllers.graph import get_researcher_graph
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+router = APIRouter(tags=["frontend"])
+
+
+@router.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    return templates.TemplateResponse("home.html", {"request": request})
+
+
+@router.get("/graph", response_class=HTMLResponse)
+async def graph_view(request: Request):
+    graph = get_researcher_graph()
+    return templates.TemplateResponse(
+        "graph.html", {"request": request, "graph": graph.model_dump()}
+    )
+
+
+@router.get("/other", response_class=HTMLResponse)
+async def other(request: Request):
+    return templates.TemplateResponse("other.html", {"request": request})
+
+
+@router.get("/researcher/{researcher_id}", response_class=HTMLResponse)
+async def researcher(request: Request, researcher_id: str):
+    # TODO: get researcher info from db
+    return templates.TemplateResponse(
+        "researcher.html", {"request": request, "researcher_id": researcher_id}
+    )
