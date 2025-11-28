@@ -15,14 +15,29 @@ To preprocess the dataset, assuming you have a directory `raw_csv` with the star
 export DATA_DIR=<dirpath>/  # This will only affect this bash session
 python scripts/01_1_preprocess_articles.py \
     --input-dir ${DATA_DIR}/raw_csv/articlulos_v2 \
-    --output-file ${DATA_DIR}/preprocessed_csv/articles.json \
-    > ${DATA_DIR}/preprocessed_csv/articles.log
+    --output-file ${DATA_DIR}/1_preprocessed_csv/articles.json \
+    > ${DATA_DIR}/1_preprocessed_csv/articles.log
 
 python scripts/01_2_preprocess_projects_and_calls.py \
     --projects-dir ${DATA_DIR}/raw_csv/proyectos \
     --calls-dir ${DATA_DIR}/raw_csv/convocatorias \
-    --output-file ${DATA_DIR}/preprocessed_csv/projects.json \
-    > ${DATA_DIR}/preprocessed_csv/projects.log
+    --output-file ${DATA_DIR}/1_preprocessed_csv/projects.json \
+    > ${DATA_DIR}/1_preprocessed_csv/projects.log
+
+python scripts/01_3_preprocess_portfolios.py \
+  --portfolios-file ${DATA_DIR}/raw_csv/portfolios.csv \
+  --output-file ${DATA_DIR}/1_preprocessed_csv/portfolios.json \
+    > ${DATA_DIR}/1_preprocessed_csv/portfolios.log
+
+python scripts/02_1_filter_enrolled_users.py \
+  --enrollment-file ${DATA_DIR}/0_raw_csv/empadronamientos.csv \
+  --portfolios-file ${DATA_DIR}/1_preprocessed_csv/portfolios.json \
+  --articles-file ${DATA_DIR}/1_preprocessed_csv/articles.json \
+  --projects-file ${DATA_DIR}/1_preprocessed_csv/projects.json \
+  --remove-academic-unit "FD" \
+  --output-directory ${DATA_DIR}/2_merged_sampled_data \
+  --include-cuits ${DATA_DIR}/raw_pdfs/cuit_list_sample_30.csv \
+  > ${DATA_DIR}/2_merged_data/merge_logs.log
 ```
 
 ## Scripts Overview
@@ -198,7 +213,7 @@ python scripts/01_3_preprocess_portfolios.py \
 
 ### 02_1_filter_enrolled_users.py
 
-This script filters articles and projects data to include only enrolled users. It performs left joins to keep all enrolled users even if they don't have corresponding articles or projects. The script also cleans HTML-like content from text columns in all output files.
+This script filters articles, projects, and optionally portfolios based on a combined set of CUITs from enrollment and portfolio data. It applies sampling and academic unit filtering to the combined CUIT set, then filters all datasets accordingly. The script also cleans HTML-like content from text columns in all output files.
 
 **Usage:**
 ```bash
@@ -206,6 +221,7 @@ python scripts/02_1_filter_enrolled_users.py \
   --enrollment-file <enrollment_csv> \
   --articles-file <articles_file> \
   --projects-file <projects_file> \
+  --portfolios-file <portfolios_file> \
   --sample-size <ratio> \
   --output-directory <output_dir>
 ```
@@ -214,27 +230,36 @@ python scripts/02_1_filter_enrolled_users.py \
 - `--enrollment-file`: Path to enrollment CSV file containing "CUIL (sin guiones)" column
 - `--articles-file`: Path to articles data file (supports .csv, .parquet, .json)
 - `--projects-file`: Path to projects data file (supports .csv, .parquet, .json)
-- `--sample-size`: (Optional) Ratio of enrollment data to use (0.0-1.0, default: 1.0). Use values < 1.0 for sampling/testing
-- `--remove-academic-unit`: (Optional) Comma-separated list of academic units to exclude (e.g., "Unit A,Unit B")
+- `--portfolios-file`: (Optional) Path to portfolios data file with "cuit" and "email" columns
+- `--sample-size`: (Optional) Ratio of combined CUIT data to use (0.0-1.0, default: 1.0). Not compatible with `--include-cuits`
+- `--include-cuits`: (Optional) Path to CSV file with "cuit" column containing specific CUITs to include. Not compatible with `--sample-size`
+- `--remove-academic-unit`: (Optional) Comma-separated list of academic units to exclude
 - `--output-directory`: Directory where filtered files will be saved
 
 **Processing Steps:**
 1. Reads enrollment file and renames "CUIL (sin guiones)" to "cuit"
-2. If `--sample-size` < 1.0, randomly samples that fraction of enrollment data
-3. If `--remove-academic-unit` is specified, filters out CUITs from those academic units
-4. Performs left join: `enrollment LEFT JOIN articles ON cuit`
-5. Cleans HTML-like content from article text columns (`titulo`, `resumen`)
-6. Saves filtered articles as `articles.json` in output directory
-7. Performs left join: `enrollment LEFT JOIN projects ON cuit`
-8. Cleans HTML-like content from project text columns (`tema_periodo`, `tema_periodo_ingles`, `titulo_proyecto`, `resumen_proyecto`)
-9. Saves filtered projects as `projects.json` in output directory
-10. Cleans HTML-like content from enrollment text columns (`research_area`, `last_project_title`)
-11. Saves enrollment data as `enrollment.json` in output directory
+2. Reads portfolios file if provided
+3. Reads include-cuits file if provided
+4. Determines the CUIT set to use:
+   - If `--include-cuits` is provided, uses those CUITs (ignores `--sample-size`)
+   - Otherwise, combines CUITs from enrollment and portfolios into a single set
+   - If `--sample-size` < 1.0, randomly samples that fraction of combined CUITs
+5. If `--remove-academic-unit` is specified, removes CUITs from those academic units
+6. Filters enrollment, portfolios, articles, and projects by the final CUIT set
+7. Cleans HTML-like content from all text columns
+8. Saves all filtered datasets as JSON files
 
-**Join Behavior:**
-- Left joins preserve all enrollment records
-- Enrolled users without articles/projects will have NULL values in those fields
-- Articles/projects without matching enrollment are excluded
+**Output Files:**
+- `articles.json`: Filtered articles (text cleaned)
+- `projects.json`: Filtered projects (text cleaned)
+- `enrollment.json`: Filtered enrollment data (text cleaned)
+- `portfolios.json`: Filtered portfolios (only if `--portfolios-file` was provided)
+
+**Filtering Behavior:**
+- All datasets are filtered to include only CUITs in the final CUIT set
+- The CUIT set is the union of enrollment and portfolio CUITs
+- Sampling and academic unit filtering apply to the combined CUIT set
+- All output datasets will have consistent CUITs
 
 **Text Cleaning:**
 The script applies HTML cleaning to remove:
@@ -278,6 +303,16 @@ python scripts/02_1_filter_enrolled_users.py \
   --articles-file data/processed/articles.parquet \
   --projects-file data/processed/projects_calls.parquet \
   --remove-academic-unit "Facultad de Ciencias Exactas,Facultad de Derecho" \
+  --output-directory data/filtered/
+```
+
+Filter with specific list of CUITs:
+```bash
+python scripts/02_1_filter_enrolled_users.py \
+  --enrollment-file data/enrollment.csv \
+  --articles-file data/processed/articles.parquet \
+  --projects-file data/processed/projects_calls.parquet \
+  --include-cuits data/selected_cuits.csv \
   --output-directory data/filtered/
 ```
 

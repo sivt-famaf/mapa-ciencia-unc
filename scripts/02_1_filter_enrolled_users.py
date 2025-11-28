@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Script to filter articles and projects based on enrolled users.
 
@@ -9,6 +10,7 @@ articles or projects.
 """
 
 import argparse
+import random
 import pandas as pd
 from pathlib import Path
 import sys
@@ -126,6 +128,95 @@ def filter_academic_units(df: pd.DataFrame, units_to_remove: list) -> pd.DataFra
     return df_filtered
 
 
+def read_include_cuits_file(include_cuits_path: Path) -> set:
+    """
+    Read CSV file with CUITs to include.
+
+    Args:
+        include_cuits_path: Path to CSV file with 'cuit' column
+
+    Returns:
+        Set of CUIT strings to include
+    """
+    if not include_cuits_path.exists():
+        raise FileNotFoundError(f"Include CUITs file does not exist: {include_cuits_path}")
+
+    print(f"Reading include CUITs file: {include_cuits_path}")
+
+    df = pd.read_csv(include_cuits_path)
+
+    if 'cuit' not in df.columns:
+        raise ValueError(
+            f"Column 'cuit' not found in include CUITs file. "
+            f"Available columns: {df.columns.tolist()}"
+        )
+
+    cuits = set(df['cuit'].astype(str).unique())
+    print(f"  - Loaded {len(cuits)} unique CUITs to include")
+
+    return cuits
+
+
+def get_combined_cuits(
+    df_enrollment: pd.DataFrame,
+    df_portfolio: pd.DataFrame = None,
+    sample_size: float = 1.0,
+    units_to_remove: list = None,
+    include_cuits: set = None
+) -> set:
+    """
+    Get combined set of CUITs from enrollment and portfolio data.
+
+    Args:
+        df_enrollment: DataFrame with enrollment data
+        df_portfolio: Optional DataFrame with portfolio data
+        sample_size: Ratio of data to use for sampling
+        units_to_remove: List of academic units to exclude
+        include_cuits: Optional set of CUITs to include (overrides sampling)
+
+    Returns:
+        Set of CUIT strings to include in the final dataset
+    """
+    print("\nCombining CUITs from enrollment and portfolio...")
+
+    # If include_cuits is provided, use that instead of combining/sampling
+    if include_cuits is not None:
+        print(f"  - Using provided include CUITs: {len(include_cuits)}")
+        combined_cuits = include_cuits
+    else:
+        # Start with enrollment CUITs
+        enrollment_cuits = set(df_enrollment['cuit'].astype(str).unique())
+        print(f"  - Enrollment CUITs: {len(enrollment_cuits)}")
+
+        # Add portfolio CUITs if provided
+        if df_portfolio is not None:
+            portfolio_cuits = set(df_portfolio['cuit'].astype(str).unique())
+            print(f"  - Portfolio CUITs: {len(portfolio_cuits)}")
+            combined_cuits = enrollment_cuits.union(portfolio_cuits)
+            print(f"  - Combined unique CUITs: {len(combined_cuits)}")
+        else:
+            combined_cuits = enrollment_cuits
+
+        # Apply sampling if needed
+        if sample_size < 1.0:
+            original_size = len(combined_cuits)
+            sample_count = int(len(combined_cuits) * sample_size)
+            combined_cuits = set(random.sample(list(combined_cuits), sample_count))
+            print(f"  - Sampled {len(combined_cuits)} CUITs from {original_size} (sample_size={sample_size})")
+
+    # Filter by academic unit if needed
+    if units_to_remove:
+        # Get CUITs to exclude based on academic_unit
+        excluded_cuits = set(
+            df_enrollment[df_enrollment['academic_unit'].isin(units_to_remove)]['cuit'].astype(str).unique()
+        )
+        combined_cuits = combined_cuits - excluded_cuits
+        print(f"  - Removed {len(excluded_cuits)} CUITs from excluded academic units")
+        print(f"  - Final CUITs count: {len(combined_cuits)}")
+
+    return combined_cuits
+
+
 def read_data_file(file_path: Path, file_type: str) -> pd.DataFrame:
     """
     Read articles or projects file.
@@ -167,41 +258,30 @@ def read_data_file(file_path: Path, file_type: str) -> pd.DataFrame:
     return df
 
 
-def filter_by_enrollment(
-    df_enrollment: pd.DataFrame,
+def filter_by_cuit_set(
+    cuit_set: set,
     df_data: pd.DataFrame,
     data_type: str
 ) -> pd.DataFrame:
     """
-    Perform left join of enrollment with data (articles or projects).
+    Filter data by a set of CUITs.
 
     Args:
-        df_enrollment: DataFrame with enrollment data
-        df_data: DataFrame with articles or projects data
-        data_type: Type of data ("articles" or "projects") for logging
+        cuit_set: Set of CUIT strings to include
+        df_data: DataFrame with data to filter
+        data_type: Type of data for logging
 
     Returns:
-        Filtered DataFrame with all enrollment records
+        Filtered DataFrame
     """
-    print(f"\nFiltering {data_type} by enrollment...")
+    print(f"\nFiltering {data_type} by CUIT set...")
 
-    # Perform left join: keep all enrollment records
-    # I need to do this instead of a merge because of some problem with the
-    # type of the cuit column
-    enrolled_cuits = set(df_enrollment.cuit.apply(lambda x: str(x)).values)
-    shared_cuits = [x for x in df_data.cuit if str(x) in enrolled_cuits]
-    df_filtered = df_data[df_data.cuit.isin(shared_cuits)]
+    # Filter to only include CUITs in the set
+    df_filtered = df_data[df_data['cuit'].astype(str).isin(cuit_set)]
 
-    print(f"  - Enrollment records: {len(df_enrollment)}")
-    print(f"  - {data_type.capitalize()} records: {len(df_data)}")
-    print(f"  - Filtered records (after left join): {len(df_filtered)}")
-
-    # Count how many enrolled users have data
-    users_with_data = len(df_filtered.cuit.unique())
-    users_without_data = len(df_enrollment) - users_with_data
-
-    print(f"  - Enrolled users with {data_type}: {users_with_data}")
-    print(f"  - Enrolled users without {data_type}: {users_without_data}")
+    print(f"  - {data_type.capitalize()} records before: {len(df_data)}")
+    print(f"  - {data_type.capitalize()} records after: {len(df_filtered)}")
+    print(f"  - Unique CUITs with {data_type}: {df_filtered['cuit'].nunique()}")
 
     return df_filtered
 
@@ -288,10 +368,22 @@ Examples:
     )
 
     parser.add_argument(
+        '--portfolios-file',
+        type=Path,
+        help='(Optional) Path to portfolios data file with "cuit" and "email" columns (CSV, Parquet, or JSON)'
+    )
+
+    parser.add_argument(
         '--sample-size',
         type=float,
         default=1.0,
-        help='Ratio of enrollment data to use (0.0 to 1.0, default: 1.0)'
+        help='Ratio of enrollment data to use (0.0 to 1.0, default: 1.0). Not compatible with --include-cuits'
+    )
+
+    parser.add_argument(
+        '--include-cuits',
+        type=Path,
+        help='Path to CSV file with "cuit" column containing CUITs to include in the sample. Not compatible with --sample-size'
     )
 
     parser.add_argument(
@@ -314,20 +406,58 @@ Examples:
     if not 0.0 < args.sample_size <= 1.0:
         parser.error("--sample-size must be between 0.0 and 1.0")
 
+    # Validate that --include-cuits and --sample-size are not used together
+    if args.include_cuits and args.sample_size < 1.0:
+        parser.error("--include-cuits and --sample-size cannot be used together")
+
     try:
-        # Read enrollment file
+        # Read enrollment file (without sampling - we'll do that later with combined CUITs)
         print("=" * 60)
         print("READING ENROLLMENT DATA")
         print("=" * 60)
-        df_enrollment = read_enrollment_file(args.enrollment_file, args.sample_size)
+        df_enrollment = read_enrollment_file(args.enrollment_file, sample_size=1.0)
 
-        # Filter academic units if specified
-        units_to_remove = [unit.strip() for unit in args.remove_academic_unit.split(',') if unit.strip()]
-        if units_to_remove:
+        # Read portfolio file if provided
+        df_portfolio = None
+        if args.portfolios_file:
             print("\n" + "=" * 60)
-            print("FILTERING ACADEMIC UNITS")
+            print("READING PORTFOLIO DATA")
             print("=" * 60)
-            df_enrollment = filter_academic_units(df_enrollment, units_to_remove)
+            df_portfolio = read_data_file(args.portfolios_file, "portfolios")
+
+        # Read include-cuits file if provided
+        include_cuits_set = None
+        if args.include_cuits:
+            print("\n" + "=" * 60)
+            print("READING INCLUDE CUITS")
+            print("=" * 60)
+            include_cuits_set = read_include_cuits_file(args.include_cuits)
+
+        # Get combined CUIT set with sampling and academic unit filtering
+        print("\n" + "=" * 60)
+        print("CALCULATING CUIT SET")
+        print("=" * 60)
+        units_to_remove = [unit.strip() for unit in args.remove_academic_unit.split(',') if unit.strip()]
+        cuit_set = get_combined_cuits(
+            df_enrollment,
+            df_portfolio,
+            sample_size=args.sample_size,
+            units_to_remove=units_to_remove,
+            include_cuits=include_cuits_set
+        )
+
+        # Filter enrollment by CUIT set
+        print("\n" + "=" * 60)
+        print("FILTERING ENROLLMENT")
+        print("=" * 60)
+        df_enrollment = filter_by_cuit_set(cuit_set, df_enrollment, "enrollment")
+
+        # Filter portfolio by CUIT set if provided
+        if df_portfolio is not None:
+            print("\n" + "=" * 60)
+            print("FILTERING PORTFOLIO")
+            print("=" * 60)
+            df_portfolio = filter_by_cuit_set(cuit_set, df_portfolio, "portfolio")
 
         # Read articles file
         print("\n" + "=" * 60)
@@ -341,11 +471,11 @@ Examples:
         print("=" * 60)
         df_projects = read_data_file(args.projects_file, "projects")
 
-        # Filter articles by enrollment
+        # Filter articles by CUIT set
         print("\n" + "=" * 60)
         print("FILTERING ARTICLES")
         print("=" * 60)
-        df_articles_filtered = filter_by_enrollment(df_enrollment, df_articles, "articles")
+        df_articles_filtered = filter_by_cuit_set(cuit_set, df_articles, "articles")
 
         # Clean text columns in articles
         print("\n" + "=" * 60)
@@ -357,11 +487,11 @@ Examples:
         articles_output = args.output_directory / "articles.json"
         save_output(df_articles_filtered, articles_output)
 
-        # Filter projects by enrollment
+        # Filter projects by CUIT set
         print("\n" + "=" * 60)
         print("FILTERING PROJECTS")
         print("=" * 60)
-        df_projects_filtered = filter_by_enrollment(df_enrollment, df_projects, "projects")
+        df_projects_filtered = filter_by_cuit_set(cuit_set, df_projects, "projects")
 
         # Clean text columns in projects
         print("\n" + "=" * 60)
@@ -383,6 +513,11 @@ Examples:
         enrollment_output = args.output_directory / "enrollment.json"
         save_output(df_enrollment, enrollment_output)
 
+        # Save portfolio if provided
+        if df_portfolio is not None:
+            portfolio_output = args.output_directory / "portfolios.json"
+            save_output(df_portfolio, portfolio_output)
+
         print("\n" + "=" * 60)
         print("FILTERING COMPLETED SUCCESSFULLY!")
         print("=" * 60)
@@ -390,6 +525,8 @@ Examples:
         print(f"  - {articles_output}")
         print(f"  - {projects_output}")
         print(f"  - {enrollment_output}")
+        if df_portfolio is not None:
+            print(f"  - {portfolio_output}")
 
     except Exception as e:
         print(f"\nError: {e}", file=sys.stderr)
