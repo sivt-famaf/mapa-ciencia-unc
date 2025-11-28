@@ -1,0 +1,36 @@
+name: mapa-ciencia-unc
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8123:8000"
+    depends_on:
+      - mongo
+    networks:
+      - appnet
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "${MONGO_PORT}:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - appnet
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+
+networks:
+  appnet:
+    driver: bridge
