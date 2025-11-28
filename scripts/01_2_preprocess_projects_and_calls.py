@@ -16,19 +16,19 @@ import pandas as pd
 from pathlib import Path
 import sys
 
-from mapa_ciencia_unc.data_handlers import read_csv_file
+from mapa_ciencia_unc.data_handlers import read_csv_file, save_output_by_extension
 
 
 COLUMN_RENAMES = {
-    'CUIL': 'cuit',
-    'CÃ³d. TrÃ¡mite': 'codigo_tramite',
-    'Fecha Alta': 'fecha_alta',
-    'Estado TrÃ¡m.': 'estado_tramie',
-    'Convocatoria': 'convocatoria',
-    'Objeto EvaluaciÃ³n': 'objeto_evaluacion',
-    'Grupo OE': 'grupo_oe',
-    'Postulante': 'postulante',
-    'Rol': 'rol',
+    "CUIL": "cuit",
+    "CÃ³d. TrÃ¡mite": "codigo_tramite",
+    "Fecha Alta": "fecha_alta",
+    "Estado TrÃ¡m.": "estado_tramie",
+    "Convocatoria": "convocatoria",
+    "Objeto EvaluaciÃ³n": "objeto_evaluacion",
+    "Grupo OE": "grupo_oe",
+    "Postulante": "postulante",
+    "Rol": "rol",
 }
 
 
@@ -65,7 +65,7 @@ def read_calls_directory(calls_dir: Path) -> pd.DataFrame:
     for csv_file in csv_files:
         try:
             # Read CSV with semicolon separator
-            df = read_csv_file(csv_file, separator=';')
+            df = read_csv_file(csv_file, separator=";")
             dataframes.append(df)
         except Exception as e:
             print(f"Error reading {csv_file.name}: {e}")
@@ -120,11 +120,11 @@ def read_projects_directory(projects_dir: Path) -> pd.DataFrame:
         try:
             # Extract CUIT from filename (format: proyectos_<cuit>.csv)
             filename = csv_file.stem  # Get filename without extension
-            cuit = filename.replace('proyectos_', '')
+            cuit = filename.replace("proyectos_", "")
             # Read CSV with semicolon separator
-            df = read_csv_file(csv_file, separator=';')
+            df = read_csv_file(csv_file, separator=";")
             # Add CUIT column extracted from filename
-            df['cuit'] = cuit
+            df["cuit"] = cuit
             dataframes.append(df)
         except Exception as e:
             print(f"Error reading {csv_file.name}: {e}")
@@ -159,24 +159,29 @@ def join_dataframes(df_calls: pd.DataFrame, df_projects: pd.DataFrame) -> pd.Dat
 
     # Validate that join columns exist in calls dataframe
     if "cuit" not in df_calls.columns:
-        raise ValueError(f"'cuit' column not found in calls data. Available columns: {df_calls.columns.tolist()}")
+        raise ValueError(
+            f"'cuit' column not found in calls data. Available columns: {df_calls.columns.tolist()}"
+        )
 
     if "codigo_tramite" not in df_calls.columns:
-        raise ValueError(f"'codigo_tramite' column not found in calls data. Available columns: {df_calls.columns.tolist()}")
+        raise ValueError(
+            f"'codigo_tramite' column not found in calls data. Available columns: {df_calls.columns.tolist()}"
+        )
 
     # Validate that join columns exist in projects dataframe
     if "cuit" not in df_projects.columns:
-        raise ValueError(f"'cuit' column not found in projects data. Available columns: {df_projects.columns.tolist()}")
+        raise ValueError(
+            f"'cuit' column not found in projects data. Available columns: {df_projects.columns.tolist()}"
+        )
 
     if "codigo_tramite" not in df_projects.columns:
-        raise ValueError(f"'codigo_tramite' column not found in projects data. Available columns: {df_projects.columns.tolist()}")
+        raise ValueError(
+            f"'codigo_tramite' column not found in projects data. Available columns: {df_projects.columns.tolist()}"
+        )
 
     # Perform the join on both CUIT and codigo_tramite
     df_joined = pd.merge(
-        df_projects,
-        df_calls,
-        on=["cuit", "codigo_tramite"],
-        how="inner"
+        df_projects, df_calls, on=["cuit", "codigo_tramite"], how="inner"
     )
 
     print(f"  - Projects records: {len(df_projects)}")
@@ -184,11 +189,21 @@ def join_dataframes(df_calls: pd.DataFrame, df_projects: pd.DataFrame) -> pd.Dat
     print(f"  - Joined records: {len(df_joined)}")
 
     # Calculate unmatched records
-    projects_key = df_projects['cuit'].astype(str) + '_' + df_projects['codigo_tramite'].astype(str)
-    calls_key = df_calls['cuit'].astype(str) + '_' + df_calls['codigo_tramite'].astype(str)
+    projects_key = (
+        df_projects["cuit"].astype(str)
+        + "_"
+        + df_projects["codigo_tramite"].astype(str)
+    )
+    calls_key = (
+        df_calls["cuit"].astype(str) + "_" + df_calls["codigo_tramite"].astype(str)
+    )
 
-    print(f"  - Projects without matching calls: {len(df_projects) - projects_key.isin(calls_key).sum()}")
-    print(f"  - Calls without matching projects: {len(df_calls) - calls_key.isin(projects_key).sum()}")
+    print(
+        f"  - Projects without matching calls: {len(df_projects) - projects_key.isin(calls_key).sum()}"
+    )
+    print(
+        f"  - Calls without matching projects: {len(df_calls) - calls_key.isin(projects_key).sum()}"
+    )
 
     return df_joined
 
@@ -217,42 +232,20 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     print(f"\nData summary:")
     print(f"  - Total records: {len(df)}")
     print(f"  - Unique CUITs: {df['cuit'].nunique()}")
-    if 'codigo_tramite' in df.columns:
-        print(f"  - Unique transactions (codigo_tramite): {df['codigo_tramite'].nunique()}")
+    if "codigo_tramite" in df.columns:
+        print(
+            f"  - Unique transactions (codigo_tramite): {df['codigo_tramite'].nunique()}"
+        )
 
     # Check for missing values in key columns
-    if 'titulo_proyecto' in df.columns:
+    if "titulo_proyecto" in df.columns:
         print(f"  - Projects with missing titles: {df['titulo_proyecto'].isna().sum()}")
-    if 'resumen_proyecto' in df.columns:
-        print(f"  - Projects with missing abstracts: {df['resumen_proyecto'].isna().sum()}")
+    if "resumen_proyecto" in df.columns:
+        print(
+            f"  - Projects with missing abstracts: {df['resumen_proyecto'].isna().sum()}"
+        )
 
     return df
-
-
-def save_output(df: pd.DataFrame, output_path: Path) -> None:
-    """
-    Save the preprocessed data to the output file.
-
-    Args:
-        df: Preprocessed dataframe
-        output_path: Path where to save the output file
-    """
-    # Create output directory if it doesn't exist
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Determine output format based on file extension
-    if output_path.suffix == '.csv':
-        df.to_csv(output_path, index=False)
-    elif output_path.suffix == '.parquet':
-        df.to_parquet(output_path, index=False)
-    elif output_path.suffix == '.json':
-        df.to_json(output_path, orient='records', lines=True)
-    else:
-        # Default to CSV
-        df.to_csv(output_path, index=False)
-
-    print(f"\nOutput saved to: {output_path}")
-    print(f"File size: {output_path.stat().st_size / 1024:.2f} KB")
 
 
 def main():
@@ -262,28 +255,28 @@ def main():
         epilog="""
 Examples:
   %(prog)s --projects-dir data/raw/projects/ --calls-dir data/raw/calls/ --output-file data/processed/projects_calls.parquet
-        """
+        """,
     )
 
     parser.add_argument(
-        '--projects-dir',
+        "--projects-dir",
         type=Path,
         required=True,
-        help='Directory containing proyectos_*.csv files'
+        help="Directory containing proyectos_*.csv files",
     )
 
     parser.add_argument(
-        '--calls-dir',
+        "--calls-dir",
         type=Path,
         required=True,
-        help='Directory containing convocatorias_*.csv files'
+        help="Directory containing convocatorias_*.csv files",
     )
 
     parser.add_argument(
-        '--output-file',
+        "--output-file",
         type=Path,
         required=True,
-        help='Output filepath for preprocessed data (supports .csv, .parquet, .json)'
+        help="Output filepath for preprocessed data (supports .csv, .parquet, .json)",
     )
 
     args = parser.parse_args()
@@ -311,7 +304,7 @@ Examples:
         df_processed = preprocess_data(df_joined)
 
         # Save output
-        save_output(df_processed, args.output_file)
+        save_output_by_extension(df_processed, args.output_file)
 
         print("\n" + "=" * 60)
         print("Preprocessing completed successfully!")

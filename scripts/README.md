@@ -7,6 +7,24 @@ Files follow the established naming convention: `NN_X_descriptive_name.py`
    - `X`: Sub-step number (if needed)
    - `descriptive_name`: Description of what the script does
 
+# TL;DR
+
+To preprocess the dataset, assuming you have a directory `raw_csv` with the starting data:
+
+```bash
+export DATA_DIR=<dirpath>/  # This will only affect this bash session
+python scripts/01_1_preprocess_articles.py \
+    --input-dir ${DATA_DIR}/raw_csv/articlulos_v2 \
+    --output-file ${DATA_DIR}/preprocessed_csv/articles.json \
+    > ${DATA_DIR}/preprocessed_csv/articles.log
+
+python scripts/01_2_preprocess_projects_and_calls.py \
+    --projects-dir ${DATA_DIR}/raw_csv/proyectos \
+    --calls-dir ${DATA_DIR}/raw_csv/convocatorias \
+    --output-file ${DATA_DIR}/preprocessed_csv/projects.json \
+    > ${DATA_DIR}/preprocessed_csv/projects.log
+```
+
 ## Scripts Overview
 
 ### 01_1_preprocess_articles.py
@@ -116,6 +134,64 @@ python scripts/01_2_preprocess_projects_and_calls.py \
   --projects-dir data/raw/projects/ \
   --calls-dir data/raw/calls/ \
   --output-file data/processed/projects_calls.parquet
+```
+
+---
+
+### 01_3_preprocess_portfolios.py
+
+This script preprocesses portfolio data by reading a CSV file, renaming columns according to a mapping from a JSON file, and saving the result.
+
+**Usage:**
+```bash
+python scripts/01_3_preprocess_portfolios.py --portfolios-file <portfolio_csv> --output-file <output_filepath>
+```
+
+**Arguments:**
+- `--portfolios-file`: Path to portfolio CSV file (also supports .parquet, .json)
+- `--column-names-file`: (Optional) Path to JSON file with column name mappings (default: `scripts/portfolio_column_names.json`)
+- `--output-file`: Output filepath for preprocessed data (supports .csv, .parquet, .json)
+
+**Column Mapping File:**
+
+The script reads column name mappings from a JSON file. The JSON should be a single object where keys are original column names and values are new standardized names:
+
+```json
+{
+  "CUIL": "cuit",
+  "Apellido": "last_name",
+  "Nombres": "first_name",
+  "Género": "gender",
+  "Unidad Académica": "academic_unit",
+  ...
+}
+```
+
+**Processing Steps:**
+1. Loads column mapping from JSON file
+2. Reads portfolio file (supports CSV, Parquet, JSON)
+3. Renames columns according to the mapping
+4. Filters to keep only renamed columns (removes any extra columns)
+5. Converts CUIT to string type
+6. Saves preprocessed data in specified format
+
+**Output format**: Supports .csv, .parquet, .json
+
+**Examples:**
+
+Default usage (uses `scripts/portfolio_column_names.json`):
+```bash
+python scripts/01_3_preprocess_portfolios.py \
+  --portfolios-file data/raw/portfolios.csv \
+  --output-file data/processed/portfolios.parquet
+```
+
+With custom column mapping file:
+```bash
+python scripts/01_3_preprocess_portfolios.py \
+  --portfolios-file data/raw/portfolios.csv \
+  --column-names-file config/custom_portfolio_columns.json \
+  --output-file data/processed/portfolios.parquet
 ```
 
 ---

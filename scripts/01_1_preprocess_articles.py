@@ -16,10 +16,10 @@ import pandas as pd
 from pathlib import Path
 import sys
 
-from mapa_ciencia_unc.data_handlers import read_csv_file
+from mapa_ciencia_unc.data_handlers import read_csv_file, save_output_by_extension
 
 
-def read_csv_files(input_dir: Path) -> pd.DataFrame:
+def read_files(input_dir: Path) -> pd.DataFrame:
     """
     Read all CSV files from the input directory and concatenate them.
 
@@ -100,32 +100,6 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def save_output(df: pd.DataFrame, output_path: Path) -> None:
-    """
-    Save the preprocessed data to the output file.
-
-    Args:
-        df: Preprocessed dataframe
-        output_path: Path where to save the output file
-    """
-    # Create output directory if it doesn't exist
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Determine output format based on file extension
-    if output_path.suffix == '.csv':
-        df.to_csv(output_path, index=False)
-    elif output_path.suffix == '.parquet':
-        df.to_parquet(output_path, index=False)
-    elif output_path.suffix == '.json':
-        df.to_json(output_path, orient='records', lines=True)
-    else:
-        # Default to CSV
-        df.to_csv(output_path, index=False)
-
-    print(f"\nOutput saved to: {output_path}")
-    print(f"File size: {output_path.stat().st_size / 1024:.2f} KB")
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Preprocess articles from CSV files in a directory",
@@ -160,9 +134,9 @@ Examples:
         parser.error("Both input_dir and output_file are required")
 
     try:
-        df = read_csv_files(input_dir)
+        df = read_files(input_dir)
         df = preprocess_data(df)
-        save_output(df, output_file)
+        save_output_by_extension(df, output_file)
 
         print("\nPreprocessing completed successfully!")
 
