@@ -120,13 +120,13 @@ python scripts/01_2_preprocess_projects_and_calls.py \
 
 ---
 
-### 01_3_filter_enrolled_users.py
+### 02_1_filter_enrolled_users.py
 
 This script filters articles and projects data to include only enrolled users. It performs left joins to keep all enrolled users even if they don't have corresponding articles or projects. The script also cleans HTML-like content from text columns in all output files.
 
 **Usage:**
 ```bash
-python scripts/01_3_filter_enrolled_users.py \
+python scripts/02_1_filter_enrolled_users.py \
   --enrollment-file <enrollment_csv> \
   --articles-file <articles_file> \
   --projects-file <projects_file> \
@@ -178,7 +178,7 @@ This is applied to all text columns in enrollment, articles, and projects data.
 
 Filter with all enrolled users:
 ```bash
-python scripts/01_3_filter_enrolled_users.py \
+python scripts/02_1_filter_enrolled_users.py \
   --enrollment-file data/enrollment.csv \
   --articles-file data/processed/articles.parquet \
   --projects-file data/processed/projects_calls.parquet \
@@ -187,11 +187,21 @@ python scripts/01_3_filter_enrolled_users.py \
 
 Filter with 10% sample for testing:
 ```bash
-python scripts/01_3_filter_enrolled_users.py \
+python scripts/02_1_filter_enrolled_users.py \
   --enrollment-file data/enrollment.csv \
   --articles-file data/processed/articles.parquet \
   --projects-file data/processed/projects_calls.parquet \
   --sample-size 0.1 \
   --output-directory data/filtered_sample/
+```
+
+Filter excluding specific academic units:
+```bash
+python scripts/02_1_filter_enrolled_users.py \
+  --enrollment-file data/enrollment.csv \
+  --articles-file data/processed/articles.parquet \
+  --projects-file data/processed/projects_calls.parquet \
+  --remove-academic-unit "Facultad de Ciencias Exactas,Facultad de Derecho" \
+  --output-directory data/filtered/
 ```
 
