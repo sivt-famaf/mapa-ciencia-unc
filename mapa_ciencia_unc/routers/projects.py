@@ -26,6 +26,22 @@ async def create_project(payload: ProjectCreate):
     return project
 
 
+@router.post("/bulk", status_code=status.HTTP_201_CREATED, response_model=List[Project])
+async def create_projects_bulk(payload: List[ProjectCreate]):
+    created_projects = []
+    for project_data in payload:
+        existing = await Project.find_one(
+            Project.codigo_tramite == project_data.codigo_tramite
+        )
+        if existing:
+            continue  # Skip existing projects
+
+        project = Project(**project_data.model_dump())
+        await project.insert()
+        created_projects.append(project)
+    return created_projects
+
+
 @router.get("", response_model=List[Project])
 async def list_projects():
     projects = await Project.find_all().to_list()

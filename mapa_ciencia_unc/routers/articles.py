@@ -26,6 +26,20 @@ async def create_article(payload: ArticleCreate):
     return article
 
 
+@router.post("/bulk", status_code=status.HTTP_201_CREATED, response_model=List[Article])
+async def create_articles_bulk(payload: List[ArticleCreate]):
+    created_articles = []
+    for article_data in payload:
+        existing = await Article.find_one(Article.titulo == article_data.titulo)
+        if existing:
+            continue  # Skip existing articles
+
+        article = Article(**article_data.model_dump())
+        await article.insert()
+        created_articles.append(article)
+    return created_articles
+
+
 @router.get("", response_model=List[Article])
 async def list_articles():
     articles = await Article.find_all().to_list()

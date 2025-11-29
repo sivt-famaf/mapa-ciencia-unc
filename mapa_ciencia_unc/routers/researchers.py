@@ -4,7 +4,16 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from mapa_ciencia_unc.auth import require_auth
-from mapa_ciencia_unc.models.researcher import Researcher, ResearcherCreate
+from mapa_ciencia_unc.models.researcher import (
+    Researcher,
+    ResearcherCreate,
+)
+from mapa_ciencia_unc.models.embedding import (
+    Embedding,
+    EmbeddingCreate,
+    MultipleEmbeddingsCreate,
+)
+from mapa_ciencia_unc.models.summary import Summary, MultipleSummariesCreate
 
 
 router = APIRouter(
@@ -28,9 +37,25 @@ async def create_researcher(payload: ResearcherCreate):
     return researcher
 
 
+@router.post(
+    "/bulk", status_code=status.HTTP_201_CREATED, response_model=List[Researcher]
+)
+async def create_researchers_bulk(payload: List[ResearcherCreate]):
+    created_researchers = []
+    for researcher_data in payload:
+        existing = await Researcher.find_one(Researcher.cuit == researcher_data.cuit)
+        if existing:
+            continue  # Skip existing researchers
+
+        researcher = Researcher(**researcher_data.model_dump())
+        await researcher.insert()
+        created_researchers.append(researcher)
+    return created_researchers
+
+
 @router.get("", response_model=List[Researcher])
 async def list_researchers():
-    researchers = await Researcher.find_all().to_list()
+    researchers = await Researcher.find_all(fetch_links=False).to_list()
     return researchers
 
 
@@ -44,10 +69,106 @@ async def get_researcher(researcher_id: str):
             detail="Invalid researcher id.",
         )
 
-    researcher = await Researcher.find_one({"_id": object_id})
+    researcher = await Researcher.get(object_id, fetch_links=False)
     if not researcher:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Researcher not found.",
         )
     return researcher
+
+
+@router.post("/{researcher_id}/embeddings", response_model=Researcher)
+async def create_researcher_embedding(researcher_id: str, payload: EmbeddingCreate):
+    researcher = await Researcher.get(
+        PydanticObjectId(researcher_id), fetch_links=False
+    )
+    if not researcher:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Researcher not found.",
+        )
+
+    embedding = Embedding(
+        **payload.model_dump(),
+        dimensions=len(payload.vector),
+    )
+    await embedding.insert()
+
+    researcher.embeddings.append(embedding)
+
+    await researcher.save()
+    return researcher
+
+
+@router.post("/embeddings/bulk", response_model=dict)
+async def create_multiple_embeddings(payload: MultipleEmbeddingsCreate):
+    created_embeddings = {}
+    for researcher_id, vector in payload.vector_mapping.items():
+        researcher = await Researcher.get(
+            PydanticObjectId(researcher_id), fetch_links=False
+        )
+        if not researcher:
+            continue
+
+        embedding = Embedding(
+            model=payload.model,
+            vector=vector,
+            dimensions=len(vector),
+            tag=payload.tag,
+        )
+        await embedding.insert()
+
+        researcher.embeddings.append(embedding)
+
+        await researcher.save()
+        created_embeddings[researcher_id] = str(embedding.id)
+
+    return {"created_embeddings": created_embeddings}
+
+
+@router.post("/{researcher_id}/summaries", response_model=Researcher)
+async def create_researcher_summary(researcher_id: str, payload: Summary):
+    researcher = await Researcher.get(
+        PydanticObjectId(researcher_id), fetch_links=False
+    )
+    if not researcher:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Researcher not found.",
+        )
+
+    summary = Summary(
+        **payload.model_dump(),
+    )
+    await summary.insert()
+
+    researcher.summaries.append(summary)
+
+    await researcher.save()
+    return researcher
+
+
+@router.post("/summaries/bulk", response_model=dict)
+async def create_multiple_summaries(payload: MultipleSummariesCreate):
+    created_summaries = {}
+    for researcher_id, content in payload.content_mapping.items():
+        researcher = await Researcher.get(
+            PydanticObjectId(researcher_id), fetch_links=False
+        )
+        if not researcher:
+            continue
+
+        summary = Summary(
+            model=payload.model,
+            prompt_id=payload.prompt_id,
+            content=content,
+        )
+        await summary.insert()
+
+        researcher.summaries.append(summary)
+
+        await researcher.save()
+        created_summaries[researcher_id] = str(summary.id)
+
+    return {"created_summaries": created_summaries}

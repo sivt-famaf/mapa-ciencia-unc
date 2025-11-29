@@ -1,20 +1,11 @@
-from beanie import Document, Indexed
+from beanie import Document, Indexed, Link, PydanticObjectId
 from pydantic import BaseModel, Field
-from typing import List, Optional, Annotated
+from typing import List, Annotated
 from datetime import datetime
 
 from mapa_ciencia_unc.models.constants import CUIT_FIELD
-
-
-class Embedding(BaseModel):
-    model: str = Field(
-        ..., examples=["embedding-model-v1"], description="Embedding model name"
-    )
-    created_at: datetime = Field(default_factory=datetime.now)
-    vector: List[float] = Field(..., description="Embedding vector", min_items=1)
-    tag: Optional[str] = Field(
-        None, description="Optional tag for the embedding", examples=["test-run-1"]
-    )
+from mapa_ciencia_unc.models.embedding import Embedding
+from mapa_ciencia_unc.models.summary import Summary
 
 
 class ResearcherBase(BaseModel):
@@ -41,5 +32,10 @@ class ResearcherCreate(ResearcherBase):
 
 class Researcher(ResearcherBase, Document):
     cuit: Annotated[str, Indexed(unique=True)] = ResearcherBase.model_fields["cuit"]
-
     created_at: datetime = Field(default_factory=datetime.now)
+    embeddings: List[Link[Embedding]] = Field(default_factory=list)
+    summaries: List[Link[Summary]] = Field(default_factory=list)
+
+
+class ResearcherResponse(Researcher):
+    embeddings: List[PydanticObjectId]
