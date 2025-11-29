@@ -16,6 +16,11 @@ router = APIRouter(
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=Article)
 async def create_article(payload: ArticleCreate):
+    if await Article.find_one(Article.titulo == payload.titulo):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Article with this title already exists.",
+        )
     article = Article(**payload.model_dump())
     await article.insert()
     return article

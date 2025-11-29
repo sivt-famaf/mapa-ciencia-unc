@@ -1,9 +1,9 @@
-from beanie import Document
+from beanie import Document, Indexed
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Annotated
 from datetime import datetime
 
-CUIT_LENGTH = 11
+from mapa_ciencia_unc.models.constants import CUIT_FIELD
 
 
 class Embedding(BaseModel):
@@ -18,29 +18,21 @@ class Embedding(BaseModel):
 
 
 class ResearcherBase(BaseModel):
-    cuit: str = Field(
-        ...,
-        min_length=CUIT_LENGTH,
-        max_length=CUIT_LENGTH,
-    )
-    email: str | None = None
-    name: str | None = None
-    last_name: str | None = None
+    cuit: str = CUIT_FIELD
+    email: str
+    name: str
+    last_name: str
     orcid_number: str | None = None
-    gender: str | None = None
-    academic_unit: str | None = None
-    highest_position: str | None = None
-    languages: str | None = None
-    research_center: str | None = None
+    gender: str
+    academic_units: List[str] = []
+    highest_position: str
+    languages: List[str] = []
+    research_center: str
     research_area: str | None = None
     last_project_title: str | None = None
-    ods: str | None = None
-    maturity_level: str | None = None
-    international_research_links: str | None = None
-    embeddings: List[Embedding] = Field(
-        ...,
-        default_factory=list,
-    )
+    ods: List[str] = []
+    maturity_level: str
+    international_research_links: bool
 
 
 class ResearcherCreate(ResearcherBase):
@@ -48,4 +40,6 @@ class ResearcherCreate(ResearcherBase):
 
 
 class Researcher(ResearcherBase, Document):
+    cuit: Annotated[str, Indexed(unique=True)] = ResearcherBase.model_fields["cuit"]
+
     created_at: datetime = Field(default_factory=datetime.now)

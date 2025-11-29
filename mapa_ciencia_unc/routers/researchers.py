@@ -23,7 +23,7 @@ async def create_researcher(payload: ResearcherCreate):
             detail="Researcher with this CUIT already exists.",
         )
 
-    researcher = Researcher(cuit=payload.cuit, embeddings=payload.embeddings or [])
+    researcher = Researcher(**payload.model_dump())
     await researcher.insert()
     return researcher
 

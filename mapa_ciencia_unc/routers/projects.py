@@ -16,6 +16,11 @@ router = APIRouter(
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=Project)
 async def create_project(payload: ProjectCreate):
+    if await Project.find_one(Project.codigo_tramite == payload.codigo_tramite):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project with this codigo_tramite already exists.",
+        )
     project = Project(**payload.model_dump())
     await project.insert()
     return project
