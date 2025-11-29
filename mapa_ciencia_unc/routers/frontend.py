@@ -5,7 +5,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from mapa_ciencia_unc.controllers.graph import get_researcher_graph
-
+from mapa_ciencia_unc.models.researcher import Researcher, ResearcherPublicView
+from beanie import PydanticObjectId
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -33,7 +34,13 @@ async def other(request: Request):
 
 @router.get("/researcher/{researcher_id}", response_class=HTMLResponse)
 async def researcher(request: Request, researcher_id: str):
-    # TODO: get researcher info from db
+    researcher = await Researcher.find_one(
+        {"_id": PydanticObjectId(researcher_id)}
+    ).project(ResearcherPublicView)
+
+    if not researcher:
+        return HTMLResponse(content="Researcher not found", status_code=404)
+
     return templates.TemplateResponse(
-        "researcher.html", {"request": request, "researcher_id": researcher_id}
+        "researcher.html", {"request": request, "researcher": researcher.model_dump()}
     )

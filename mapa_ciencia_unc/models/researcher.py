@@ -30,12 +30,16 @@ class ResearcherCreate(ResearcherBase):
     pass
 
 
+class ResearcherPublicView(BaseModel):
+    name: str
+    last_name: str
+    research_center: str
+    research_area: str | None = "N/A"
+    last_project_title: str | None = "N/A"
+
+
 class Researcher(ResearcherBase, Document):
     cuit: Annotated[str, Indexed(unique=True)] = ResearcherBase.model_fields["cuit"]
     created_at: datetime = Field(default_factory=datetime.now)
-    embeddings: List[Link[Embedding]] = Field(default_factory=list)
-    summaries: List[Link[Summary]] = Field(default_factory=list)
-
-
-class ResearcherResponse(Researcher):
-    embeddings: List[PydanticObjectId]
+    embeddings: List[Embedding] = Field(default_factory=list)
+    summaries: List[Summary] = Field(default_factory=list)

@@ -69,7 +69,8 @@ async def get_researcher(researcher_id: str):
             detail="Invalid researcher id.",
         )
 
-    researcher = await Researcher.get(object_id, fetch_links=False)
+    researcher = await Researcher.get(object_id)
+
     if not researcher:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -93,7 +94,6 @@ async def create_researcher_embedding(researcher_id: str, payload: EmbeddingCrea
         **payload.model_dump(),
         dimensions=len(payload.vector),
     )
-    await embedding.insert()
 
     researcher.embeddings.append(embedding)
 
@@ -117,7 +117,6 @@ async def create_multiple_embeddings(payload: MultipleEmbeddingsCreate):
             dimensions=len(vector),
             tag=payload.tag,
         )
-        await embedding.insert()
 
         researcher.embeddings.append(embedding)
 
@@ -141,7 +140,6 @@ async def create_researcher_summary(researcher_id: str, payload: Summary):
     summary = Summary(
         **payload.model_dump(),
     )
-    await summary.insert()
 
     researcher.summaries.append(summary)
 
@@ -164,7 +162,6 @@ async def create_multiple_summaries(payload: MultipleSummariesCreate):
             prompt_id=payload.prompt_id,
             content=content,
         )
-        await summary.insert()
 
         researcher.summaries.append(summary)
 

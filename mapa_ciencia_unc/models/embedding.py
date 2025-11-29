@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import List, Optional, Annotated
+from typing import List, Annotated
 from beanie import Document, Indexed
 
 
@@ -24,13 +24,9 @@ class MultipleEmbeddingsCreate(BaseModel):
     )
 
 
-class Embedding(Document):
+class Embedding(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
-    model: str = Field(
-        ..., examples=["embedding-model-v1"], description="Embedding model name"
-    )
-    vector: List[float] = Field(..., description="Embedding vector", min_items=1)
+    model: str
+    vector: List[float] = Field(..., min_items=1)
     dimensions: int
-    tag: Annotated[str, Indexed(unique=True)] = Field(
-        ..., description="tag for the embedding", examples=["test-run-1"]
-    )
+    tag: str

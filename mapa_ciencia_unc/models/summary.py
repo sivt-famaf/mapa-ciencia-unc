@@ -1,4 +1,3 @@
-from beanie import Document
 from pydantic import BaseModel
 
 
@@ -8,7 +7,7 @@ class MultipleSummariesCreate(BaseModel):
     content_mapping: dict[str, str]  # Mapping of researcher IDs to summary content
 
 
-class Summary(Document):
+class Summary(BaseModel):
     model: str
     prompt_id: str
     content: str
