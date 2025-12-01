@@ -26,18 +26,37 @@ async def create_article(payload: ArticleCreate):
     return article
 
 
-@router.post("/bulk", status_code=status.HTTP_201_CREATED, response_model=List[Article])
+@router.post("/bulk", status_code=status.HTTP_201_CREATED, response_model=dict)
 async def create_articles_bulk(payload: List[ArticleCreate]):
     created_articles = []
+    failed_articles = []
     for article_data in payload:
-        existing = await Article.find_one(Article.titulo == article_data.titulo)
-        if existing:
-            continue  # Skip existing articles
+        try:
+            existing = await Article.find_one(article_data.model_dump())
+            if existing:
+                failed_articles.append(
+                    {
+                        "title": article_data.titulo,
+                        "error": "This article already exists.",
+                    }
+                )
+                continue  # Skip existing articles
 
-        article = Article(**article_data.model_dump())
-        await article.insert()
-        created_articles.append(article)
-    return created_articles
+            article = Article(**article_data.model_dump())
+            await article.insert()
+            created_articles.append(article)
+        except Exception as e:
+            failed_articles.append(
+                {
+                    "title": article_data.titulo,
+                    "error": str(e),
+                }
+            )
+
+    return {
+        "created": created_articles,
+        "failed": failed_articles,
+    }
 
 
 @router.get("", response_model=List[Article])

@@ -20,4 +20,4 @@ class ArticleCreate(ArticleBase):
 
 class Article(ArticleBase, Document):
     created_at: datetime = Field(default_factory=datetime.now)
-    titulo: Annotated[str, Indexed(unique=True)] = ArticleBase.model_fields["titulo"]
+    titulo: Annotated[str, Indexed()] = ArticleBase.model_fields["titulo"]

@@ -26,20 +26,37 @@ async def create_project(payload: ProjectCreate):
     return project
 
 
-@router.post("/bulk", status_code=status.HTTP_201_CREATED, response_model=List[Project])
+@router.post("/bulk", status_code=status.HTTP_201_CREATED, response_model=dict)
 async def create_projects_bulk(payload: List[ProjectCreate]):
     created_projects = []
+    failed_projects = []
     for project_data in payload:
-        existing = await Project.find_one(
-            Project.codigo_tramite == project_data.codigo_tramite
-        )
-        if existing:
-            continue  # Skip existing projects
+        try:
+            existing = await Project.find_one(project_data.model_dump())
+            if existing:
+                failed_projects.append(
+                    {
+                        "codigo_tramite": project_data.codigo_tramite,
+                        "error": "This project already exists.",
+                    }
+                )
+                continue  # Skip existing projects
 
-        project = Project(**project_data.model_dump())
-        await project.insert()
-        created_projects.append(project)
-    return created_projects
+            project = Project(**project_data.model_dump())
+            await project.insert()
+            created_projects.append(project)
+        except Exception as e:
+            failed_projects.append(
+                {
+                    "codigo_tramite": project_data.codigo_tramite,
+                    "error": str(e),
+                }
+            )
+
+    return {
+        "created": created_projects,
+        "failed": failed_projects,
+    }
 
 
 @router.get("", response_model=List[Project])

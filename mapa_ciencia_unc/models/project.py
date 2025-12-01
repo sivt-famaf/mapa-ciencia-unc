@@ -34,6 +34,6 @@ class ProjectCreate(ProjectBase):
 
 class Project(ProjectBase, Document):
     created_at: datetime = Field(default_factory=datetime.now)
-    codigo_tramite: Annotated[str, Indexed(unique=True)] = ProjectBase.model_fields[
+    codigo_tramite: Annotated[str, Indexed()] = ProjectBase.model_fields[
         "codigo_tramite"
     ]

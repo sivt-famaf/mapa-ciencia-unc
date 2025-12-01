@@ -37,20 +37,33 @@ async def create_researcher(payload: ResearcherCreate):
     return researcher
 
 
-@router.post(
-    "/bulk", status_code=status.HTTP_201_CREATED, response_model=List[Researcher]
-)
+@router.post("/bulk", status_code=status.HTTP_201_CREATED, response_model=dict)
 async def create_researchers_bulk(payload: List[ResearcherCreate]):
     created_researchers = []
+    failed_researchers = []
     for researcher_data in payload:
-        existing = await Researcher.find_one(Researcher.cuit == researcher_data.cuit)
-        if existing:
-            continue  # Skip existing researchers
+        try:
+            existing = await Researcher.find_one(
+                Researcher.cuit == researcher_data.cuit
+            )
+            if existing:
+                continue  # Skip existing researchers
 
-        researcher = Researcher(**researcher_data.model_dump())
-        await researcher.insert()
-        created_researchers.append(researcher)
-    return created_researchers
+            researcher = Researcher(**researcher_data.model_dump())
+            await researcher.insert()
+            created_researchers.append(researcher)
+        except Exception as e:
+            failed_researchers.append(
+                {
+                    "cuit": researcher_data.cuit,
+                    "error": str(e),
+                }
+            )
+
+    return {
+        "created": created_researchers,
+        "failed": failed_researchers,
+    }
 
 
 @router.get("", response_model=List[Researcher])
