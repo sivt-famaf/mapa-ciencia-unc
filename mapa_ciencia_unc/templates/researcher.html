@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Researcher {{ researcher_id }}</title>
+    <title>Researcher: {{ researcher.last_name }}, {{ researcher.name }}</title>
     <style>
       body {
         font-family: sans-serif;
@@ -12,8 +12,9 @@
     </style>
   </head>
   <body>
-    <h1>Researcher {{ researcher_id }}</h1>
-    <p>Researcher information will be displayed here</p>
-    <p>Perhaps a profile picture?? linkedin profile??</p>
+    <h1>Researcher: {{ researcher.last_name }}, {{ researcher.name }}</h1>
+    <p>Research Area: {{ researcher.research_area }}</p>
+    <p>Research Center: {{ researcher.research_center }}</p>
+    <p>Last Project Title: {{ researcher.last_project_title }}</p>
   </body>
 </html>

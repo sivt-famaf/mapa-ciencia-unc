@@ -1,0 +1,13 @@
+from pydantic import BaseModel
+
+
+class MultipleSummariesCreate(BaseModel):
+    model: str
+    prompt_id: str
+    content_mapping: dict[str, str]  # Mapping of researcher IDs to summary content
+
+
+class Summary(BaseModel):
+    model: str
+    prompt_id: str
+    content: str
