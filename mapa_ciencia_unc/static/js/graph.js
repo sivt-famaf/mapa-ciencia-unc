@@ -62,8 +62,8 @@ const graph = new Graphology.Graph();
 rawData.nodes?.forEach((node) => {
   graph.addNode(node.id, {
     label: node.label,
-    size: 5,
-    color: "#000000",
+    size: 10,
+    color: node.color || "#000000",
     x: node.x,
     y: node.y,
     description: node.description || "",
