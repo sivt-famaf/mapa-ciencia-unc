@@ -116,27 +116,34 @@ async def create_researcher_embedding(researcher_id: str, payload: EmbeddingCrea
 
 @router.post("/embeddings/bulk", response_model=dict)
 async def create_multiple_embeddings(payload: MultipleEmbeddingsCreate):
-    created_embeddings = {}
+    created_embeddings = 0
+    failed_embeddings = []
     for researcher_id, vector in payload.vector_mapping.items():
-        researcher = await Researcher.get(
-            PydanticObjectId(researcher_id), fetch_links=False
-        )
-        if not researcher:
-            continue
+        try:
+            researcher = await Researcher.get(
+                PydanticObjectId(researcher_id), fetch_links=False
+            )
+            if not researcher:
+                continue
 
-        embedding = Embedding(
-            model=payload.model,
-            vector=vector,
-            dimensions=len(vector),
-            tag=payload.tag,
-        )
+            embedding = Embedding(
+                model=payload.model,
+                vector=vector,
+                dimensions=len(vector),
+                tag=payload.tag,
+            )
 
-        researcher.embeddings.append(embedding)
+            researcher.embeddings.append(embedding)
 
-        await researcher.save()
-        created_embeddings[researcher_id] = str(embedding.id)
+            await researcher.save()
+            created_embeddings += 1
+        except Exception:
+            failed_embeddings.append(researcher_id)
 
-    return {"created_embeddings": created_embeddings}
+    return {
+        "created_embeddings": created_embeddings,
+        "failed_embeddings": failed_embeddings,
+    }
 
 
 @router.post("/{researcher_id}/summaries", response_model=Researcher)
