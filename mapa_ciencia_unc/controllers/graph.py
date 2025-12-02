@@ -11,6 +11,24 @@ from sklearn.decomposition import PCA
 DATA_DIR = Path(__file__).resolve().parent.parent / "graphs"
 DEFAULT_GRAPH_FILE = DATA_DIR / "researcher_graph.json"
 
+ACADEMIC_UNIT_COLORS = {
+    "FP": "#FFB300",
+    "FCM": "#803E75",
+    "FCQ": "#FF6800",
+    "FA": "#A6BDD7",
+    "FaMAF": "#C10020",
+    "FO": "#CEA262",
+    "FL": "#817066",
+    "FCE": "#007D34",
+    "FAUD": "#F6768E",
+    "FFyH": "#00538A",
+    "FCEFyN": "#FF7A5C",
+    "FCS": "#FF8E00",
+    "FCA": "#3B2204",
+    "FCC": "#F4C800",
+    "Otros": "#53377A",
+}
+
 
 def get_researcher_graph(graph_file_path: Path = DEFAULT_GRAPH_FILE) -> ResearcherGraph:
     with open(graph_file_path, "r", encoding="utf-8") as f:
@@ -54,19 +72,27 @@ async def compute_graph(embeddings_tag: str, strategy: str = "PCA") -> Researche
         else:
             description = f"{researcher.research_center}"
 
+        academic_unit = (
+            researcher.academic_units[0] if researcher.academic_units else "Otros"
+        )
+        color = ACADEMIC_UNIT_COLORS.get(academic_unit, ACADEMIC_UNIT_COLORS["Otros"])
+
+        label = f"{researcher.name} ({academic_unit})"
+
         node = ResearcherNode(
             id=str(researcher.id),
-            label=researcher.name,
+            label=label,
             x=float(pos[0]),
             y=float(pos[1]),
             description=description,
+            color=color,
         )
 
         nodes.append(node)
 
     edges = []
     graph = ResearcherGraph(
-        title=f"Researcher Graph - Embeddings tag: {embeddings_tag}",
+        title=f"Researcher Graph - Summary/Embeddings tag: {embeddings_tag}",
         nodes=nodes,
         edges=edges,
     )
