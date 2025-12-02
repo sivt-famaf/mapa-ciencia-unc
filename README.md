@@ -45,6 +45,49 @@ uvicorn mapa_ciencia_unc.main:app --reload
 
 The app will be available at http://localhost:8000
 
+### Docker Compose & Ngrok
+
+To deploy using compose and expose the port using ngrok:
+
+1. Create a `.env` file with:
+   - `MONGO_INITDB_ROOT_USERNAME` / `MONGO_INITDB_ROOT_PASSWORD`: Mongo admin credentials.
+   - `MONGO_DB`: default database name (example: pri-db).
+   - `MONGO_PORT=27018`: port exposed by `docker-compose.yml`.
+   - `BASIC_AUTH_USERNAME` / `BASIC_AUTH_PASSWORD`: HTTP basic auth for the API. 
+   - `JWT_SECRET`: signing secret for issued tokens.
+2. Start everything with `docker compose up --build`. If running on zx81 you may need to run `docker swarm leave (--force)` for the internal compose network to work.
+3. Expose the backend from another terminal with:
+   ```bash
+   docker run --net=host -it -e NGROK_AUTHTOKEN=YOUR-NGROK-AUTHTOKEN ngrok/ngrok:latest http PORT
+   ```
+   Replace `PORT` with the backend port (default `8000`).
+
+
+#### Database operations
+##### Fresh start
+In case you need reset the Mongo database (volume `mongo-data`) run `docker compose down` followed by `docker volume rm mapa-ciencia-unc_mongo-data` (`docker compose down -v` does both in one step.)
+
+##### Drop table
+To delete only one collection (researchers, for example), open a shell in the Mongo container and drop it:
+```bash
+docker compose exec mongo mongosh -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin $MONGO_DB --eval 'db.collectionName.drop()'
+```
+Replace `collectionName` with the collection you want to remove.
+
+##### Backup table
+Need a JSON snapshot instead? Use `mongoexport`:
+```bash
+docker compose exec mongo mongoexport \
+  -u $MONGO_INITDB_ROOT_USERNAME \
+  -p $MONGO_INITDB_ROOT_PASSWORD \
+  --authenticationDatabase admin \
+  -d $MONGO_DB \
+  -c collectionName \
+  --jsonArray > collectionName.json
+```
+This writes the selected collection into `collectionName.json` on the host machine.
+
+
 ### Running Jupyter Notebooks
 
 After installation, start Jupyter:
