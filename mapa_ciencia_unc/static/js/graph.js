@@ -86,6 +86,9 @@ if (!container) {
 
 const renderer = new SigmaRenderer(graph, container);
 
+const urlParams = new URLSearchParams(window.location.search);
+const currentGraphTag = urlParams.get("tag");
+
 const state = {
   hoveredNode: null,
   hoveredNeighbors: new Set(),
@@ -107,7 +110,10 @@ renderer.on("leaveNode", () => {
 });
 
 renderer.on("clickNode", ({ node }) => {
-  const url = `/researcher/${encodeURIComponent(node)}`;
+  const baseUrl = `/researcher/${encodeURIComponent(node)}`;
+  const url = currentGraphTag
+    ? `${baseUrl}?tag=${encodeURIComponent(currentGraphTag)}`
+    : baseUrl;
   window.open(url, "_blank", "noopener");
 
   if (state.selectedNode === node) {
@@ -137,15 +143,12 @@ renderer.setSetting("nodeReducer", (node, data) => {
 
   const isMain = node === state.hoveredNode;
   const isNeighbor = state.hoveredNeighbors.has(node);
+  const sameColorAsMain = graph.getNodeAttribute(node, "color") === graph.getNodeAttribute(state.hoveredNode, "color");
+  if (sameColorAsMain && !isMain) {
+    res.color = graph.getNodeAttribute(node, "color");
+  }
 
-  if (
-    graph.getNodeAttribute(node, "color") ===
-      graph.getNodeAttribute(state.hoveredNode, "color") &&
-    !isMain
-  ) {
-    const mainNodeColor = graph.getNodeAttribute(node, "color");
-    res.color = `${mainNodeColor}88`;
-  } else if (!isMain && !isNeighbor) {
+  if (!isMain && !isNeighbor && !sameColorAsMain) {
     res.color = "#eee";
   }
 
@@ -154,7 +157,7 @@ renderer.setSetting("nodeReducer", (node, data) => {
     res.forceLabel = true;
   }
 
-  if (isNeighbor) {
+  if (isNeighbor || sameColorAsMain) {
     res.size = data.size * 1.2;
     res.forceLabel = true;
   }

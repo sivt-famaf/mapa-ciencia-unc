@@ -41,6 +41,37 @@
         font-size: 1.1rem;
         color: #d1d5db;
       }
+      .controls {
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .controls label {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #9ca3af;
+      }
+      .controls select {
+        width: 25%;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(15, 23, 42, 0.6);
+        color: #f9fafb;
+        font-size: 1rem;
+        appearance: none;
+        outline: none;
+        transition: border-color 0.2s ease;
+      }
+      .controls select:focus {
+        border-color: #3b82f6;
+      }
+      .controls small {
+        color: #6b7280;
+        font-size: 0.85rem;
+      }
       #graph-wrapper {
         display: flex;
         justify-content: center;
@@ -91,6 +122,11 @@
       <p>
         graph: {{ graph.title }}
       </p>
+      <div class="controls">
+        <label for="graph-tag-select">Graph dataset (optional)</label>
+        <select id="graph-tag-select"></select>
+        <small id="graph-tag-status">Loading available graphs…</small>
+      </div>
       <div id="graph-wrapper">
         <div id="container"></div>
       </div>
@@ -103,6 +139,101 @@
     </div>
     <script id="graph-data" type="application/json">
       {{ graph | tojson }}
+    </script>
+    <script>
+      (function initGraphTagSelector() {
+        const selectEl = document.getElementById("graph-tag-select");
+        const statusEl = document.getElementById("graph-tag-status");
+        if (!selectEl || !statusEl) return;
+
+        const { search, pathname } = window.location;
+        const params = new URLSearchParams(search);
+        const currentTag = params.get("tag");
+
+        const setStatus = (message, isError = false) => {
+          statusEl.textContent = message;
+          statusEl.style.color = isError ? "#f87171" : "#6b7280";
+        };
+
+        const applySelectionState = () => {
+          if (currentTag) {
+            const existingOption = [...selectEl.options].find(
+              (option) => option.value === currentTag
+            );
+            if (existingOption) {
+              selectEl.value = currentTag;
+              return;
+            }
+          }
+          selectEl.selectedIndex = -1;
+        };
+
+        const renderOptions = (tags) => {
+          selectEl.innerHTML = "";
+
+          const defaultOption = document.createElement("option");
+          defaultOption.value = "";
+          defaultOption.textContent = "Default graph";
+          selectEl.appendChild(defaultOption);
+
+          tags.forEach((tag) => {
+            const option = document.createElement("option");
+            option.value = tag;
+            option.textContent = tag;
+            selectEl.appendChild(option);
+          });
+
+          applySelectionState();
+        };
+
+        const redirectToGraph = (tag) => {
+          const baseUrl = pathname;
+          if (!tag) {
+            window.location.href = baseUrl;
+            return;
+          }
+
+          const nextParams = new URLSearchParams();
+          nextParams.set("tag", tag);
+          window.location.href = `${baseUrl}?${nextParams.toString()}`;
+        };
+
+        selectEl.addEventListener("change", (event) => {
+          redirectToGraph(event.target.value);
+        });
+
+        const fetchAvailableTags = async () => {
+          try {
+            const response = await fetch("/api/available_graph_tags");
+            if (!response.ok) {
+              throw new Error(`Unexpected status ${response.status}`);
+            }
+
+            const payload = await response.json();
+            const tags =
+              payload?.available_graph_tags ??
+              payload?.graphs ??
+              payload?.tags ??
+              [];
+
+            if (!Array.isArray(tags) || tags.length === 0) {
+              throw new Error("No available graph tags returned.");
+            }
+
+            renderOptions(tags);
+            setStatus("Select a tag to change the graph.");
+          } catch (error) {
+            console.error("Failed to load graph tags", error);
+            renderOptions([]);
+            setStatus(
+              "Unable to load available graphs. Showing default dataset.",
+              true
+            );
+          }
+        };
+
+        fetchAvailableTags();
+      })();
     </script>
     <script type="module" src="/static/js/graph.js"></script>
   </body>

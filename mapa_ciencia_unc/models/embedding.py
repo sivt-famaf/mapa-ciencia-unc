@@ -13,6 +13,7 @@ class EmbeddingCreate(BaseModel):
 
 
 class MultipleEmbeddingsCreate(BaseModel):
+    overwrite: bool = False
     model: str = Field(
         ..., examples=["embedding-model-v1"], description="Embedding model name"
     )

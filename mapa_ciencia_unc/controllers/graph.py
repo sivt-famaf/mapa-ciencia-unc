@@ -9,7 +9,6 @@ from sklearn.decomposition import PCA
 
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "graphs"
-DEFAULT_GRAPH_FILE = DATA_DIR / "researcher_graph.json"
 
 ACADEMIC_UNIT_COLORS = {
     "FP": "#FFB300",
@@ -30,7 +29,24 @@ ACADEMIC_UNIT_COLORS = {
 }
 
 
-def get_researcher_graph(graph_file_path: Path = DEFAULT_GRAPH_FILE) -> ResearcherGraph:
+def get_available_graphs() -> list[str]:
+    graphs = []
+    for graph_file in DATA_DIR.glob("*.json"):
+        graphs.append(graph_file.stem)
+    return graphs
+
+
+def get_researcher_graph(tag: str | None = None) -> ResearcherGraph:
+    # if no graphs are available, raise an error
+    tag_list = get_available_graphs()
+    if not tag_list:
+        raise ValueError("No available graphs")
+
+    # if no tag is provided, use the first available graph
+    if not tag:
+        tag = tag_list[0]
+
+    graph_file_path = DATA_DIR / f"{tag}.json"
     with open(graph_file_path, "r", encoding="utf-8") as f:
         graph_data = json.load(f)
 
@@ -96,5 +112,5 @@ async def compute_graph(embeddings_tag: str, strategy: str = "PCA") -> Researche
         nodes=nodes,
         edges=edges,
     )
-    graph.dump_to_json(DEFAULT_GRAPH_FILE)
+    graph.dump_to_json(DATA_DIR / f"{embeddings_tag}.json")
     return graph
