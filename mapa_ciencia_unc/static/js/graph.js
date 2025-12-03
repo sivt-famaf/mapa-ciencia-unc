@@ -150,6 +150,7 @@ renderer.setSetting("nodeReducer", (node, data) => {
 
   if (!isMain && !isNeighbor && !sameColorAsMain) {
     res.color = "#eee";
+    res.forceLabel = false;
   }
 
   if (isMain) {
