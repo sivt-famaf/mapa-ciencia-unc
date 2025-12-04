@@ -118,6 +118,7 @@ async def create_researcher_embedding(researcher_id: str, payload: EmbeddingCrea
 async def create_multiple_embeddings(payload: MultipleEmbeddingsCreate):
     created_embeddings = 0
     failed_embeddings = []
+    skipped_embeddings = {}
     for researcher_id, vector in payload.vector_mapping.items():
         try:
             researcher = await Researcher.get(
@@ -133,6 +134,29 @@ async def create_multiple_embeddings(payload: MultipleEmbeddingsCreate):
                 tag=payload.tag,
             )
 
+            if not payload.overwrite:
+                # Check if an embedding with the same model and tag already exists
+                existing_embedding = next(
+                    (
+                        e
+                        for e in researcher.embeddings
+                        if e.model == payload.model and e.tag == payload.tag
+                    ),
+                    None,
+                )
+                if existing_embedding:
+                    skipped_embeddings[researcher_id] = (
+                        "Embedding with tag already exists"
+                    )
+                    continue  # Skip creating this embedding
+            if payload.overwrite:
+                # Remove existing embeddings with the same model and tag
+                researcher.embeddings = [
+                    e
+                    for e in researcher.embeddings
+                    if not (e.model == payload.model and e.tag == payload.tag)
+                ]
+
             researcher.embeddings.append(embedding)
 
             await researcher.save()
@@ -143,6 +167,7 @@ async def create_multiple_embeddings(payload: MultipleEmbeddingsCreate):
     return {
         "created_embeddings": created_embeddings,
         "failed_embeddings": failed_embeddings,
+        "skipped_embeddings": skipped_embeddings,
     }
 
 
@@ -169,23 +194,54 @@ async def create_researcher_summary(researcher_id: str, payload: Summary):
 
 @router.post("/summaries/bulk", response_model=dict)
 async def create_multiple_summaries(payload: MultipleSummariesCreate):
-    created_summaries = {}
+    created_summaries = 0
+    skipped_summaries = {}
+    failed_summaries = []
     for researcher_id, content in payload.content_mapping.items():
-        researcher = await Researcher.get(
-            PydanticObjectId(researcher_id), fetch_links=False
-        )
-        if not researcher:
-            continue
+        try:
+            researcher = await Researcher.get(
+                PydanticObjectId(researcher_id), fetch_links=False
+            )
+            if not researcher:
+                continue
 
-        summary = Summary(
-            model=payload.model,
-            prompt_id=payload.prompt_id,
-            content=content,
-        )
+            summary = Summary(
+                model=payload.model,
+                tag=payload.tag,
+                content=content,
+            )
 
-        researcher.summaries.append(summary)
+            if not payload.overwrite:
+                # Check if a summary with the same model and tag already exists
+                existing_summary = next(
+                    (
+                        s
+                        for s in researcher.summaries
+                        if s.model == payload.model and s.tag == payload.tag
+                    ),
+                    None,
+                )
+                if existing_summary:
+                    skipped_summaries[researcher_id] = "Summary with tag already exists"
+                    continue  # Skip creating this summary
 
-        await researcher.save()
-        created_summaries[researcher_id] = str(summary.id)
+            if payload.overwrite:
+                # Remove existing summaries with the same model and tag
+                researcher.summaries = [
+                    s
+                    for s in researcher.summaries
+                    if not (s.model == payload.model and s.tag == payload.tag)
+                ]
 
-    return {"created_summaries": created_summaries}
+            researcher.summaries.append(summary)
+
+            await researcher.save()
+            created_summaries += 1
+        except Exception:
+            failed_summaries.append(researcher_id)
+
+    return {
+        "created_summaries": created_summaries,
+        "skipped_summaries": skipped_summaries,
+        "failed_summaries": failed_summaries,
+    }

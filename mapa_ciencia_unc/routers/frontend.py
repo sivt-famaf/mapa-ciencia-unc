@@ -20,8 +20,8 @@ async def home(request: Request):
 
 
 @router.get("/graph", response_class=HTMLResponse)
-async def graph_view(request: Request):
-    graph = get_researcher_graph()
+async def graph_view(request: Request, tag: str | None = None):
+    graph = get_researcher_graph(tag=tag)
     return templates.TemplateResponse(
         "graph.html", {"request": request, "graph": graph.model_dump()}
     )
@@ -33,14 +33,17 @@ async def other(request: Request):
 
 
 @router.get("/researcher/{researcher_id}", response_class=HTMLResponse)
-async def researcher(request: Request, researcher_id: str):
-    researcher = await Researcher.find_one(
-        {"_id": PydanticObjectId(researcher_id)}
-    ).project(ResearcherPublicView)
+async def researcher_view(request: Request, researcher_id: str, tag: str | None = None):
+    researcher_doc = await Researcher.find_one({"_id": PydanticObjectId(researcher_id)})
 
-    if not researcher:
+    if not researcher_doc:
         return HTMLResponse(content="Researcher not found", status_code=404)
 
+    researcher_public_view = ResearcherPublicView.from_researcher(
+        researcher_doc, tag=tag
+    )
+
     return templates.TemplateResponse(
-        "researcher.html", {"request": request, "researcher": researcher.model_dump()}
+        "researcher.html",
+        {"request": request, "researcher": researcher_public_view.model_dump()},
     )

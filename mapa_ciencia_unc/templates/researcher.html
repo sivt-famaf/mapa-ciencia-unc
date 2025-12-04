@@ -2,19 +2,176 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Researcher: {{ researcher.last_name }}, {{ researcher.name }}</title>
+    <title>Researcher | {{ researcher.last_name }}, {{ researcher.name }}</title>
     <style>
+      * {
+        box-sizing: border-box;
+      }
       body {
-        font-family: sans-serif;
         margin: 0;
-        padding: 2rem;
+        min-height: 100vh;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        color: #f9fafb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 1.5rem;
+      }
+      main {
+        width: min(900px, 100%);
+        background: rgba(15, 23, 42, 0.88);
+        border-radius: 28px;
+        padding: 3rem;
+        box-shadow: 0 40px 80px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(14px);
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding-bottom: 1.5rem;
+        margin-bottom: 2rem;
+      }
+      .title {
+        flex: 1 1 320px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        letter-spacing: 0.03em;
+      }
+      .breadcrumb {
+        margin-top: 0.4rem;
+        color: #94a3b8;
+        font-size: 0.95rem;
+      }
+      .tag-pill {
+        align-self: flex-start;
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: rgba(59, 130, 246, 0.2);
+        border: 1px solid rgba(59, 130, 246, 0.4);
+        color: #bfdbfe;
+      }
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+      }
+      .info-card {
+        padding: 1.25rem;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .info-card h3 {
+        margin: 0 0 0.4rem;
+        font-size: 0.9rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #9ca3af;
+      }
+      .info-card p {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #f8fafc;
+      }
+      section.summary {
+        padding: 1.75rem;
+        border-radius: 20px;
+        background: rgba(15, 118, 110, 0.15);
+        border: 1px solid rgba(94, 234, 212, 0.25);
+      }
+      section.summary h2 {
+        margin-top: 0;
+        font-size: 1.4rem;
+        letter-spacing: 0.04em;
+      }
+      section.summary p {
+        margin-bottom: 0;
+        line-height: 1.6;
+        color: #e0f2fe;
+      }
+      .summary-empty {
+        padding: 1rem 1.25rem;
+        border-radius: 14px;
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        color: #cbd5f5;
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .actions {
+        margin-top: 2.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .actions a {
+        text-decoration: none;
+        padding: 0.85rem 1.5rem;
+        border-radius: 999px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        color: #0f172a;
+        background: #a5f3fc;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .actions a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
       }
     </style>
   </head>
   <body>
-    <h1>Researcher: {{ researcher.last_name }}, {{ researcher.name }}</h1>
-    <p>Research Area: {{ researcher.research_area }}</p>
-    <p>Research Center: {{ researcher.research_center }}</p>
-    <p>Last Project Title: {{ researcher.last_project_title }}</p>
+    <main>
+      <header>
+        <div class="title">
+          <h1>{{ researcher.name }} {{ researcher.last_name }}</h1>
+          <p class="breadcrumb">Researcher profile overview</p>
+        </div>
+        {% if researcher.tag %}
+        <span class="tag-pill">tag: {{ researcher.tag }}</span>
+        {% endif %}
+      </header>
+
+      <div class="info-grid">
+        <article class="info-card">
+          <h3>Research Area</h3>
+          <p>{{ researcher.research_area }}</p>
+        </article>
+        <article class="info-card">
+          <h3>Center</h3>
+          <p>{{ researcher.research_center }}</p>
+        </article>
+        <article class="info-card">
+          <h3>Latest Project</h3>
+          <p>{{ researcher.last_project_title }}</p>
+        </article>
+      </div>
+
+      {% if researcher.summary_for_tag %}
+      <section class="summary">
+        <h2>Summary{% if researcher.tag %} · {{ researcher.tag }}{% endif %}</h2>
+        <p>{{ researcher.summary_for_tag }}</p>
+      </section>
+      {% elif researcher.tag %}
+      <div class="summary-empty">
+        No summary available for tag "<strong>{{ researcher.tag }}</strong>".
+      </div>
+      {% endif %}
+
+      <div class="actions">
+        <a href="/graph{% if researcher.tag %}?tag={{ researcher.tag }}{% endif %}">
+          Back to Graph
+        </a>
+        <a href="/">Return Home</a>
+      </div>
+    </main>
   </body>
 </html>
