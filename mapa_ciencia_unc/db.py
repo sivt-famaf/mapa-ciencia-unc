@@ -9,7 +9,9 @@ from mapa_ciencia_unc.models.project import Project
 async def init_db():
     user = os.getenv("MONGO_INITDB_ROOT_USERNAME")
     password = os.getenv("MONGO_INITDB_ROOT_PASSWORD")
-    mongo_uri = f"mongodb://{user}:{password}@mongo:27017"
+    host = os.getenv("MONGO_HOST", "mongo")
+    port = os.getenv("MONGO_PORT", 27018)
+    mongo_uri = f"mongodb://{user}:{password}@{host}:{port}"
     client = AsyncIOMotorClient(mongo_uri)
     db = client[os.getenv("MONGO_DB")]
 
