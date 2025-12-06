@@ -30,24 +30,12 @@ def read_agreements_file(agreements_path: Path) -> pd.DataFrame:
     print(f"Reading agreements file: {agreements_path}")
 
     # Read agreements file
-    if agreements_path.suffix == ".csv":
-        df = pd.read_csv(agreements_path)
-    elif agreements_path.suffix == ".parquet":
-        df = pd.read_parquet(agreements_path)
-    elif agreements_path.suffix == ".json":
-        df = pd.read_json(agreements_path, lines=True)
-    else:
-        raise ValueError(f"Unsupported file format: {agreements_path.suffix}")
-    
-    '''
     try:
         # Read CSV with semicolon separator
         df = read_csv_file(agreements_path, separator=";")
-        dataframes.append(df)
     except Exception as e:
         print(f"Error reading {agreements_path.name}: {e}")
-        continue
-    '''
+    
 
     print(f"  - Loaded {len(df)} agreements records")
     print(f"  - Columns found: {len(df.columns)}")
@@ -82,8 +70,10 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     print(f"\nData summary:")
     print(f"  - Total records: {len(df)}")
     print(f"  - Records with missing description: {df['descripcion'].isna().sum()}")
-    print(f'  - Records with missing type production: {df['tipo_produccion_tecnologica'].isna().sum()}')
+    print(f"  - Records with missing type production: {df['tipo_produccion_tecnologica'].isna().sum()}")
     print(f"  - Unique cuits: {df['cuit'].nunique()}")
+
+    return df
 
 
 def main():
@@ -92,7 +82,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --input-dir data/raw/ --output-file data/processed/articles.csv
+  %(prog)s --input-dir data/raw/ --output-file data/processed/agreements.csv
         """
     )
 
