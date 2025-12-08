@@ -84,19 +84,19 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Preprocess articles from CSV files in a directory",
+        description="Preprocess articles from CSV file",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --input-dir data/raw/ --output-file data/processed/articles.csv
+  %(prog)s --articles-file data/raw/ --output-file data/processed/articles.csv
         """
     )
 
     parser.add_argument(
-        '--input-dir',
+        '--articles-file',
         type=Path,
-        dest='input_dir',
-        help='Alternative way to specify input directory'
+        dest='articles_file',
+        help='Alternative way to specify input file'
     )
 
     parser.add_argument(
@@ -109,18 +109,18 @@ Examples:
     args = parser.parse_args()
 
     # Handle both positional and flag arguments
-    input_dir = args.input_dir
+    articles_file = args.articles_file
     output_file = args.output_file
 
-    if not input_dir or not output_file:
-        parser.error("Both input_dir and output_file are required")
+    if not articles_file or not output_file:
+        parser.error("Both articles_file and output_file are required")
 
     try:
         # Read article file
         print("\n" + "=" * 60)
         print("READING ARTICLES DATA")
         print("=" * 60)
-        df = read_files(input_dir)
+        df = read_files(articles_file)
 
 
         # Preprocess data

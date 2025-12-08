@@ -557,6 +557,7 @@ Examples:
         print(f"  - {articles_output}")
         print(f"  - {projects_output}")
         print(f"  - {enrollment_output}")
+        print(f"  - {agreements_output}")
         if df_portfolio is not None:
             print(f"  - {portfolio_output}")
 

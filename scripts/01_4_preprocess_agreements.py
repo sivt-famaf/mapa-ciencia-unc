@@ -82,15 +82,15 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --input-dir data/raw/ --output-file data/processed/agreements.csv
+  %(prog)s --agreements-file data/raw/ --output-file data/processed/agreements.csv
         """
     )
 
     parser.add_argument(
-        '--input-dir',
+        '--agreements-file',
         type=Path,
-        dest='input_dir',
-        help='Alternative way to specify input directory'
+        dest='agreements_file',
+        help='Alternative way to specify input file'
     )
 
     parser.add_argument(
@@ -103,18 +103,18 @@ Examples:
     args = parser.parse_args()
 
     # Handle both positional and flag arguments
-    input_dir = args.input_dir
+    agreement_file = args.agreements_file
     output_file = args.output_file
 
-    if not input_dir or not output_file:
-        parser.error("Both input_dir and output_file are required")
+    if not agreement_file or not output_file:
+        parser.error("Both agreement file and output_file are required")
 
     try:
         # Read portfolio file
         print("\n" + "=" * 60)
         print("READING AGREEMENTS DATA")
         print("=" * 60)
-        df = read_agreements_file(input_dir)
+        df = read_agreements_file(agreement_file)
 
         # Preprocess data
         print("\n" + "=" * 60)
