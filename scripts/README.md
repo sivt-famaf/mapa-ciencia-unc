@@ -44,37 +44,31 @@ python scripts/02_1_filter_enrolled_users.py \
 
 ### 01_1_preprocess_articles.py
 
-This script consolidates multiple CSV files containing article information into a single preprocessed dataset. It reads files from a specified directory, validates the data, removes duplicates, and generates a summary report.
+This script preprocesses articles data by reading a CSV file and saving the result.
 
+**Usage:**
 ```bash
-python scripts/01_1_preprocess_articles.py --input-dir <input_directory> --output-file <output_filepath>
+python scripts/01_1_preprocess_articles.py --articles-file <articles_csv> --output-file <output_filepath>
 ```
 
-The script expects a directory containing `.txt` files (which are CSV formatted) with the following structure:
+**Arguments:**
+- `--articles-file`: Path to articles CSV file (also supports .parquet, .json)
+- `--output-file`: Output filepath for preprocessed data (supports .csv, .parquet, .json)
 
-**Input format**
+**Processing Steps:**
+1. Reads article file
+2. Filters to keep only renamed columns (removes any extra columns)
+3. Converts CUIT to string type
+4. Saves preprocessed data in specified format
+
+**Output format**: Supports .csv, .parquet, .json
+
+**Examples:**
+```bash
+python scripts/01_1_preprocess_articles.py \
+  --articles-file data/raw/articles.csv \
+  --output-file data/processed/articles.parquet
 ```
-input_directory/
-├── CENTRO_DE_INVESTIGACION_Y_ESTUDIOS_DE_MATEMATICA.txt
-├── ESCUELA_DE_TRABAJO_SOCIAL.txt
-└── UNIVERSIDAD_NACIONAL_DE_CORDOBA.txt
-```
-
-Each CSV file must contain the following columns:
-- `autores`: Authors of the article (string)
-- `titulo`: Title of the article (string)
-- `resumen`: Abstract/summary of the article (string, may have null values)
-- `cuil`: CUIL identifier (integer)
-- `lugar_de_trabajo`: Workplace/institution (string)
-
-**Output format**
-The script outputs a single consolidated file with all the data from the input files. Supported output formats:
-- `.csv`: Comma-separated values
-- `.parquet`: Apache Parquet format (recommended for large datasets)
-- `.json`: JSON Lines format
-
-The output includes an additional column:
-- `source_file`: Name of the source file (without extension) where the record originated
 
 ---
 
@@ -210,10 +204,40 @@ python scripts/01_3_preprocess_portfolios.py \
 ```
 
 ---
+### 01_4_preprocess_agreements.py
+
+This script preprocesses agreements data by reading a CSV file and saving the result.
+
+
+**Usage:**
+```bash
+python scripts/01_4_preprocess_agreements.py --agreements-file <agreement_csv> --output-file <output_filepath>
+```
+
+**Arguments:**
+- `--agreements-file`: Path to agreement CSV file
+- `--output-file`: Output filepath for preprocessed data (supports .csv, .parquet, .json)
+
+**Processing Steps:**
+1. Reads agreement file
+2. Filters to keep only renamed columns (removes any extra columns)
+3. Converts CUIT to string type
+4. Saves preprocessed data in specified format
+
+**Output format**: Supports .csv, .parquet, .json
+
+**Examples:**
+```bash
+python scripts/01_4_preprocess_agreements.py \
+  --agreements-file data/raw/agreements.csv \
+  --output-file data/processed/agreements.parquet
+```
+
+---
 
 ### 02_1_filter_enrolled_users.py
 
-This script filters articles, projects, and optionally portfolios based on a combined set of CUITs from enrollment and portfolio data. It applies sampling and academic unit filtering to the combined CUIT set, then filters all datasets accordingly. The script also cleans HTML-like content from text columns in all output files.
+This script filters articles, projects, agreements and optionally portfolios based on a combined set of CUITs from enrollment and portfolio data. It applies sampling and academic unit filtering to the combined CUIT set, then filters all datasets accordingly. The script also cleans HTML-like content from text columns in all output files.
 
 **Usage:**
 ```bash
@@ -221,6 +245,7 @@ python scripts/02_1_filter_enrolled_users.py \
   --enrollment-file <enrollment_csv> \
   --articles-file <articles_file> \
   --projects-file <projects_file> \
+  --agreements-file <agreements_file> \
   --portfolios-file <portfolios_file> \
   --sample-size <ratio> \
   --output-directory <output_dir>
@@ -230,6 +255,7 @@ python scripts/02_1_filter_enrolled_users.py \
 - `--enrollment-file`: Path to enrollment CSV file containing "CUIL (sin guiones)" column
 - `--articles-file`: Path to articles data file (supports .csv, .parquet, .json)
 - `--projects-file`: Path to projects data file (supports .csv, .parquet, .json)
+- `--agreements-file`: Path to agreements CSV file
 - `--portfolios-file`: (Optional) Path to portfolios data file with "cuit" and "email" columns
 - `--sample-size`: (Optional) Ratio of combined CUIT data to use (0.0-1.0, default: 1.0). Not compatible with `--include-cuits`
 - `--include-cuits`: (Optional) Path to CSV file with "cuit" column containing specific CUITs to include. Not compatible with `--sample-size`
@@ -245,7 +271,7 @@ python scripts/02_1_filter_enrolled_users.py \
    - Otherwise, combines CUITs from enrollment and portfolios into a single set
    - If `--sample-size` < 1.0, randomly samples that fraction of combined CUITs
 5. If `--remove-academic-unit` is specified, removes CUITs from those academic units
-6. Filters enrollment, portfolios, articles, and projects by the final CUIT set
+6. Filters enrollment, portfolios, articles, projects, and agreements by the final CUIT set
 7. Cleans HTML-like content from all text columns
 8. Saves all filtered datasets as JSON files
 
@@ -253,6 +279,7 @@ python scripts/02_1_filter_enrolled_users.py \
 - `articles.json`: Filtered articles (text cleaned)
 - `projects.json`: Filtered projects (text cleaned)
 - `enrollment.json`: Filtered enrollment data (text cleaned)
+- `agreements.json`: Filtered agreements (text cleaned)
 - `portfolios.json`: Filtered portfolios (only if `--portfolios-file` was provided)
 
 **Filtering Behavior:**
@@ -274,6 +301,7 @@ This is applied to all text columns in enrollment, articles, and projects data.
 - `articles.json`: JSON Lines format with enrolled users and their articles (text cleaned)
 - `projects.json`: JSON Lines format with enrolled users and their projects (text cleaned)
 - `enrollment.json`: JSON Lines format with enrollment data (text cleaned)
+- `agreements.json`: JSON Lines format with enrolled users and their agreements (text cleaned)
 
 **Examples:**
 
@@ -283,6 +311,7 @@ python scripts/02_1_filter_enrolled_users.py \
   --enrollment-file data/enrollment.csv \
   --articles-file data/processed/articles.parquet \
   --projects-file data/processed/projects_calls.parquet \
+  --agreements-file data/processed/agreements.csv \
   --output-directory data/filtered/
 ```
 
@@ -292,6 +321,7 @@ python scripts/02_1_filter_enrolled_users.py \
   --enrollment-file data/enrollment.csv \
   --articles-file data/processed/articles.parquet \
   --projects-file data/processed/projects_calls.parquet \
+  --agreements-file data/processed/agreements.csv \
   --sample-size 0.1 \
   --output-directory data/filtered_sample/
 ```
@@ -302,6 +332,7 @@ python scripts/02_1_filter_enrolled_users.py \
   --enrollment-file data/enrollment.csv \
   --articles-file data/processed/articles.parquet \
   --projects-file data/processed/projects_calls.parquet \
+  --agreements-file data/processed/agreements.csv \
   --remove-academic-unit "Facultad de Ciencias Exactas,Facultad de Derecho" \
   --output-directory data/filtered/
 ```
@@ -312,6 +343,7 @@ python scripts/02_1_filter_enrolled_users.py \
   --enrollment-file data/enrollment.csv \
   --articles-file data/processed/articles.parquet \
   --projects-file data/processed/projects_calls.parquet \
+  --agreements-file data/processed/agreements.csv \
   --include-cuits data/selected_cuits.csv \
   --output-directory data/filtered/
 ```
