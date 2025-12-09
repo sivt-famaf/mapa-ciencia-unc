@@ -1,0 +1,31 @@
+Analiza exhaustivamente la información dada:
+
+Proyectos:
+{{ projects }}
+
+Publicaciones:
+{{ publications }}
+
+Convenios:
+{{ agreements }}
+
+Genera un archivo Markdown con un JSON válido que respete el response_schema:
+
+{
+  "brief": "...",
+  "profile": "...",
+  "areas": [...]
+}
+
+Especificaciones:
+- "brief": síntesis muy concisa de la identidad profesional.
+- "profile": debe incluir, como mínimo:
+   • Áreas principales de investigación  
+   • Técnicas y metodologías empleadas  
+   • Contribuciones notables  
+   • Líneas de trabajo secundarias  
+   • Colaboraciones institucionales  
+   • Impacto potencial o real  
+- "areas": lista de áreas inferidas directamente desde los datos procesados.
+
+La salida debe contener únicamente el bloque JSON dentro de Markdown.

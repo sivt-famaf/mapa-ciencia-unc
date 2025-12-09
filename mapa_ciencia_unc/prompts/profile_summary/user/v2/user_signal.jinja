@@ -1,0 +1,26 @@
+A partir del siguiente conjunto de datos sobre el investigador:
+
+{{ projects }}
+{{ publications }}
+{{ agreements }}
+
+Realiza un análisis por extracción de señales (signal-based) que identifique:
+- Patrones metodológicos
+- Dominio disciplinar predominante
+- Evolución histórica de temas
+- Contribuciones técnicas destacadas
+
+Luego, produce un archivo en formato Markdown que contenga un JSON estricto con la estructura definida por response_schema:
+
+{
+  "brief": "...",
+  "profile": "...",
+  "areas": [...]
+}
+
+Reglas:
+- "brief": descripción breve de máximo 4 líneas destacando el núcleo del trabajo.
+- "profile": explicación extensa y técnica basada en los patrones identificados.
+- "areas": generar una lista de áreas consistentes con el análisis realizado.
+
+La salida debe contener únicamente el bloque JSON dentro de Markdown.

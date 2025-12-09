@@ -1,0 +1,26 @@
+A partir de la siguiente información de un investigador:
+
+Proyectos:
+{{ projects }}
+
+Publicaciones:
+{{ publications }}
+
+Convenios / colaboraciones:
+{{ agreements }}
+
+Genera un archivo en formato Markdown que contenga un JSON con la siguiente estructura:
+
+{
+  "brief": "...",
+  "profile": "...",
+  "areas": ["area1", "area2", ...]
+}
+
+Instrucciones:
+- "brief": crear un resumen profesional conciso (3–5 líneas) destacando rol, experticia y contribuciones principales.
+- "profile": redactar una trayectoria extendida (mínimo 2 párrafos) incluyendo métodos utilizados, líneas de trabajo, impacto, aplicaciones y detalles técnicos cuando sea posible.
+- "areas": inferir áreas de investigación relevantes a partir de la información dada, en forma de lista.
+
+Debe generarse *únicamente* el JSON válido dentro de un bloque Markdown.
+Ajustar la generación al response_schema indicado por el sistema.
