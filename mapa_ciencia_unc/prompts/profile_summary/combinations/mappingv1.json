@@ -1,0 +1,22 @@
+{
+  "exp_01": {
+    "system": "system/v1/system_instruction_1.jinja",
+    "user": "user/v1/prompt_1.jinja",
+    "temperature": 0.7
+  },
+  "exp_02": {
+    "system": "system/v1/system_instruction_2.jinja",
+    "user": "user/v1/prompt_2.jinja",
+    "temperature": 0.7
+  },
+  "exp_03": {
+    "system": "system/v1/system_instruction_3.jinja",
+    "user": "user/v1/prompt3.jinja",
+    "temperature": 0.7
+  },
+  "exp_04": {
+    "system": "system/v1/system_instruction_4.jinja",
+    "user": "user/v1/prompt_2.jinja",
+    "temperature": 0.7
+  }
+}

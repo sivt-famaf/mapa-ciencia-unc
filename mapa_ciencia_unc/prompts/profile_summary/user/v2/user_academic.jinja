@@ -1,0 +1,22 @@
+Con la información provista sobre el investigador, analiza su trayectoria, líneas de investigación y producción científica.
+
+Datos para analizar:
+- Proyectos: {{ projects }}
+- Publicaciones: {{ publications }}
+- Convenios y colaboraciones: {{ agreements }}
+
+Producción esperada (formato Markdown con JSON):
+
+{
+  "brief": "...",
+  "profile": "...",
+  "areas": ["area1", "area2", ...]
+}
+
+Criterios:
+- "brief": síntesis académica precisa que identifique campo, temas predominantes y relevancia.
+- "profile": narrativa técnica detallada abarcando fundamentos metodológicos, diseño experimental, enfoques matemáticos o computacionales, aplicaciones y participación en redes de colaboración.
+- "areas": derivar áreas temáticas a partir de palabras clave, tópicos recurrentes y metodologías mencionadas.
+
+Seguir estrictamente el response_schema definido.
+La salida debe contener únicamente el bloque JSON dentro de Markdown.
