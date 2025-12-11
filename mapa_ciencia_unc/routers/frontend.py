@@ -21,7 +21,36 @@ async def home(request: Request):
 
 @router.get("/graph", response_class=HTMLResponse)
 async def graph_view(request: Request, tag: str | None = None):
-    graph = get_researcher_graph(tag=tag)
+    try:
+        graph = get_researcher_graph(tag=tag)
+    except ValueError as e:
+        # No graphs available or specific tag not found
+        error_message = str(e)
+        if "No available graphs" in error_message:
+            return templates.TemplateResponse(
+                "404.html",
+                {
+                    "request": request,
+                    "error_code": "404",
+                    "title": "No hay gráficos disponibles",
+                    "message": "Actualmente no hay gráficos de red disponibles. Los gráficos se generan a partir de embeddings de investigadores.",
+                },
+                status_code=404,
+            )
+        else:
+            # Specific tag not found
+            return templates.TemplateResponse(
+                "404.html",
+                {
+                    "request": request,
+                    "error_code": "404",
+                    "title": "Gráfico no encontrado",
+                    "message": f"El gráfico solicitado '{tag}' no existe.",
+                    "additional_info": "Verificá que el identificador del gráfico sea correcto.",
+                    "show_graph_link": True,
+                },
+                status_code=404,
+            )
     return templates.TemplateResponse(
         "graph.html", {"request": request, "graph": graph.model_dump()}
     )

@@ -1,11 +1,16 @@
 import json
 from pathlib import Path
+from datetime import datetime
+from typing import Optional
 
 from mapa_ciencia_unc.models.graph import ResearcherGraph, ResearcherNode, Edge
 from mapa_ciencia_unc.models.embedding import Embedding
 from mapa_ciencia_unc.models.researcher import Researcher
 
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+
+from pydantic import BaseModel
 
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "graphs"
@@ -29,14 +34,69 @@ ACADEMIC_UNIT_COLORS = {
 }
 
 
+class GraphCard(BaseModel):
+    """Metadata for a graph embedding."""
+    dataset_id: str
+    method: str  # 'pca' or 'tsne'
+    tag: str  # embeddings tag
+    original_dimension: int
+    target_dimension: int = 2
+    timestamp: str
+    n_samples: int
+    parameters: Optional[dict] = None  # Additional method-specific parameters
+
+
 def get_available_graphs() -> list[str]:
+    """Get list of available graph dataset IDs.
+
+    Returns list of directory names under DATA_DIR/graphs/
+    Each directory represents a graph dataset.
+    """
     graphs = []
-    for graph_file in DATA_DIR.glob("*.json"):
-        graphs.append(graph_file.stem)
+    if not DATA_DIR.exists():
+        return graphs
+
+    for graph_dir in DATA_DIR.iterdir():
+        if graph_dir.is_dir() and (graph_dir / "graph.json").exists():
+            graphs.append(graph_dir.name)
     return graphs
 
 
+def get_graph_metadata(tag: str) -> GraphCard:
+    """Load graph metadata (graph_card.json) for a dataset.
+
+    Args:
+        tag: The dataset ID (directory name).
+
+    Returns:
+        GraphCard object with metadata.
+
+    Raises:
+        ValueError: If metadata file doesn't exist.
+    """
+    graph_dir = DATA_DIR / tag
+    metadata_file = graph_dir / "graph_card.json"
+
+    if not metadata_file.exists():
+        raise ValueError(f"Metadata file not found for tag: {tag}")
+
+    with open(metadata_file, "r", encoding="utf-8") as f:
+        metadata = json.load(f)
+        return GraphCard(**metadata)
+
+
 def get_researcher_graph(tag: str | None = None) -> ResearcherGraph:
+    """Load a researcher graph by dataset ID.
+
+    Args:
+        tag: The dataset ID (directory name). If None, uses the first available graph.
+
+    Returns:
+        ResearcherGraph object with nodes and edges.
+
+    Raises:
+        ValueError: If no graphs are available or tag doesn't exist.
+    """
     # if no graphs are available, raise an error
     tag_list = get_available_graphs()
     if not tag_list:
@@ -46,7 +106,13 @@ def get_researcher_graph(tag: str | None = None) -> ResearcherGraph:
     if not tag:
         tag = tag_list[0]
 
-    graph_file_path = DATA_DIR / f"{tag}.json"
+    # Load from new directory structure
+    graph_dir = DATA_DIR / tag
+    graph_file_path = graph_dir / "graph.json"
+
+    if not graph_file_path.exists():
+        raise ValueError(f"Graph file not found for tag: {tag}")
+
     with open(graph_file_path, "r", encoding="utf-8") as f:
         graph_data = json.load(f)
 
@@ -56,10 +122,13 @@ def get_researcher_graph(tag: str | None = None) -> ResearcherGraph:
     return graph
 
 
-async def compute_graph(embeddings_tag: str, strategy: str = "PCA") -> ResearcherGraph:
-    # Only PCA is supported for now
-    if strategy != "PCA":
-        raise NotImplementedError(f"Unsupported strategy: {strategy}")
+async def compute_graph(embeddings_tag: str, method: str = "pca") -> ResearcherGraph:
+    # Validate method parameter
+    method_lower = method.lower()
+    if method_lower not in ["pca", "tsne"]:
+        raise ValueError(
+            f"Unsupported method: {method}. Supported methods: 'pca', 'tsne'"
+        )
 
     researchers = await Researcher.find(
         {"embeddings": {"$elemMatch": {"tag": embeddings_tag}}}
@@ -76,11 +145,38 @@ async def compute_graph(embeddings_tag: str, strategy: str = "PCA") -> Researche
         )[0]
         vectors.append(emb.vector)
 
-    print(f"Computing graph for {len(researchers)} researchers using {strategy}")
-    print(vectors)
+    original_dimension = len(vectors[0]) if vectors else 0
 
-    pca = PCA(n_components=2)
-    emb_2d = pca.fit_transform(vectors)
+    # Store method-specific parameters
+    method_params = {}
+
+    # Apply dimensionality reduction based on method
+    if method_lower == "pca":
+        reducer = PCA(n_components=2)
+        emb_2d = reducer.fit_transform(vectors)
+    elif method_lower == "tsne":  # tsne
+        # First reduce to dimension 30 and then apply tsne
+        reducer = PCA(n_components=30)
+        emb_30d = reducer.fit_transform(vectors)
+        perplexity = min(30, len(emb_30d) - 1)
+        method_params = {
+            "perplexity": perplexity,
+            "random_state": 42,
+            "max_iter": 500,
+            "intermediate_pca_dimension": 30
+        }
+        reducer = TSNE(
+            n_components=2,
+            random_state=42,
+            perplexity=perplexity,  # Ensure perplexity < n_samples
+            max_iter=500,
+        )
+        emb_2d = reducer.fit_transform(emb_30d)
+    else:
+        raise ValueError(
+            f"Incorrect method to reduce embedding dimensioanility {method_lower}"
+        )
+
     nodes = []
     for researcher, pos in zip(researchers, emb_2d):
         if researcher.research_area:
@@ -93,7 +189,7 @@ async def compute_graph(embeddings_tag: str, strategy: str = "PCA") -> Researche
         )
         color = ACADEMIC_UNIT_COLORS.get(academic_unit, ACADEMIC_UNIT_COLORS["Otros"])
 
-        label = f"{researcher.name} ({academic_unit})"
+        label = f"{researcher.name} {researcher.last_name} ({academic_unit})"
 
         node = ResearcherNode(
             id=str(researcher.id),
@@ -112,5 +208,30 @@ async def compute_graph(embeddings_tag: str, strategy: str = "PCA") -> Researche
         nodes=nodes,
         edges=edges,
     )
-    graph.dump_to_json(DATA_DIR / f"{embeddings_tag}.json")
+
+    # Create dataset ID and directory structure
+    dataset_id = f"{embeddings_tag}_{method_lower}"
+    graph_dir = DATA_DIR / dataset_id
+    graph_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save graph data (embeddings)
+    graph_file = graph_dir / "graph.json"
+    graph.dump_to_json(str(graph_file))
+
+    # Create and save graph card metadata
+    graph_card = GraphCard(
+        dataset_id=dataset_id,
+        method=method_lower,
+        tag=embeddings_tag,
+        original_dimension=original_dimension,
+        target_dimension=2,
+        timestamp=datetime.now().isoformat(),
+        n_samples=len(researchers),
+        parameters=method_params if method_params else None
+    )
+
+    graph_card_file = graph_dir / "graph_card.json"
+    with open(graph_card_file, "w", encoding="utf-8") as f:
+        f.write(graph_card.model_dump_json(indent=2))
+
     return graph

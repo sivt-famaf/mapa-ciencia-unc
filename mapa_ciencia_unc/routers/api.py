@@ -25,7 +25,11 @@ async def get_available_graph_tags():
 
 
 @router.get("/compute_graph")
-async def compute_graph_data(embeddings_tag: str, overwrite: bool = False):
+async def compute_graph_data(
+    embeddings_tag: str,
+    method: str = "pca",
+    overwrite: bool = False
+):
     if not overwrite:
         exists = embeddings_tag in get_available_graphs()
         if exists:
@@ -35,11 +39,12 @@ async def compute_graph_data(embeddings_tag: str, overwrite: bool = False):
             )
 
     try:
-        graph = await compute_graph(embeddings_tag)
+        graph = await compute_graph(embeddings_tag, method=method)
         return {
             "graph": graph.title,
             "nodes": len(graph.nodes),
             "edges": len(graph.edges),
+            "method": method,
         }
     except Exception as e:
         return {"error": str(e)}
