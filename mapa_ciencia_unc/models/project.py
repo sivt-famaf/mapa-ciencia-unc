@@ -37,3 +37,17 @@ class Project(ProjectBase, Document):
     codigo_tramite: Annotated[str, Indexed()] = ProjectBase.model_fields[
         "codigo_tramite"
     ]
+
+
+class ProjectExtractedIntroBase(BaseModel):
+    cuit: str = CUIT_FIELD
+    codigo_tramite: str
+    extracted_intro: str
+
+
+class ProjectExtractedIntroCreate(ProjectExtractedIntroBase):
+    pass
+
+
+class ProjectExtractedIntro(ProjectExtractedIntroBase, Document):
+    created_at: datetime = Field(default_factory=datetime.now)

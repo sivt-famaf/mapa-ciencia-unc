@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 from mapa_ciencia_unc.models.researcher import Researcher
 from mapa_ciencia_unc.models.article import Article
-from mapa_ciencia_unc.models.project import Project
+from mapa_ciencia_unc.models.project import Project, ProjectExtractedIntro
 
 
 async def init_db():
@@ -17,5 +17,5 @@ async def init_db():
 
     await init_beanie(
         database=db,
-        document_models=[Researcher, Article, Project],
+        document_models=[Researcher, Article, Project, ProjectExtractedIntro],
     )

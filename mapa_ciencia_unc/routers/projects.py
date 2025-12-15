@@ -4,7 +4,12 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from mapa_ciencia_unc.auth import require_auth
-from mapa_ciencia_unc.models.project import Project, ProjectCreate
+from mapa_ciencia_unc.models.project import (
+    Project,
+    ProjectCreate,
+    ProjectExtractedIntro,
+    ProjectExtractedIntroCreate,
+)
 
 
 router = APIRouter(
@@ -83,3 +88,41 @@ async def get_project(project_id: str):
         )
 
     return project
+
+
+@router.post(
+    "/extracted_intros/bulk", status_code=status.HTTP_201_CREATED, response_model=dict
+)
+async def create_extracted_intros_bulk(
+    payload: List[ProjectExtractedIntroCreate], overwrite: bool = False
+):
+    created = 0
+    skipped = 0
+    for intro_data in payload:
+        if not overwrite:
+            existing = await ProjectExtractedIntro.find_one(
+                {
+                    "cuit": intro_data.cuit,
+                    "codigo_tramite": intro_data.codigo_tramite,
+                }
+            )
+            if existing:
+                skipped += 1
+                continue  # Skip existing entries
+
+        # If overwrite is True, delete existing entry first
+        await ProjectExtractedIntro.find(
+            {
+                "cuit": intro_data.cuit,
+                "codigo_tramite": intro_data.codigo_tramite,
+            }
+        ).delete()
+
+        intro_entry = ProjectExtractedIntro(**intro_data.model_dump())
+        await intro_entry.insert()
+        created += 1
+
+    return {
+        "created": created,
+        "skipped": skipped,
+    }

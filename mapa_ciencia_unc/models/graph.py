@@ -17,7 +17,7 @@ class Edge(BaseModel):
 class ResearcherNode(Node):
     type: str = "researcher"
     description: Optional[str] = None
-    color: str = "#000000"  # Default color black
+    color: str = "#000000"
 
 
 class ResearcherGraph(BaseModel):
