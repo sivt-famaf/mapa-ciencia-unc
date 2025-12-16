@@ -10,7 +10,7 @@ Inputs:
 Example usage:
 python processes/upload_projects_to_db.py \
     --input-file path/to/project_texts.json \
-    --api-url http://localhost:8123 \
+    --api-url http://example.com \
     --username admin \
     --password secret \
     --overwrite
