@@ -4,11 +4,11 @@ Script to preprocess articles from CSV files.
 
 This script reads CSV files from a directory and consolidates them into a single output file.
 Each CSV file contains article information with the following fields:
-- autores: Authors of the article
+- apellido: Surname of one of authors of the article
+- nombre: Name of one of the authors of the article
 - titulo: Title of the article
 - resumen: Abstract/summary of the article
 - cuil: CUIL identifier
-- lugar_de_trabajo: Workplace/institution
 """
 
 import argparse
@@ -16,63 +16,46 @@ import pandas as pd
 from pathlib import Path
 import sys
 
-from mapa_ciencia_unc.data_handlers import read_csv_file, save_output_by_extension
+from mapa_ciencia_unc.data_handlers import save_output_by_extension
 
 
-def read_files(input_dir: Path) -> pd.DataFrame:
+def read_files(articles_path: Path) -> pd.DataFrame:
     """
-    Read all CSV files from the input directory and concatenate them.
+    Read CSV file from the input directory.
 
     Args:
-        input_dir: Path to directory containing CSV files
+        articles_path: Path to articles CSV file
 
     Returns:
-        DataFrame containing all articles from all CSV files
+        DataFrame containing all articles from all CSV file
     """
-    if not input_dir.exists():
-        raise FileNotFoundError(f"Input directory does not exist: {input_dir}")
+    if not articles_path.exists():
+        raise FileNotFoundError(f"Articles file does not exist: {articles_path}")
 
-    if not input_dir.is_dir():
-        raise NotADirectoryError(f"Input path is not a directory: {input_dir}")
+    print(f"Reading articles file: {articles_path}")
 
-    # Find all .txt files (which are actually CSVs based on the structure)
-    csv_files = list(input_dir.glob("*.txt"))
+    # Read articles file
+    if articles_path.suffix == ".csv":
+        df = pd.read_csv(articles_path, sep=";")
+    elif articles_path.suffix == ".parquet":
+        df = pd.read_parquet(articles_path)
+    elif articles_path.suffix == ".json":
+        df = pd.read_json(articles_path, lines=True)
+    else:
+        raise ValueError(f"Unsupported file format: {articles_path.suffix}")
 
-    if not csv_files:
-        raise FileNotFoundError(f"No .txt files found in directory: {input_dir}")
+    print(f"  - Loaded {len(df)} articles records")
+    print(f"  - Columns found: {len(df.columns)}")
 
-    print(f"Found {len(csv_files)} files to process")
-
-    dataframes = []
-
-    for csv_file in csv_files:
-        print(f"Reading {csv_file.name}...")
-        try:
-            df = read_csv_file(csv_file)
-
-            dataframes.append(df)
-            print(f"  - Loaded {len(df)} records")
-
-        except Exception as e:
-            print(f"Error reading {csv_file.name}: {e}")
-            continue
-
-    if not dataframes:
-        raise ValueError("No data was successfully loaded from any files")
-
-    # Concatenate all dataframes
-    combined_df = pd.concat(dataframes, ignore_index=True)
-    print(f"\nTotal records loaded: {len(combined_df)}")
-
-    return combined_df
+    return df
 
 
 def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Preprocess the combined dataframe.
+    Preprocess the dataframe.
 
     Args:
-        df: Combined dataframe from all CSV files
+        df: Dataframe from CSV file
 
     Returns:
         Preprocessed dataframe
@@ -81,7 +64,7 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
 
     # Remove duplicates based on all columns except source_file
     initial_count = len(df)
-    df = df.drop_duplicates(subset=['autores', 'titulo', 'resumen', 'cuil', 'lugar_de_trabajo'])
+    df = df.drop_duplicates(subset=['apellido', 'nombre', 'titulo', 'resumen', 'cuil'])
     duplicates_removed = initial_count - len(df)
 
     # Rename columns
@@ -94,27 +77,26 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     print(f"\nData summary:")
     print(f"  - Total records: {len(df)}")
     print(f"  - Records with missing abstracts: {df['resumen'].isna().sum()}")
-    print(f"  - Unique authors: {df['autores'].nunique()}")
-    print(f"  - Unique workplaces: {df['lugar_de_trabajo'].nunique()}")
+    print(f"  - Unique cuits: {df['cuit'].nunique()}")
 
     return df
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Preprocess articles from CSV files in a directory",
+        description="Preprocess articles from CSV file",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --input-dir data/raw/ --output-file data/processed/articles.csv
+  %(prog)s --articles-file data/raw/ --output-file data/processed/articles.csv
         """
     )
 
     parser.add_argument(
-        '--input-dir',
+        '--articles-file',
         type=Path,
-        dest='input_dir',
-        help='Alternative way to specify input directory'
+        dest='articles_file',
+        help='Alternative way to specify input file'
     )
 
     parser.add_argument(
@@ -127,18 +109,35 @@ Examples:
     args = parser.parse_args()
 
     # Handle both positional and flag arguments
-    input_dir = args.input_dir
+    articles_file = args.articles_file
     output_file = args.output_file
 
-    if not input_dir or not output_file:
-        parser.error("Both input_dir and output_file are required")
+    if not articles_file or not output_file:
+        parser.error("Both articles_file and output_file are required")
 
     try:
-        df = read_files(input_dir)
+        # Read article file
+        print("\n" + "=" * 60)
+        print("READING ARTICLES DATA")
+        print("=" * 60)
+        df = read_files(articles_file)
+
+
+        # Preprocess data
+        print("\n" + "=" * 60)
+        print("PREPROCESSING DATA")
+        print("=" * 60)
         df = preprocess_data(df)
+
+        # Save output
+        print("\n" + "=" * 60)
+        print("SAVING OUTPUT")
+        print("=" * 60)
         save_output_by_extension(df, output_file)
 
-        print("\nPreprocessing completed successfully!")
+        print("\n" + "=" * 60)
+        print("Preprocessing completed successfully!")
+        print("=" * 60)
 
     except Exception as e:
         print(f"\nError: {e}", file=sys.stderr)

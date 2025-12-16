@@ -44,7 +44,9 @@ TEXT_COLUMNS = [
     # articles
     'titulo', 'resumen',
     # projects
-    'tema_periodo', 'tema_periodo_ingles', 'titulo_proyecto', 'resumen_proyecto'
+    'tema_periodo', 'tema_periodo_ingles', 'titulo_proyecto', 'resumen_proyecto',
+    # agreements
+    'descripcion', 'tipo_produccion_tecnologica'
 ]
 
 
@@ -219,11 +221,11 @@ def get_combined_cuits(
 
 def read_data_file(file_path: Path, file_type: str) -> pd.DataFrame:
     """
-    Read articles or projects file.
+    Read articles, projects or agreements file.
 
     Args:
         file_path: Path to data file
-        file_type: Type of file ("articles" or "projects") for logging
+        file_type: Type of file ("articles", "projects" or "agreements") for logging
 
     Returns:
         DataFrame with data
@@ -339,13 +341,13 @@ def main():
         epilog="""
 Examples:
   # Filter with all enrolled users:
-  %(prog)s --enrollment-file data/enrollment.csv --articles-file data/articles.parquet --projects-file data/projects.parquet --output-directory data/filtered/
+  %(prog)s --enrollment-file data/enrollment.csv --articles-file data/articles.parquet --projects-file data/projects.parquet --agreements-file data/agreements.csv --output-directory data/filtered/
 
   # Filter with 10% sample:
-  %(prog)s --enrollment-file data/enrollment.csv --articles-file data/articles.parquet --projects-file data/projects.parquet --sample-size 0.1 --output-directory data/filtered/
+  %(prog)s --enrollment-file data/enrollment.csv --articles-file data/articles.parquet --projects-file data/projects.parquet --agreements-file data/agreements.csv --sample-size 0.1 --output-directory data/filtered/
         """
     )
-
+    
     parser.add_argument(
         '--enrollment-file',
         type=Path,
@@ -366,7 +368,14 @@ Examples:
         required=True,
         help='Path to projects data file (CSV, Parquet, or JSON)'
     )
-
+    
+    parser.add_argument(
+        '--agreements-file',
+        type=Path,
+        required=True,
+        help='Path to agreements data file (CSV, Parquet, or JSON)'
+    )
+    
     parser.add_argument(
         '--portfolios-file',
         type=Path,
@@ -399,9 +408,9 @@ Examples:
         required=True,
         help='Directory where filtered files will be saved'
     )
-
+    
     args = parser.parse_args()
-
+    
     # Validate sample size
     if not 0.0 < args.sample_size <= 1.0:
         parser.error("--sample-size must be between 0.0 and 1.0")
@@ -409,8 +418,9 @@ Examples:
     # Validate that --include-cuits and --sample-size are not used together
     if args.include_cuits and args.sample_size < 1.0:
         parser.error("--include-cuits and --sample-size cannot be used together")
-
+    
     try:
+        
         # Read enrollment file (without sampling - we'll do that later with combined CUITs)
         print("=" * 60)
         print("READING ENROLLMENT DATA")
@@ -470,7 +480,13 @@ Examples:
         print("READING PROJECTS DATA")
         print("=" * 60)
         df_projects = read_data_file(args.projects_file, "projects")
-
+        
+        # Read agreements file
+        print("\n" + "=" * 60)
+        print("READING AGREEMENTS DATA")
+        print("=" * 60)
+        df_agreements = read_data_file(args.agreements_file, "agreements")
+        
         # Filter articles by CUIT set
         print("\n" + "=" * 60)
         print("FILTERING ARTICLES")
@@ -502,7 +518,23 @@ Examples:
         # Save filtered projects
         projects_output = args.output_directory / "projects.json"
         save_output(df_projects_filtered, projects_output)
+        
+        # Filter agreements by CUIT set
+        print("\n" + "=" * 60)
+        print("FILTERING AGREEMENTS")
+        print("=" * 60)
+        df_agreements_filtered = filter_by_cuit_set(cuit_set, df_agreements, "agreements")
 
+        # Clean text columns in agreements
+        print("\n" + "=" * 60)
+        print("CLEANING AGREEMENTS TEXT")
+        print("=" * 60)
+        df_agreements_filtered = clean_text_columns(df_agreements_filtered)
+
+        # Save filtered agreements
+        agreements_output = args.output_directory / "agreements.json"
+        save_output(df_agreements_filtered, agreements_output)
+        
         # Clean text columns in enrollment
         print("\n" + "=" * 60)
         print("CLEANING ENROLLMENT TEXT")
@@ -525,6 +557,7 @@ Examples:
         print(f"  - {articles_output}")
         print(f"  - {projects_output}")
         print(f"  - {enrollment_output}")
+        print(f"  - {agreements_output}")
         if df_portfolio is not None:
             print(f"  - {portfolio_output}")
 
