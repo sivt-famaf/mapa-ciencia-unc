@@ -31,3 +31,10 @@ class Embedding(BaseModel):
     vector: List[float] = Field(..., min_items=1)
     dimensions: int
     tag: str
+
+
+class EmbeddingRequest(BaseModel):
+    summary_tag: str
+    embedding_tag: str
+    model: str = "gemini-embedding-001"
+    output_dim: int = 768
