@@ -11,7 +11,7 @@ Outputs:
     - A json file with the extracted intros, where keys are the file names and values are the extracted text.
 
 Example usage:
-python processes/extract_intro_from_project_files.py \
+python scripts/04_02_extract_intro_from_project_files.py \
     --source-dir path/to/project/files \
     --output-file path/to/output/intros.json \
     --num-words 500

@@ -22,7 +22,7 @@ Outputs:
  - A target directory with all files flattened. Will create the target directory if it does not exist
 
 Example usage:
-python processes/flatten_file_structure.py \
+python scripts/04_01_flatten_project_file_structure.py \
     --source-dir path/to/nested/projects \
     --target-dir path/to/flattened/projects
 """
