@@ -6,6 +6,11 @@ Data science project for UNC science mapping using scikit-learn, Jupyter noteboo
 
 This project uses [uv](https://github.com/astral-sh/uv) for fast Python package management.
 
+## API Stack and runtime
+- Backend uses FastAPI with Beanie/Motor over MongoDB; app entrypoint is mapa_ciencia_unc.main:app served by uvicorn inside the container.
+- Auth uses HTTP Basic-style credentials to issue JWTs; protected routes depend on a bearer token.
+- Frontend is server-rendered plain HTML+CSS+JS via Jinja templates plus static assets
+
 ### Prerequisites
 
 Install uv if you haven't already:

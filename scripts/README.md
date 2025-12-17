@@ -348,3 +348,166 @@ python scripts/02_1_filter_enrolled_users.py \
   --output-directory data/filtered/
 ```
 
+### 03_01_upload_sample_to_db.py
+Script to upload the sample .json files to the database.
+
+Files to upload:
+- articles.json
+- projects.json
+- enrollments.json
+
+Steps, for each file:
+1. Read the JSON file.
+2. Parse the JSON data into the corresponding data formats (i.e. language str -> list[str])
+3. Use the api endpoints to upload the data to the database in batches to avoid overloading the server.
+
+Inputs:
+    - Username and password for API authentication.
+    - API base URL.
+    - Path to the json files directory.
+
+    
+Format guidelines for the json files:
+Each json file is expected to have one JSON object per line, in the following formats:
+Article Format example:
+    {
+        "autores": "string1; string2; string3",
+        "titulo": "string",
+        "resumen": "string",
+        "cuit": "12341234123",
+        "lugar_de_trabajo": "string"
+    }
+
+Project Format example:
+    {
+        "convocatoria_id": 123123123,
+        "codigo_tramite": "12312312312312CB",
+        "titulo_proyecto": "string",
+        "resumen_proyecto": "string",
+        "palabrasclaves": "string1; string2; string3",
+        "rol_grupo": "string",
+        "nombre": "string",
+        "apellido": "string",
+        "comision": "string",
+        "tema_periodo": "string",
+        "tema_periodo_ingles": "string",
+        "especialidad": null,
+        "cuit": 12341234123,
+        "fecha_alta": "2012-02-23 18:42:44",
+        "estado_tramie": "string",
+        "convocatoria": "string",
+        "objeto_evaluacion": "string",
+        "grupo_oe": "string",
+        "postulante": "string",
+        "rol": "string"
+    }
+
+Enrollment Format example:
+    {
+        "email": "example@domain.com",
+        "name": "string",
+        "last_name": "string",
+        "cuit": 12341234123,
+        "orcid_number": "0000-0001-0002-0003",
+        "gender": "string",
+        "academic_unit": "string1,string2,string3",
+        "highest_position": "string",
+        "languages": "string1,string2,string3",
+        "research_center": "string",
+        "research_area": "string",
+        "last_project_title": "string",
+        "ods": "string1,string2,string3",
+        "maturity_level": "string",
+        "international_research_links": "string"
+    }
+
+Example usage:
+```
+python scripts/03_01_upload_sample_to_db.py \
+    --username admin \
+    --password secret \
+    --api-url http://localhost:8123 \
+    --samples-dir path/to/samples
+```
+
+### 04_01_upload_sample_to_db.py
+This process flattens the nested project file structure by moving all files from subdirectories
+to a single target directory. It searches through each subdirectory recursively and
+attempts to find a descriptive file for each project, it will look for files in the following order:
+1. File containting the word 'plan' in its name. (plan de trabajo)
+2. File containting the word 'fundamentac' in its name. (fundamentación)
+3. File containting the word 'justific' in its name. (justificación)
+4. File containting the word 'proy_a_desarrollar' in its name. (proyecto a desarrollar)
+
+It renames files to the following format:
+<cuil>_<codigo_tramite>_<original_filename>.<extension>
+
+These extensions are considered valid: '.pdf', '.doc', '.docx', '.rtf', '.odt', '.rar'
+
+If no descriptive file is found, it will skip that project.
+It does not avoid duplicate files.
+
+Inputs:
+ - A source directory with nested subdirectories.
+
+Outputs:
+ - A target directory with all files flattened. Will create the target directory if it does not exist
+
+Example usage:
+```
+python scripts/04_01_flatten_project_file_structure.py \
+    --source-dir path/to/nested/projects \
+    --target-dir path/to/flattened/projects
+```
+
+### 04_02_extract_intro_from_project_files.py
+This process attempts to open all files in a given directory and extract the introductory text
+from each project file. It saves the extracted intros into a json file for further use.
+
+By default, 500 are extracted from each file.
+These extensions are considered valid: '.pdf', '.doc', '.docx', '.rtf', '.odt', '.rar'
+If a file cannot be opened or no intro can be extracted, it will skip that file.
+Inputs:
+    - A source directory with project files.
+Outputs:
+    - A json file with the extracted intros, where keys are the file names and values are the extracted text.
+
+Example usage:
+```
+python scripts/04_02_extract_intro_from_project_files.py \
+    --source-dir path/to/project/files \
+    --output-file path/to/output/intros.json \
+    --num-words 500
+```
+Requires:
+  
+  python packages:
+    - pymupdf (https://pymupdf.readthedocs.io/en/latest/)
+    - python-docx (https://python-docx.readthedocs.io/en/latest/)
+    - striprtf (https://pypi.org/project/striprtf/)
+    - odf (https://pypi.org/project/odfpy/)
+    - rarfile (https://rarfile.readthedocs.io/#)
+  
+  system packages:
+    - antiword (for .doc files)
+    - unrar/unar/7zip/p7zip (backend for rarfile https://rarfile.readthedocs.io/#)
+
+### 04_03_upload_projects_to_db.py
+This process uploads projects texts from a json file to the database.
+The json file should be the ouput of the script 04_02_extract_intro_from_project_files.py
+
+Inputs:
+    - A json file with project texts. The json keys are expected to be "<cuit>_<codigo_tramite>_<filename>"
+    - The API url to upload the data to.
+    - Username and password for API authentication.
+    - Overwrite flag to indicate whether to overwrite existing entries in the database. (based on cuit and codigo_tramite)
+
+Example usage:
+```
+python scripts/04_03_upload_projects_to_db.py \
+    --input-file path/to/project_texts.json \
+    --api-url http://example.com \
+    --username admin \
+    --password secret \
+    --overwrite
+```

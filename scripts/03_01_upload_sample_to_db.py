@@ -11,12 +11,72 @@ Steps, for each file:
 2. Parse the JSON data into the corresponding data formats (i.e. language str -> list[str])
 3. Use the api endpoints to upload the data to the database in batches to avoid overloading the server.
 
+Inputs:
+    - Username and password for API authentication.
+    - API base URL.
+    - Path to the json files directory.
+
+    
+Format guidelines for the json files:
+Each json file is expected to have one JSON object per line, in the following formats:
+Article Format example:
+    {
+        "autores": "string1; string2; string3",
+        "titulo": "string",
+        "resumen": "string",
+        "cuit": "12341234123",
+        "lugar_de_trabajo": "string"
+    }
+
+Project Format example:
+    {
+        "convocatoria_id": 123123123,
+        "codigo_tramite": "12312312312312CB",
+        "titulo_proyecto": "string",
+        "resumen_proyecto": "string",
+        "palabrasclaves": "string1; string2; string3",
+        "rol_grupo": "string",
+        "nombre": "string",
+        "apellido": "string",
+        "comision": "string",
+        "tema_periodo": "string",
+        "tema_periodo_ingles": "string",
+        "especialidad": null,
+        "cuit": 12341234123,
+        "fecha_alta": "2012-02-23 18:42:44",
+        "estado_tramie": "string",
+        "convocatoria": "string",
+        "objeto_evaluacion": "string",
+        "grupo_oe": "string",
+        "postulante": "string",
+        "rol": "string"
+    }
+
+Enrollment Format example:
+    {
+        "email": "example@domain.com",
+        "name": "string",
+        "last_name": "string",
+        "cuit": 12341234123,
+        "orcid_number": "0000-0001-0002-0003",
+        "gender": "string",
+        "academic_unit": "string1,string2,string3",
+        "highest_position": "string",
+        "languages": "string1,string2,string3",
+        "research_center": "string",
+        "research_area": "string",
+        "last_project_title": "string",
+        "ods": "string1,string2,string3",
+        "maturity_level": "string",
+        "international_research_links": "string"
+    }
+
 Example usage:
 python scripts/03_01_upload_sample_to_db.py \
     --username admin \
     --password secret \
     --api-url http://localhost:8123 \
-    --samples-dir path/to/samples    
+    --samples-dir path/to/samples
 """
 
 import json

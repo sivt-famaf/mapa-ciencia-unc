@@ -1,5 +1,6 @@
 """
 This process uploads projects texts from a json file to the database.
+The json file should be the ouput of the script 04_02_extract_intro_from_project_files.py
 
 Inputs:
     - A json file with project texts. The json keys are expected to be "<cuit>_<codigo_tramite>_<filename>"
@@ -8,7 +9,7 @@ Inputs:
     - Overwrite flag to indicate whether to overwrite existing entries in the database. (based on cuit and codigo_tramite)
 
 Example usage:
-python processes/upload_projects_to_db.py \
+python scripts/04_03_upload_projects_to_db.py \
     --input-file path/to/project_texts.json \
     --api-url http://example.com \
     --username admin \
