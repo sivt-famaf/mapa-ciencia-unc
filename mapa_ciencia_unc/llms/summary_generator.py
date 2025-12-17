@@ -7,6 +7,7 @@ from google.genai import types
 from typing import List
 
 from mapa_ciencia_unc.models.article import Article
+from mapa_ciencia_unc.models.project import Project
 
 def generate_researcher_summary(
     info_completa_investigador: str,
@@ -80,18 +81,42 @@ def generate_researcher_summary(
         }
     
 
-def build_researcher_llm_input(articles: List[Article]) -> str:
+def build_researcher_llm_inputs(
+    articles: List[Article],
+    projects: List[Project],
+) -> dict[str, str]:
     """
-    Build a single textual input by concatenating all articles
-    associated with a researcher.
+    Build separated textual inputs for projects and publications
+    to be injected into a Jinja template.
+
+    Args:
+        articles: List of articles (publications) associated with a researcher.
+            Only the title and abstract are used.
+        projects: List of projects associated with a researcher.
+            Only the project title and summary are used.
+
+    Returns:
+        Dictionary with two keys:
+            - "projects": concatenated text of project titles and summaries.
+            - "publications": concatenated text of article titles and abstracts.
     """
 
-    parts: list[str] = []
+    publications_parts: list[str] = []
+    projects_parts: list[str] = []
 
     for article in articles:
-        parts.append(article.titulo)
+        publications_parts.append(article.titulo)
 
         if article.resumen:
-            parts.append(article.resumen)
+            publications_parts.append(article.resumen)
 
-    return "\n\n".join(parts)
+    for project in projects:
+        projects_parts.append(project.titulo_proyecto)
+
+        if project.resumen_proyecto:
+            projects_parts.append(project.resumen_proyecto)
+
+    return {
+        "projects": "\n\n".join(projects_parts),
+        "publications": "\n\n".join(publications_parts),
+    }
