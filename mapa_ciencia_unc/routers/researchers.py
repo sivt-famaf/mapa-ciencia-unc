@@ -1,6 +1,7 @@
 from typing import List
 
 from beanie import PydanticObjectId
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from mapa_ciencia_unc.auth import require_auth
@@ -70,6 +71,51 @@ async def create_researchers_bulk(payload: List[ResearcherCreate]):
 async def list_researchers():
     researchers = await Researcher.find_all(fetch_links=False).to_list()
     return researchers
+
+
+class EmbeddingModelTagResponse(BaseModel):
+    model: str
+    tag: str
+    dimensions: int
+    count: int
+
+
+@router.get("/list_embeddings", response_model=List[EmbeddingModelTagResponse])
+async def list_embeddings():
+    """
+    List all embedding versions by model and tag, and their total count.
+    """
+    pipeline = [
+        # Flatten the embeddings array
+        {"$unwind": "$embeddings"},
+        # Group by unique pair
+        {
+            "$group": {
+                "_id": {"model": "$embeddings.model", "tag": "$embeddings.tag"},
+                # Take dimensions from the first document found in this group
+                "dimensions": {"$first": "$embeddings.dimensions"},
+                # Still counting occurrences
+                "count": {"$sum": 1},
+            }
+        },
+        # Reshape for output
+        {
+            "$project": {
+                "_id": 0,
+                "model": "$_id.model",
+                "tag": "$_id.tag",
+                "dimensions": 1,
+                "count": 1,
+            }
+        },
+        # Sort by model name and then tag
+        {"$sort": {"model": 1, "tag": 1}},
+    ]
+
+    # 1. Prepare the query (No I/O happens here)
+    query = await Researcher.aggregate(pipeline).to_list()
+
+    return query
 
 
 @router.get("/{researcher_id}", response_model=Researcher)

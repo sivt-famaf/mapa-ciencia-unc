@@ -20,8 +20,8 @@ async def home(request: Request):
 
 
 @router.get("/graph", response_class=HTMLResponse)
-async def graph_view(request: Request, tag: str | None = None):
-    graph = get_researcher_graph(tag=tag)
+async def graph_view(request: Request, graph_key: str):
+    graph = get_researcher_graph(graph_key=graph_key)
     return templates.TemplateResponse(
         "graph.html", {"request": request, "graph": graph.model_dump()}
     )

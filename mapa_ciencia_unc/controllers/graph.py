@@ -36,17 +36,20 @@ def get_available_graphs() -> list[str]:
     return graphs
 
 
-def get_researcher_graph(tag: str | None = None) -> ResearcherGraph:
+def get_researcher_graph(graph_key: str | None = None) -> ResearcherGraph:
     # if no graphs are available, raise an error
-    tag_list = get_available_graphs()
-    if not tag_list:
+    graphs = get_available_graphs()
+    if not graphs:
         raise ValueError("No available graphs")
 
     # if no tag is provided, use the first available graph
-    if not tag:
-        tag = tag_list[0]
+    if not graph_key:
+        graph_key = graphs[0]
 
-    graph_file_path = DATA_DIR / f"{tag}.json"
+    if graph_key not in graphs:
+        raise ValueError(f"Graph {graph_key} not found")
+
+    graph_file_path = DATA_DIR / f"{graph_key}.json"
     with open(graph_file_path, "r", encoding="utf-8") as f:
         graph_data = json.load(f)
 
@@ -56,19 +59,20 @@ def get_researcher_graph(tag: str | None = None) -> ResearcherGraph:
     return graph
 
 
-async def compute_graph(embeddings_tag: str, strategy: str = "PCA") -> ResearcherGraph:
+async def compute_graph(tag: str, model: str, strategy: str = "PCA") -> ResearcherGraph:
     # Only PCA is supported for now
     if strategy != "PCA":
         raise NotImplementedError(f"Unsupported strategy: {strategy}")
 
+    # Get researchers with the given tag and model embeddings
     researchers = await Researcher.find(
-        {"embeddings": {"$elemMatch": {"tag": embeddings_tag}}}
+        {"embeddings": {"$elemMatch": {"tag": tag, "model": model}}}
     ).to_list()
 
     vectors = []
-    # 2. Filter embeddings per researcher
+    # Filter embeddings per researcher and get the most recent one
     for r in researchers:
-        filtered_embs = [e for e in r.embeddings if e.tag == embeddings_tag]
+        filtered_embs = [e for e in r.embeddings if e.tag == tag and e.model == model]
         emb = sorted(
             filtered_embs,
             key=lambda e: e.created_at,
@@ -108,9 +112,9 @@ async def compute_graph(embeddings_tag: str, strategy: str = "PCA") -> Researche
 
     edges = []
     graph = ResearcherGraph(
-        title=f"Researcher Graph - Summary/Embeddings tag: {embeddings_tag}",
+        title=f"Researcher Graph - Summary/Embeddings tag: {tag} and model: {model} ({strategy})",
         nodes=nodes,
         edges=edges,
     )
-    graph.dump_to_json(DATA_DIR / f"{embeddings_tag}.json")
+    graph.dump_to_json(DATA_DIR / f"{tag}_{model}.json")
     return graph
