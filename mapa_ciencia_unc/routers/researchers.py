@@ -83,7 +83,11 @@ class EmbeddingModelTagResponse(BaseModel):
 @router.get("/list_embeddings", response_model=List[EmbeddingModelTagResponse])
 async def list_embeddings():
     """
-    List all embedding versions by model and tag, and their total count.
+    List all embedding versions by:
+    - model
+    - tag
+    - dimensions
+    - count (How many researchers have this embedding)
     """
     pipeline = [
         # Flatten the embeddings array

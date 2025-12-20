@@ -29,6 +29,10 @@ ACADEMIC_UNIT_COLORS = {
 }
 
 
+def generate_graph_key(tag: str, model: str) -> str:
+    return f"{tag}_{model}"
+
+
 def get_available_graphs() -> list[str]:
     graphs = []
     for graph_file in DATA_DIR.glob("*.json"):
@@ -64,24 +68,42 @@ async def compute_graph(tag: str, model: str, strategy: str = "PCA") -> Research
     if strategy != "PCA":
         raise NotImplementedError(f"Unsupported strategy: {strategy}")
 
-    # Get researchers with the given tag and model embeddings
-    researchers = await Researcher.find(
-        {"embeddings": {"$elemMatch": {"tag": tag, "model": model}}}
+    pipeline = [
+        # 1. First, find the researchers who have at least one matching embedding
+        {"$match": {"embeddings": {"$elemMatch": {"tag": tag, "model": model}}}},
+        # 2. Redefine the 'embeddings' field to only contain the matches
+        {
+            "$addFields": {
+                "embeddings": {
+                    "$filter": {
+                        "input": "$embeddings",
+                        "as": "emb",
+                        "cond": {
+                            "$and": [
+                                {"$eq": ["$$emb.tag", tag]},
+                                {"$eq": ["$$emb.model", model]},
+                            ]
+                        },
+                    }
+                }
+            }
+        },
+    ]
+
+    researchers = await Researcher.aggregate(
+        pipeline, projection_model=Researcher
     ).to_list()
 
-    vectors = []
     # Filter embeddings per researcher and get the most recent one
-    for r in researchers:
-        filtered_embs = [e for e in r.embeddings if e.tag == tag and e.model == model]
-        emb = sorted(
-            filtered_embs,
-            key=lambda e: e.created_at,
+    vectors = []
+    for researcher in researchers:
+        embeddings_sorted = sorted(
+            researcher.embeddings,
+            key=lambda emb: emb.created_at,
             reverse=True,
-        )[0]
-        vectors.append(emb.vector)
-
-    print(f"Computing graph for {len(researchers)} researchers using {strategy}")
-    print(vectors)
+        )
+        latest_embedding = embeddings_sorted[0]
+        vectors.append(latest_embedding.vector)
 
     pca = PCA(n_components=2)
     emb_2d = pca.fit_transform(vectors)
@@ -116,5 +138,6 @@ async def compute_graph(tag: str, model: str, strategy: str = "PCA") -> Research
         nodes=nodes,
         edges=edges,
     )
-    graph.dump_to_json(DATA_DIR / f"{tag}_{model}.json")
+    graph_key = generate_graph_key(tag, model)
+    graph.dump_to_json(DATA_DIR / f"{graph_key}.json")
     return graph
