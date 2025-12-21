@@ -374,7 +374,7 @@
         <ul class="similar-list">
           {% for sim in similar_researchers %}
           <li class="similar-item">
-            <a href="/researcher/{{ sim.researcher_id }}{% if tag %}?tag={{ tag }}{% endif %}">
+            <a href="/researcher/{{ sim.researcher_id }}{% if graph_key %}?graph_key={{ graph_key }}{% elif researcher.tag and researcher.model %}?graph_key={{ researcher.tag }}_{{ researcher.model }}{% endif %}">
               {{ sim.last_name }}, {{ sim.name }} ({{ sim.research_center }})
             </a>
           </li>
@@ -384,7 +384,7 @@
       {% endif %}
 
       <div class="actions">
-        <a href="/graph{% if researcher.tag and researcher.model %}?graph_key={{ researcher.tag }}_{{ researcher.model }}{% endif %}">
+        <a href="/graph{% if graph_key %}?graph_key={{ graph_key }}{% elif researcher.tag and researcher.model %}?graph_key={{ researcher.tag }}_{{ researcher.model }}{% endif %}">
           Back to Graph
         </a>
         <a href="/">Return Home</a>

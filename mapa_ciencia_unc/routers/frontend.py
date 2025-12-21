@@ -123,7 +123,6 @@ async def researcher_view(
         for project in project_files
     ]
 
-    model = "gemini"
     similar_researchers = await get_similar_researchers(
         cuit=researcher_doc.cuit, tag=tag, model=model, n=3
     )
@@ -136,5 +135,6 @@ async def researcher_view(
             "projects": projects,
             "similar_researchers": similar_researchers,
             "tag": tag,
+            "graph_key": graph_key,
         },
     )
