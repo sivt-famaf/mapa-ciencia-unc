@@ -8,6 +8,7 @@ from typing import List
 
 from mapa_ciencia_unc.models.article import Article
 from mapa_ciencia_unc.models.project import Project
+from mapa_ciencia_unc.config import GEMINI_API_KEY
 
 def generate_researcher_summary(
     info_completa_investigador: str,
@@ -55,7 +56,7 @@ def generate_researcher_summary(
         required=["brief", "profile", "areas"],
     )
 
-    client = genai.Client()
+    client = genai.Client(api_key = GEMINI_API_KEY)
 
     config = types.GenerateContentConfig(
         system_instruction=system_instruction,

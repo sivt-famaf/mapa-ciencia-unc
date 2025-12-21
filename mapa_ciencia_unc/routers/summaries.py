@@ -11,7 +11,7 @@ from mapa_ciencia_unc.models.project import Project
 from mapa_ciencia_unc.models.summary import SummaryRequest
 from mapa_ciencia_unc.llms.summary_generator import (
     generate_researcher_summary, 
-    build_researcher_llm_input
+    build_researcher_llm_inputs
 )
 from mapa_ciencia_unc.config import SYSTEMS_DIR, USER_PROMPTS_DIR
 
@@ -49,7 +49,7 @@ async def generate_summaries(req: SummaryRequest):
         Project.cuit == researcher.cuit
     ).to_list()
 
-    context = build_researcher_llm_input(
+    context = build_researcher_llm_inputs(
         articles=articles,
         projects=projects,
     )
@@ -58,7 +58,7 @@ async def generate_summaries(req: SummaryRequest):
     prompt_path = USER_PROMPTS_DIR / f"{req.prompt_name}.jinja"
 
     content = generate_researcher_summary(
-        context,
+        info_completa_investigador=context,
         system_instruction_path=system_path,
         prompt_path=prompt_path,
     )

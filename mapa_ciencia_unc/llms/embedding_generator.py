@@ -2,6 +2,8 @@ from typing import List
 from google import genai
 from google.genai import types
 
+from mapa_ciencia_unc.config import GEMINI_API_KEY
+
 def generate_gemini_embedding(
     profile_summary: str,
     output_dim: int = 768
@@ -20,7 +22,7 @@ def generate_gemini_embedding(
     """
 
     try:
-        client = genai.Client()
+        client = genai.Client(api_key = GEMINI_API_KEY)
 
         config = types.EmbedContentConfig(
             output_dimensionality=output_dim
