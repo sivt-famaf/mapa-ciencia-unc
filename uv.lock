@@ -1085,9 +1085,6 @@ wheels = [
 name = "jose"
 version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pycrypto" },
-]
 sdist = { url = "https://files.pythonhosted.org/packages/01/3d/832caa69cd0d3be2d608d8290be2221072669aa88e87690837f6b31c480f/jose-1.0.0.tar.gz", hash = "sha256:8436c3617cd94e1ba97828fbb1ce27c129f66c78fb855b4bb47e122b5f345fba", size = 9153 }
 
 [[package]]
@@ -1507,6 +1504,11 @@ dev = [
     { name = "ipdb" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "ipdb" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "beanie", specifier = ">=2.0.1" },
@@ -1529,6 +1531,9 @@ requires-dist = [
     { name = "seaborn", specifier = ">=0.12.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.24.0" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ipdb", specifier = ">=0.13.13" }]
 
 [[package]]
 name = "markupsafe"
@@ -2268,12 +2273,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/fe/cf/d2d3b9f5699fb1e46
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a0/e3/59cd50310fc9b59512193629e1984c1f95e5c8ae6e5d8c69532ccc65a7fe/pycparser-2.23-py3-none-any.whl", hash = "sha256:e5c6e8d3fbad53479cab09ac03729e0a9faf2bee3db8208a550daf5af81a5934", size = 118140 },
 ]
-
-[[package]]
-name = "pycrypto"
-version = "2.6.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/60/db/645aa9af249f059cc3a368b118de33889219e0362141e75d4eaf6f80f163/pycrypto-2.6.1.tar.gz", hash = "sha256:f2ce1e989b272cfcb677616763e0a2e7ec659effa67a88aa92b3a65528f60a3c", size = 446240 }
 
 [[package]]
 name = "pydantic"
