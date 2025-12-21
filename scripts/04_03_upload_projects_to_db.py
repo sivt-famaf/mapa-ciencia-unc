@@ -115,6 +115,7 @@ if __name__ == "__main__":
                 "cuit": cuit,
                 "codigo_tramite": codigo_tramite,
                 "extracted_intro": text,
+                "file_name": file_name,
             }
         )
     upload_data(payload, batch_size, args.api_url, headers)
