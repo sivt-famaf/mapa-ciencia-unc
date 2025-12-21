@@ -168,17 +168,7 @@ python scripts/01_1_preprocess_portfolios.py \
   --portfolios-file ${DATA_DIR}/raw_csv/portfolios.csv \
   --output-file ${DATA_DIR}/preprocessed_csv/portfolios.json
 
-python scripts/01_2_preprocess_enrollments.py \
-  --enrollments-file ${DATA_DIR}/raw_csv/enrollments.csv \
-  --output-file ${DATA_DIR}/preprocessed_csv/enrollments.json
-
-python scripts/01_3_preprocess_articles.py \
-  --articles-file ${DATA_DIR}/raw_csv/articles.csv \
-  --output-file ${DATA_DIR}/preprocessed_csv/articles.json
-
-python scripts/01_4_preprocess_agreements.py \
-  --agreements-file ${DATA_DIR}/raw_csv/agreements.csv \
-  --output-file ${DATA_DIR}/preprocessed_csv/agreements.json
+...
 
 # Stage 02: Filter and merge
 python scripts/02_1_filter_enrolled_users.py \
@@ -188,13 +178,6 @@ python scripts/02_1_filter_enrolled_users.py \
   --projects-file ${DATA_DIR}/preprocessed_csv/projects.json \
   --agreements-file ${DATA_DIR}/preprocessed_csv/agreements.json \
   --output-directory ${DATA_DIR}/merged_data
-
-# Stage 03: Upload to database
-python scripts/03_01_upload_sample_to_db.py \
-  --username admin \
-  --password your_api_password \
-  --api-url http://localhost:8000 \
-  --samples-dir ${DATA_DIR}/merged_data/
 ```
 
 **Note**: Make sure the FastAPI application is running before executing the upload script (Stage 03).
