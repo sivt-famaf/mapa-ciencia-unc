@@ -143,6 +143,23 @@
       {{ graph | tojson }}
     </script>
     <script>
+      const getStoredToken = () => {
+        const localToken = localStorage.getItem("jwtToken");
+        if (localToken) return localToken;
+
+        const cookieMatch = document.cookie.match(/(?:^|; )token=([^;]+)/);
+        return cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+      };
+
+      const requireToken = () => {
+        const token = getStoredToken();
+        if (!token) {
+          window.location.href = "/login";
+          throw new Error("Authentication required");
+        }
+        return token;
+      };
+
       (function initGraphTagSelector() {
         const selectEl = document.getElementById("graph-tag-select");
         const statusEl = document.getElementById("graph-tag-status");
@@ -205,8 +222,17 @@
         });
 
         const fetchAvailableTags = async () => {
+          const token = requireToken();
           try {
-            const response = await fetch("/api/available_graph_tags");
+            const response = await fetch("/api/available_graph_tags", {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            if (response.status === 401) {
+              window.location.href = "/login";
+              return;
+            }
             if (!response.ok) {
               throw new Error(`Unexpected status ${response.status}`);
             }

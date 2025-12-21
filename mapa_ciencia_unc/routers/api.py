@@ -9,7 +9,6 @@ from mapa_ciencia_unc.controllers.graph import (
 
 
 router = APIRouter(prefix="/api", tags=["api"], dependencies=[Depends(require_auth)])
-public_router = APIRouter(prefix="/api", tags=["api"])
 
 
 @router.get("/graph")
@@ -18,7 +17,7 @@ async def get_graph_data():
     return graph.model_dump()
 
 
-@public_router.get("/available_graph_tags")
+@router.get("/available_graph_tags")
 async def get_available_graph_tags():
     graphs = get_available_graphs()
     return {"available_graph_tags": graphs}
