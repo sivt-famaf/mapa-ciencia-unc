@@ -12,6 +12,8 @@ class ArticleBase(BaseModel):
     titulo: str
     lugar_de_trabajo: str
     resumen: str | None = None
+    issn: str | None = None
+    eissn: str | None = None
 
 
 class ArticleCreate(ArticleBase):

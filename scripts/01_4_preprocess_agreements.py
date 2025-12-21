@@ -10,37 +10,7 @@ import sys
 import pandas as pd
 from pathlib import Path
 
-from mapa_ciencia_unc.data_handlers import read_csv_file, save_output_by_extension
-
-
-
-def read_agreements_file(agreements_path: Path) -> pd.DataFrame:
-    """
-    Read agreements CSV file.
-
-    Args:
-        agreements_path: Path to agreements CSV file
-
-    Returns:
-        DataFrame with agreements data
-    """
-    if not agreements_path.exists():
-        raise FileNotFoundError(f"Agreements file does not exist: {agreements_path}")
-
-    print(f"Reading agreements file: {agreements_path}")
-
-    # Read agreements file
-    try:
-        # Read CSV with semicolon separator
-        df = read_csv_file(agreements_path, separator=";")
-    except Exception as e:
-        print(f"Error reading {agreements_path.name}: {e}")
-    
-
-    print(f"  - Loaded {len(df)} agreements records")
-    print(f"  - Columns found: {len(df.columns)}")
-
-    return df
+from mapa_ciencia_unc.data_handlers import read_data_file, save_output_by_extension
 
 
 def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -61,7 +31,7 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     duplicates_removed = initial_count - len(df)
 
     # Rename columns
-    df = df.rename(columns={'cuil': 'cuit'})
+    df = df.rename(columns={"cuil": "cuit"})
 
     if duplicates_removed > 0:
         print(f"  - Removed {duplicates_removed} duplicate records")
@@ -70,7 +40,9 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     print(f"\nData summary:")
     print(f"  - Total records: {len(df)}")
     print(f"  - Records with missing description: {df['descripcion'].isna().sum()}")
-    print(f"  - Records with missing type production: {df['tipo_produccion_tecnologica'].isna().sum()}")
+    print(
+        f"  - Records with missing type production: {df['tipo_produccion_tecnologica'].isna().sum()}"
+    )
     print(f"  - Unique cuits: {df['cuit'].nunique()}")
 
     return df
@@ -83,21 +55,21 @@ def main():
         epilog="""
 Examples:
   %(prog)s --agreements-file data/raw/ --output-file data/processed/agreements.csv
-        """
+        """,
     )
 
     parser.add_argument(
-        '--agreements-file',
+        "--agreements-file",
         type=Path,
-        dest='agreements_file',
-        help='Alternative way to specify input file'
+        dest="agreements_file",
+        help="Alternative way to specify input file",
     )
 
     parser.add_argument(
-        '--output-file',
+        "--output-file",
         type=Path,
-        dest='output_file',
-        help='Alternative way to specify output file'
+        dest="output_file",
+        help="Alternative way to specify output file",
     )
 
     args = parser.parse_args()
@@ -110,11 +82,14 @@ Examples:
         parser.error("Both agreement file and output_file are required")
 
     try:
-        # Read portfolio file
+        # Read agreements file
         print("\n" + "=" * 60)
         print("READING AGREEMENTS DATA")
         print("=" * 60)
-        df = read_agreements_file(agreement_file)
+        print(f"Reading agreements file: {agreement_file}")
+        df = read_data_file(agreement_file, separator=";")
+        print(f"  - Loaded {len(df)} agreements records")
+        print(f"  - Columns found: {len(df.columns)}")
 
         # Preprocess data
         print("\n" + "=" * 60)

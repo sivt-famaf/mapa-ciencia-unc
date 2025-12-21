@@ -21,6 +21,8 @@ dependencies = [
     "python-multipart>=0.0.6",
     "python-multipart>=0.0.20",
     "dotenv>=0.9.9",
+    "pandas>=2.3.3",
+    "jose>=1.0.0",
 ]
 
 [project.optional-dependencies]
