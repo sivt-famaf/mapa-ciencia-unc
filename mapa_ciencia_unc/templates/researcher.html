@@ -315,7 +315,7 @@
           <p class="breadcrumb">Researcher profile overview</p>
         </div>
         {% if researcher.tag %}
-        <span class="tag-pill">tag: {{ researcher.tag }}</span>
+        <span class="tag-pill">tag: {{ researcher.tag }} model: {{ researcher.model }}</span>
         {% endif %}
       </header>
 
@@ -334,14 +334,14 @@
         </article>
       </div>
 
-      {% if researcher.summary_for_tag %}
+      {% if researcher.summary %}
       <section class="summary">
-        <h2>Summary{% if researcher.tag %} · {{ researcher.tag }}{% endif %}</h2>
-        <p>{{ researcher.summary_for_tag }}</p>
+        <h2>Summary{% if researcher.tag %} · {{ researcher.tag }} {% endif %}{% if researcher.model %} · {{ researcher.model }}{% endif %}</h2>
+        <p>{{ researcher.summary }}</p>
       </section>
       {% elif researcher.tag %}
       <div class="summary-empty">
-        No summary available for tag "<strong>{{ researcher.tag }}</strong>".
+        No summary available for tag "<strong>{{ researcher.tag }} and model {{ researcher.model }}</strong>".
       </div>
       {% endif %}
 
@@ -384,7 +384,7 @@
       {% endif %}
 
       <div class="actions">
-        <a href="/graph{% if researcher.tag %}?tag={{ researcher.tag }}{% endif %}">
+        <a href="/graph{% if researcher.tag and researcher.model %}?graph_key={{ researcher.tag }}_{{ researcher.model }}{% endif %}">
           Back to Graph
         </a>
         <a href="/">Return Home</a>

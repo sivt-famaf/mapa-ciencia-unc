@@ -21,8 +21,8 @@ async def home(request: Request):
 
 
 @router.get("/graph", response_class=HTMLResponse)
-async def graph_view(request: Request, tag: str | None = None):
-    graph = get_researcher_graph(tag=tag)
+async def graph_view(request: Request, graph_key: str | None = None):
+    graph = get_researcher_graph(graph_key=graph_key)
     return templates.TemplateResponse(
         "graph.html", {"request": request, "graph": graph.model_dump()}
     )
@@ -93,14 +93,21 @@ async def get_similar_researchers(cuit: str, tag: str, model: str, n: int = 3):
 
 
 @router.get("/researcher/{researcher_id}", response_class=HTMLResponse)
-async def researcher_view(request: Request, researcher_id: str, tag: str | None = None):
+async def researcher_view(
+    request: Request,
+    researcher_id: str,
+    graph_key: str | None = None,
+):
     researcher_doc = await Researcher.find_one({"_id": PydanticObjectId(researcher_id)})
 
     if not researcher_doc:
         return HTMLResponse(content="Researcher not found", status_code=404)
 
+    model = graph_key.split("_")[-1] if graph_key else None
+    tag = "_".join(graph_key.split("_")[:-1]) if graph_key else None
+
     researcher_public_view = ResearcherPublicView.from_researcher(
-        researcher_doc, tag=tag
+        researcher_doc, tag=tag, model=model
     )
 
     project_files = await ProjectExtractedIntro.find(

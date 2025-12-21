@@ -1,5 +1,6 @@
-from beanie import init_beanie
 import os
+
+from beanie import init_beanie
 from pymongo import AsyncMongoClient
 from mapa_ciencia_unc.models.researcher import Researcher
 from mapa_ciencia_unc.models.article import Article
