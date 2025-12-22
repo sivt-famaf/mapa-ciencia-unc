@@ -3,7 +3,6 @@ from pathlib import Path
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from fastapi import Depends
 
 from mapa_ciencia_unc.controllers.graph import get_researcher_graph
 from mapa_ciencia_unc.models.researcher import Researcher, ResearcherPublicView
