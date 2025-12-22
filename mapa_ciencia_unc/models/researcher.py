@@ -50,6 +50,7 @@ class ResearcherPublicView(BaseModel):
         tag: str | None = None,
         model: str | None = None,
     ) -> "ResearcherPublicView":
+        summary_content = None
         if tag and model:
             summary = next(
                 (s for s in researcher.summaries if s.tag == tag and s.model == model),
@@ -57,8 +58,6 @@ class ResearcherPublicView(BaseModel):
             )
             if summary:
                 summary_content = summary.content
-            else:
-                summary_content = None
 
         return cls(
             name=researcher.name,
