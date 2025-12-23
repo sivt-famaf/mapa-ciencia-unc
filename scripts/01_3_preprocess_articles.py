@@ -16,38 +16,7 @@ import pandas as pd
 from pathlib import Path
 import sys
 
-from mapa_ciencia_unc.data_handlers import save_output_by_extension
-
-
-def read_files(articles_path: Path) -> pd.DataFrame:
-    """
-    Read CSV file from the input directory.
-
-    Args:
-        articles_path: Path to articles CSV file
-
-    Returns:
-        DataFrame containing all articles from all CSV file
-    """
-    if not articles_path.exists():
-        raise FileNotFoundError(f"Articles file does not exist: {articles_path}")
-
-    print(f"Reading articles file: {articles_path}")
-
-    # Read articles file
-    if articles_path.suffix == ".csv":
-        df = pd.read_csv(articles_path, sep=";")
-    elif articles_path.suffix == ".parquet":
-        df = pd.read_parquet(articles_path)
-    elif articles_path.suffix == ".json":
-        df = pd.read_json(articles_path, lines=True)
-    else:
-        raise ValueError(f"Unsupported file format: {articles_path.suffix}")
-
-    print(f"  - Loaded {len(df)} articles records")
-    print(f"  - Columns found: {len(df.columns)}")
-
-    return df
+from mapa_ciencia_unc.data_handlers import read_data_file, save_output_by_extension
 
 
 def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -64,11 +33,17 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
 
     # Remove duplicates based on all columns except source_file
     initial_count = len(df)
-    df = df.drop_duplicates(subset=['apellido', 'nombre', 'titulo', 'resumen', 'cuil'])
+    df = df.drop_duplicates(
+        subset=[
+            "titulo",
+            "resumen",
+            "cuil",
+        ]
+    )
     duplicates_removed = initial_count - len(df)
 
     # Rename columns
-    df = df.rename(columns={'cuil': 'cuit'})
+    df = df.rename(columns={"cuil": "cuit", "anio_publica": "year"})
 
     if duplicates_removed > 0:
         print(f"  - Removed {duplicates_removed} duplicate records")
@@ -89,21 +64,21 @@ def main():
         epilog="""
 Examples:
   %(prog)s --articles-file data/raw/ --output-file data/processed/articles.csv
-        """
+        """,
     )
 
     parser.add_argument(
-        '--articles-file',
+        "--articles-file",
         type=Path,
-        dest='articles_file',
-        help='Alternative way to specify input file'
+        dest="articles_file",
+        help="Alternative way to specify input file",
     )
 
     parser.add_argument(
-        '--output-file',
+        "--output-file",
         type=Path,
-        dest='output_file',
-        help='Alternative way to specify output file'
+        dest="output_file",
+        help="Alternative way to specify output file",
     )
 
     args = parser.parse_args()
@@ -120,8 +95,10 @@ Examples:
         print("\n" + "=" * 60)
         print("READING ARTICLES DATA")
         print("=" * 60)
-        df = read_files(articles_file)
-
+        print(f"Reading articles file: {articles_file}")
+        df = read_data_file(articles_file, separator=";")
+        print(f"  - Loaded {len(df)} articles records")
+        print(f"  - Columns found: {len(df.columns)}")
 
         # Preprocess data
         print("\n" + "=" * 60)

@@ -1,0 +1,19 @@
+{
+    "Dirección de correo electrónico": "email",
+    "Nombres": "name",
+    "Apellidos": "last_name",
+    "CUIL (sin guiones)": "cuit",
+    "Número de ORCID (si posee)": "orcid_number",
+    "Género": "gender",
+    "Unidad Académica": "academic_unit",
+    "Cargo de mayor jerarquía alcanzado": "highest_position",
+    "¿Posee manejo de otros idiomas?": "languages",
+    "¿Cuáles son las razones por las que desea participar del programa?": "reasons_to_participate",
+    "Centro de investigación al que pertenece": "research_center",
+    "Breve descripción de su área de investigación": "research_area",
+    "Título del último proyecto de investigación en el que participa tal como fue postulado en SECYT (2023 o 2025)": "last_project_title",
+    "El proyecto está encuadrado en el siguiente ODS:": "ods",
+    "Basándose en la escala de madurez de internacionalización de las y los investigadores, ¿Qué nivel de madurez de internacionalización considera que posee?": "maturity_level",
+    "¿Desea participar de los Portfolios internacionales de I+D+i de la Universidad Nacional de Córdoba? Los Portfolios son productos comunicacionales donde se expresa la oferta de expertise que la UNC puede ofrecer a cada convocatoria adaptándola al socio internacional con el que se tome contacto. Participar implica dedicar el tiempo para brindar información de cómo desea ser presentado internacionalmente y cuales son las capacidades y competencias que puede ofrecer a un consorcio que postule un proyecto internacional. Participar no es obligatorio pero no hacerlo implica un menor nivel de difusión internacional.": "wish_to_participate",
+    "¿Posee vínculos propios con investigadores del exterior?": "international_research_links"
+}
