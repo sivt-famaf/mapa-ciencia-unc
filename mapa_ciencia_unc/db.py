@@ -1,9 +1,14 @@
 from beanie import init_beanie
 from pymongo import AsyncMongoClient
 import os
+
+from beanie import init_beanie
+from pymongo import AsyncMongoClient
 from mapa_ciencia_unc.models.researcher import Researcher
 from mapa_ciencia_unc.models.article import Article
 from mapa_ciencia_unc.models.project import Project, ProjectExtractedIntro
+from mapa_ciencia_unc.models.agreement import Agreement
+from mapa_ciencia_unc.models.research_topic import ResearchTopic
 
 
 async def init_db():
@@ -17,5 +22,12 @@ async def init_db():
 
     await init_beanie(
         database=db,
-        document_models=[Researcher, Article, Project, ProjectExtractedIntro],
+        document_models=[
+            Researcher,
+            Article,
+            Project,
+            ProjectExtractedIntro,
+            Agreement,
+            ResearchTopic,
+        ],
     )

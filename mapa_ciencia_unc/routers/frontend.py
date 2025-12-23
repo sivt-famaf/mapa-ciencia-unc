@@ -5,7 +5,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from mapa_ciencia_unc.controllers.graph import get_researcher_graph
+from mapa_ciencia_unc.controllers.researchers import get_similar_researchers
 from mapa_ciencia_unc.models.researcher import Researcher, ResearcherPublicView
+from mapa_ciencia_unc.models.project import ProjectExtractedIntro
 from beanie import PydanticObjectId
 from mapa_ciencia_unc.auth import verify_jwt_token
 
@@ -53,10 +55,10 @@ async def home(request: Request):
 
 
 @router.get("/graph", response_class=HTMLResponse)
-async def graph_view(request: Request, tag: str | None = None):
+async def graph_view(request: Request, graph_key: str | None = None):
     if not _token_is_valid(request):
         return REDIRECT_TO_LOGIN
-    graph = get_researcher_graph(tag=tag)
+    graph = get_researcher_graph(graph_key=graph_key)
     return templates.TemplateResponse(
         "graph.html", {"request": request, "graph": graph.model_dump()}
     )
@@ -70,7 +72,11 @@ async def other(request: Request):
 
 
 @router.get("/researcher/{researcher_id}", response_class=HTMLResponse)
-async def researcher_view(request: Request, researcher_id: str, tag: str | None = None):
+async def researcher_view(
+    request: Request,
+    researcher_id: str,
+    graph_key: str | None = None,
+):
     if not _token_is_valid(request):
         return REDIRECT_TO_LOGIN
     researcher_doc = await Researcher.find_one({"_id": PydanticObjectId(researcher_id)})
@@ -78,13 +84,39 @@ async def researcher_view(request: Request, researcher_id: str, tag: str | None 
     if not researcher_doc:
         return HTMLResponse(content="Researcher not found", status_code=404)
 
+    model = graph_key.split("_")[-1] if graph_key else None
+    tag = "_".join(graph_key.split("_")[:-1]) if graph_key else None
+
     researcher_public_view = ResearcherPublicView.from_researcher(
-        researcher_doc, tag=tag
+        researcher_doc, tag=tag, model=model
+    )
+
+    project_files = await ProjectExtractedIntro.find(
+        {"cuit": researcher_doc.cuit}
+    ).to_list()
+
+    projects = [
+        {
+            "codigo_tramite": project.codigo_tramite,
+            "intro": project.extracted_intro,
+            "download_url": f"/api/projects/download_project_file/?reseacher_id={researcher_id}&codigo_tramite={project.codigo_tramite}",
+        }
+        for project in project_files
+    ]
+
+    similar_researchers = await get_similar_researchers(
+        cuit=researcher_doc.cuit, tag=tag, model=model, n=3
     )
 
     return templates.TemplateResponse(
         "researcher.html",
-        {"request": request, "researcher": researcher_public_view.model_dump()},
+        {
+            "request": request,
+            "researcher": researcher_public_view.model_dump(),
+            "projects": projects,
+            "similar_researchers": similar_researchers,
+            "graph_key": graph_key,
+        },
     )
 
 

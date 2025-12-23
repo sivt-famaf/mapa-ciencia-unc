@@ -12,7 +12,15 @@ from mapa_ciencia_unc.auth import login
 from fastapi.security import OAuth2PasswordRequestForm
 
 from mapa_ciencia_unc.db import init_db
-from mapa_ciencia_unc.routers import api, frontend, researchers, projects, articles
+from mapa_ciencia_unc.routers import (
+    api,
+    frontend,
+    researchers,
+    projects,
+    articles,
+    research_topics,
+    agreements,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -68,3 +76,5 @@ app.include_router(api.router)
 app.include_router(researchers.router)
 app.include_router(projects.router)
 app.include_router(articles.router)
+app.include_router(research_topics.router)
+app.include_router(agreements.router)
