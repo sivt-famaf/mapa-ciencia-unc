@@ -150,8 +150,7 @@
 
         const { search, pathname } = window.location;
         const params = new URLSearchParams(search);
-        const currentGraphKey =
-          params.get("graph_key") ?? params.get("tag");
+        const currentGraphKey = params.get("graph_key");
 
         const setStatus = (message, isError = false) => {
           statusEl.textContent = message;

@@ -114,6 +114,102 @@
         line-height: 1.6;
         color: #e0f2fe;
       }
+      section.downloads {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        border-radius: 18px;
+        background: rgba(59, 130, 246, 0.08);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+      }
+      section.downloads h2 {
+        margin: 0 0 0.75rem;
+        font-size: 1.25rem;
+        letter-spacing: 0.04em;
+      }
+      section.similar {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        border-radius: 18px;
+        background: rgba(15, 118, 110, 0.1);
+        border: 1px solid rgba(94, 234, 212, 0.18);
+      }
+      section.similar h2 {
+        margin: 0 0 0.75rem;
+        font-size: 1.25rem;
+        letter-spacing: 0.04em;
+      }
+      .similar-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 0.6rem;
+      }
+      .similar-item a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #e0f2fe;
+        text-decoration: none;
+        transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+      }
+      .similar-item a:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.18);
+      }
+      .download-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 0.75rem;
+      }
+      .download-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+      .download-item a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #bfdbfe;
+        text-decoration: none;
+        transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+      }
+      .download-item a:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+      .intro-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.65rem 0.95rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(15, 23, 42, 0.9);
+        color: #e5e7eb;
+        cursor: pointer;
+        font: inherit;
+        transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+      }
+      .intro-btn:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
       .summary-empty {
         padding: 1rem 1.25rem;
         border-radius: 14px;
@@ -249,8 +345,46 @@
       </div>
       {% endif %}
 
+      {% if projects %}
+      <section class="downloads">
+        <h2>Project files</h2>
+        <ul class="download-list">
+          {% for project in projects %}
+          <li class="download-item">
+            <a href="{{ project.download_url }}" target="_blank" rel="noopener">
+              {{ project.codigo_tramite }}
+            </a>
+            <button
+              class="intro-btn"
+              type="button"
+              data-intro="{{ project.intro }}"
+              data-code="{{ project.codigo_tramite }}"
+            >
+              Intro
+            </button>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if similar_researchers %}
+      <section class="similar">
+        <h2>Similar researchers</h2>
+        <ul class="similar-list">
+          {% for sim in similar_researchers %}
+          <li class="similar-item">
+            <a href="/researcher/{{ sim.researcher_id }}{% if graph_key %}?graph_key={{ graph_key }}{% elif researcher.tag and researcher.model %}?graph_key={{ researcher.tag }}_{{ researcher.model }}{% endif %}">
+              {{ sim.last_name }}, {{ sim.name }} ({{ sim.research_center }})
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
       <div class="actions">
-        <a href="/graph{% if researcher.tag and researcher.model %}?graph_key={{ researcher.tag }}_{{ researcher.model }}{% endif %}">
+        <a href="/graph{% if graph_key %}?graph_key={{ graph_key }}{% elif researcher.tag and researcher.model %}?graph_key={{ researcher.tag }}_{{ researcher.model }}{% endif %}">
           Back to Graph
         </a>
         <a href="/">Return Home</a>
@@ -302,6 +436,15 @@
           projectText.setAttribute('data-full-text', fullText);
           projectText.textContent = truncateText(fullText, 30);
         }
+
+        // Wire intro buttons to open modal with intro text
+        document.querySelectorAll('.intro-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const intro = btn.dataset.intro || 'No introduction available.';
+            const code = btn.dataset.code || 'Project';
+            openModal(`Intro · ${code}`, intro);
+          });
+        });
       });
 
       function openModal(title, text) {

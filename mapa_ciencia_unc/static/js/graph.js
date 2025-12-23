@@ -87,9 +87,7 @@ if (!container) {
 const renderer = new SigmaRenderer(graph, container);
 
 const urlParams = new URLSearchParams(window.location.search);
-// Backwards compatibility: accept legacy ?tag= param
-const currentGraphKey =
-  urlParams.get("graph_key") ?? urlParams.get("tag");
+const currentGraphKey = urlParams.get("graph_key");
 
 const state = {
   hoveredNode: null,

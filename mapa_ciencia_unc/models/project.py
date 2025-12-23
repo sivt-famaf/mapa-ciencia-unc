@@ -43,6 +43,7 @@ class ProjectExtractedIntroBase(BaseModel):
     cuit: str = CUIT_FIELD
     codigo_tramite: str
     extracted_intro: str
+    file_name: str
 
 
 class ProjectExtractedIntroCreate(ProjectExtractedIntroBase):
