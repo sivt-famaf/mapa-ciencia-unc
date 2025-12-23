@@ -1,5 +1,3 @@
-from beanie import init_beanie
-from pymongo import AsyncMongoClient
 import os
 
 from beanie import init_beanie
