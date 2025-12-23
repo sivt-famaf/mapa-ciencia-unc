@@ -15,26 +15,7 @@ import pandas as pd
 from pathlib import Path
 import sys
 
-from mapa_ciencia_unc.data_handlers import clean_html_like
-
-
-ENROLLMENT_RENAME_COLUMNS = {
-    'Dirección de correo electrónico': 'email',
-    'Nombres': 'name',
-    'Apellidos': 'last_name',
-    'CUIL (sin guiones)': 'cuit',
-    'Número de ORCID (si posee)': 'orcid_number',
-    'Género': 'gender',
-    'Unidad Académica': 'academic_unit',
-    'Cargo de mayor jerarquía alcanzado': 'highest_position',
-    '¿Posee manejo de otros idiomas?': 'languages',
-    'Centro de investigación al que pertenece': 'research_center',
-    'Breve descripción de su área de investigación': 'research_area',
-    'Título del último proyecto de investigación en el que participa tal como fue postulado en SECYT (2023 o 2025)': 'last_project_title',
-    'El proyecto está encuadrado en el siguiente ODS:': 'ods',
-    'Basándose en la escala de madurez de internacionalización de las y los investigadores, ¿Qué nivel de madurez de internacionalización considera que posee?': 'maturity_level',
-    '¿Posee vínculos propios con investigadores del exterior?': 'international_research_links'
-}
+from mapa_ciencia_unc.data_handlers import clean_html_like, read_data_file
 
 
 # TODO move each category to its own variable
@@ -50,54 +31,6 @@ TEXT_COLUMNS = [
 ]
 
 
-def read_enrollment_file(enrollment_path: Path, sample_size: float) -> pd.DataFrame:
-    """
-    Read enrollment file and optionally sample it.
-
-    Args:
-        enrollment_path: Path to enrollment CSV file
-        sample_size: Ratio of data to use (0.0 to 1.0)
-
-    Returns:
-        DataFrame with enrollment data
-    """
-    if not enrollment_path.exists():
-        raise FileNotFoundError(f"Enrollment file does not exist: {enrollment_path}")
-
-    print(f"Reading enrollment file: {enrollment_path}")
-
-    # Read enrollment file
-    if enrollment_path.suffix == '.csv':
-        df = pd.read_csv(enrollment_path)
-    elif enrollment_path.suffix == '.parquet':
-        df = pd.read_parquet(enrollment_path)
-    elif enrollment_path.suffix == '.json':
-        df = pd.read_json(enrollment_path, lines=True)
-    else:
-        raise ValueError(f"Unsupported file format: {enrollment_path.suffix}")
-
-    print(f"  - Loaded {len(df)} enrollment records")
-
-    # Rename and filter columns
-    df = df.rename(columns=ENROLLMENT_RENAME_COLUMNS)
-    df = df[ENROLLMENT_RENAME_COLUMNS.values()]
-    if 'cuit' not in df.columns:
-        raise ValueError(
-            f"Column 'CUIL (sin guiones)' or 'cuit' not found in enrollment file. "
-            f"Available columns: {df.columns.tolist()}"
-        )
-
-    # Force types
-    df = df.astype({'cuit': 'object'})
-
-    # Sample if needed
-    if sample_size < 1.0:
-        original_size = len(df)
-        df = df.sample(frac=sample_size, random_state=42)
-        df = df.reset_index(drop=True)
-        print(f"  - Sampled {len(df)} records from {original_size} (sample_size={sample_size})")
-
-    return df
 
 
 def filter_academic_units(df: pd.DataFrame, units_to_remove: list) -> pd.DataFrame:
@@ -219,45 +152,6 @@ def get_combined_cuits(
     return combined_cuits
 
 
-def read_data_file(file_path: Path, file_type: str) -> pd.DataFrame:
-    """
-    Read articles, projects or agreements file.
-
-    Args:
-        file_path: Path to data file
-        file_type: Type of file ("articles", "projects" or "agreements") for logging
-
-    Returns:
-        DataFrame with data
-    """
-    if not file_path.exists():
-        raise FileNotFoundError(f"{file_type.capitalize()} file does not exist: {file_path}")
-
-    print(f"Reading {file_type} file: {file_path}")
-
-    # Read file based on extension
-    if file_path.suffix == '.csv':
-        df = pd.read_csv(file_path)
-    elif file_path.suffix == '.parquet':
-        df = pd.read_parquet(file_path)
-    elif file_path.suffix == '.json':
-        df = pd.read_json(file_path, lines=True)
-    else:
-        raise ValueError(f"Unsupported file format: {file_path.suffix}")
-
-    print(f"  - Loaded {len(df)} {file_type} records")
-
-    # Validate cuit column exists
-    if 'cuit' not in df.columns:
-        raise ValueError(
-            f"Column 'cuit' not found in {file_type} file. "
-            f"Available columns: {df.columns.tolist()}"
-        )
-
-    # Force type
-    df = df.astype({'cuit': 'object'})
-
-    return df
 
 
 def filter_by_cuit_set(
@@ -347,7 +241,7 @@ Examples:
   %(prog)s --enrollment-file data/enrollment.csv --articles-file data/articles.parquet --projects-file data/projects.parquet --agreements-file data/agreements.csv --sample-size 0.1 --output-directory data/filtered/
         """
     )
-    
+
     parser.add_argument(
         '--enrollment-file',
         type=Path,
@@ -368,14 +262,14 @@ Examples:
         required=True,
         help='Path to projects data file (CSV, Parquet, or JSON)'
     )
-    
+
     parser.add_argument(
         '--agreements-file',
         type=Path,
         required=True,
         help='Path to agreements data file (CSV, Parquet, or JSON)'
     )
-    
+
     parser.add_argument(
         '--portfolios-file',
         type=Path,
@@ -408,9 +302,9 @@ Examples:
         required=True,
         help='Directory where filtered files will be saved'
     )
-    
+
     args = parser.parse_args()
-    
+
     # Validate sample size
     if not 0.0 < args.sample_size <= 1.0:
         parser.error("--sample-size must be between 0.0 and 1.0")
@@ -418,14 +312,25 @@ Examples:
     # Validate that --include-cuits and --sample-size are not used together
     if args.include_cuits and args.sample_size < 1.0:
         parser.error("--include-cuits and --sample-size cannot be used together")
-    
+
     try:
-        
+
         # Read enrollment file (without sampling - we'll do that later with combined CUITs)
         print("=" * 60)
         print("READING ENROLLMENT DATA")
         print("=" * 60)
-        df_enrollment = read_enrollment_file(args.enrollment_file, sample_size=1.0)
+        print(f"Reading enrollment file: {args.enrollment_file}")
+        df_enrollment = read_data_file(args.enrollment_file)
+        print(f"  - Loaded {len(df_enrollment)} enrollment records")
+
+        if 'cuit' not in df_enrollment.columns:
+            raise ValueError(
+                f"Column 'CUIL (sin guiones)' or 'cuit' not found in enrollment file. "
+                f"Available columns: {df_enrollment.columns.tolist()}"
+            )
+
+        # Force types
+        df_enrollment = df_enrollment.astype({'cuit': 'object'})
 
         # Read portfolio file if provided
         df_portfolio = None
@@ -433,7 +338,19 @@ Examples:
             print("\n" + "=" * 60)
             print("READING PORTFOLIO DATA")
             print("=" * 60)
-            df_portfolio = read_data_file(args.portfolios_file, "portfolios")
+            print(f"Reading portfolios file: {args.portfolios_file}")
+            df_portfolio = read_data_file(args.portfolios_file)
+            print(f"  - Loaded {len(df_portfolio)} portfolios records")
+
+            # Validate cuit column exists
+            if 'cuit' not in df_portfolio.columns:
+                raise ValueError(
+                    f"Column 'cuit' not found in portfolios file. "
+                    f"Available columns: {df_portfolio.columns.tolist()}"
+                )
+
+            # Force type
+            df_portfolio = df_portfolio.astype({'cuit': 'object'})
 
         # Read include-cuits file if provided
         include_cuits_set = None
@@ -473,20 +390,56 @@ Examples:
         print("\n" + "=" * 60)
         print("READING ARTICLES DATA")
         print("=" * 60)
-        df_articles = read_data_file(args.articles_file, "articles")
+        print(f"Reading articles file: {args.articles_file}")
+        df_articles = read_data_file(args.articles_file)
+        print(f"  - Loaded {len(df_articles)} articles records")
+
+        # Validate cuit column exists
+        if 'cuit' not in df_articles.columns:
+            raise ValueError(
+                f"Column 'cuit' not found in articles file. "
+                f"Available columns: {df_articles.columns.tolist()}"
+            )
+
+        # Force type
+        df_articles = df_articles.astype({'cuit': 'object'})
 
         # Read projects file
         print("\n" + "=" * 60)
         print("READING PROJECTS DATA")
         print("=" * 60)
-        df_projects = read_data_file(args.projects_file, "projects")
-        
+        print(f"Reading projects file: {args.projects_file}")
+        df_projects = read_data_file(args.projects_file)
+        print(f"  - Loaded {len(df_projects)} projects records")
+
+        # Validate cuit column exists
+        if 'cuit' not in df_projects.columns:
+            raise ValueError(
+                f"Column 'cuit' not found in projects file. "
+                f"Available columns: {df_projects.columns.tolist()}"
+            )
+
+        # Force type
+        df_projects = df_projects.astype({'cuit': 'object'})
+
         # Read agreements file
         print("\n" + "=" * 60)
         print("READING AGREEMENTS DATA")
         print("=" * 60)
-        df_agreements = read_data_file(args.agreements_file, "agreements")
-        
+        print(f"Reading agreements file: {args.agreements_file}")
+        df_agreements = read_data_file(args.agreements_file)
+        print(f"  - Loaded {len(df_agreements)} agreements records")
+
+        # Validate cuit column exists
+        if 'cuit' not in df_agreements.columns:
+            raise ValueError(
+                f"Column 'cuit' not found in agreements file. "
+                f"Available columns: {df_agreements.columns.tolist()}"
+            )
+
+        # Force type
+        df_agreements = df_agreements.astype({'cuit': 'object'})
+
         # Filter articles by CUIT set
         print("\n" + "=" * 60)
         print("FILTERING ARTICLES")
@@ -518,7 +471,7 @@ Examples:
         # Save filtered projects
         projects_output = args.output_directory / "projects.json"
         save_output(df_projects_filtered, projects_output)
-        
+
         # Filter agreements by CUIT set
         print("\n" + "=" * 60)
         print("FILTERING AGREEMENTS")
@@ -534,7 +487,7 @@ Examples:
         # Save filtered agreements
         agreements_output = args.output_directory / "agreements.json"
         save_output(df_agreements_filtered, agreements_output)
-        
+
         # Clean text columns in enrollment
         print("\n" + "=" * 60)
         print("CLEANING ENROLLMENT TEXT")

@@ -137,6 +137,37 @@ def clean_html_like(text: str) -> str:
     return s
 
 
+def read_data_file(file_path: Path, separator: str = ",") -> pd.DataFrame:
+    """
+    Read data file supporting multiple formats (CSV, Parquet, JSON).
+
+    Args:
+        file_path: Path to the data file
+        separator: Separator for CSV files (default: ",")
+
+    Returns:
+        DataFrame with the loaded data
+
+    Raises:
+        FileNotFoundError: If the file doesn't exist
+        ValueError: If the file format is not supported
+    """
+    if not file_path.exists():
+        raise FileNotFoundError(f"File does not exist: {file_path}")
+
+    # Read file based on extension
+    if file_path.suffix == ".csv":
+        df = read_csv_file(file_path, separator=separator)
+    elif file_path.suffix == ".parquet":
+        df = pd.read_parquet(file_path)
+    elif file_path.suffix == ".json":
+        df = pd.read_json(file_path, lines=True)
+    else:
+        raise ValueError(f"Unsupported file format: {file_path.suffix}")
+
+    return df
+
+
 def save_output_by_extension(df: pd.DataFrame, output_path: Path) -> None:
     """
     Save the preprocessed data to the output file.

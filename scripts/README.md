@@ -1,54 +1,209 @@
 # Scripts Directory
 
 This directory contains data processing and analysis scripts for the UNC Science Map project.
+These scripts may not match exactly your data and need some tweaking before using.
+
+## Naming Convention
 
 Files follow the established naming convention: `NN_X_descriptive_name.py`
    - `NN`: Sequential number of the preprocessing stage
    - `X`: Sub-step number (if needed)
    - `descriptive_name`: Description of what the script does
 
-# TL;DR
+## Data Processing Pipeline
+
+The scripts implement a multi-stage pipeline to transform raw data into a clean database:
+
+### Stage 01: Preprocessing (`01_*` scripts → `raw_csv/` to `preprocessed_csv/`)
+
+**Purpose**: Transform raw CSV files into clean, standardized data with normalized column names and formats.
+
+**What preprocessing does**:
+- **Column renaming**: Uses JSON mapping files to standardize column names (Spanish → English)
+- **Format conversion**: Reads CSV/Parquet/JSON, outputs to any format
+- **Data normalization**: Converts CUIT to string, handles missing values, removes duplicates
+- **Encoding handling**: Automatically detects encodings (UTF-8, Latin-1, CP1252)
+- **Type conversion**: Ensures consistent data types across fields
+
+**Scripts**:
+- `01_1_preprocess_portfolios.py` - Portfolio/researcher profile data
+- `01_2_preprocess_enrollments.py` - Enrollment/registration data
+- `01_3_preprocess_articles.py` - Publication/article data
+- `01_4_preprocess_agreements.py` - Institutional agreements data
+
+**Output**: Clean files with standardized schemas in `preprocessed_csv/`
+
+### Stage 02: Filtering & Merging (`02_*` scripts → `preprocessed_csv/` to `merged_data/`)
+
+**Purpose**: Combine preprocessed files, filter by enrolled users, and clean text content.
+
+**What merging does**:
+- Filters all data to only include enrolled researchers (by CUIT)
+- Cleans HTML tags, LaTeX fragments, and unicode anomalies from text fields
+- Applies sampling for testing (optional)
+- Filters by academic unit (optional)
+- Ensures consistent CUIT identifiers across all datasets
+
+**Output**: Merged, filtered, text-cleaned files ready for database upload
+
+### Stage 03: Database Upload (`03_*` scripts → `merged_data/` to MongoDB)
+
+**Purpose**: Batch-upload processed data to MongoDB via the API.
+
+The web application reads directly from MongoDB to display researchers, articles, projects, etc.
+
+### Stage 04: Project Files (Optional, `04_*` scripts)
+
+**Purpose**: Extract and upload detailed project descriptions from PDF/DOC files.
+
+Adds rich text content to supplement project metadata.
+
+---
+
+## Entity Types
+
+The webapp handles different kinds of entities:
+
+- **Articles** - Publication data (authors, titles, abstracts, CUIT identifiers)
+- **Projects** - Research project information and funding calls
+- **Portfolios** - Researcher profile information
+- **Agreements** - Institutional agreements data
+- **Enrollments** - Researcher enrollment and affiliation data
+- **Project Files** - PDF/DOC/DOCX files with detailed project descriptions
+
+---
+
+# Quick Start
 
 To preprocess the dataset, assuming you have a directory `raw_csv` with the starting data:
 
 ```bash
-export DATA_DIR=<dirpath>/  # This will only affect this bash session
-python scripts/01_1_preprocess_articles.py \
-    --input-dir ${DATA_DIR}/raw_csv/articlulos_v2 \
-    --output-file ${DATA_DIR}/1_preprocessed_csv/articles.json \
-    > ${DATA_DIR}/1_preprocessed_csv/articles.log
+export DATA_DIR=<dirpath>  # This will only affect this bash session
 
-python scripts/01_2_preprocess_projects_and_calls.py \
-    --projects-dir ${DATA_DIR}/raw_csv/proyectos \
-    --calls-dir ${DATA_DIR}/raw_csv/convocatorias \
-    --output-file ${DATA_DIR}/1_preprocessed_csv/projects.json \
-    > ${DATA_DIR}/1_preprocessed_csv/projects.log
-
-python scripts/01_3_preprocess_portfolios.py \
+# Stage 01: Preprocess raw CSV files
+python scripts/01_1_preprocess_portfolios.py \
   --portfolios-file ${DATA_DIR}/raw_csv/portfolios.csv \
-  --output-file ${DATA_DIR}/1_preprocessed_csv/portfolios.json \
-    > ${DATA_DIR}/1_preprocessed_csv/portfolios.log
+  --output-file ${DATA_DIR}/preprocessed_csv/portfolios.json \
+  > ${DATA_DIR}/preprocessed_csv/portfolios.log
 
+python scripts/01_2_preprocess_enrollments.py \
+  --enrollments-file ${DATA_DIR}/raw_csv/enrollments.csv \
+  --output-file ${DATA_DIR}/preprocessed_csv/enrollments.json \
+  > ${DATA_DIR}/preprocessed_csv/enrollments.log
+
+python scripts/01_3_preprocess_articles.py \
+  --articles-file ${DATA_DIR}/raw_csv/articles.csv \
+  --output-file ${DATA_DIR}/preprocessed_csv/articles.json \
+  > ${DATA_DIR}/preprocessed_csv/articles.log
+
+python scripts/01_4_preprocess_agreements.py \
+  --agreements-file ${DATA_DIR}/raw_csv/agreements.csv \
+  --output-file ${DATA_DIR}/preprocessed_csv/agreements.json \
+  > ${DATA_DIR}/preprocessed_csv/agreements.log
+
+python scripts/01_5_preprocess_projects_and_calls.py \
+  --projects-dir ${DATA_DIR}/raw_csv/proyectos \
+  --calls-dir ${DATA_DIR}/raw_csv/convocatorias \
+  --output-file ${DATA_DIR}/preprocessed_csv/calls.json \
+  > ${DATA_DIR}/preprocessed_csv/calls.log
+
+# Stage 02: Filter by enrolled users and merge
 python scripts/02_1_filter_enrolled_users.py \
-  --enrollment-file ${DATA_DIR}/0_raw_csv/empadronamientos.csv \
-  --portfolios-file ${DATA_DIR}/1_preprocessed_csv/portfolios.json \
-  --articles-file ${DATA_DIR}/1_preprocessed_csv/articles.json \
-  --projects-file ${DATA_DIR}/1_preprocessed_csv/projects.json \
-  --remove-academic-unit "FD" \
-  --output-directory ${DATA_DIR}/2_merged_sampled_data \
-  --include-cuits ${DATA_DIR}/raw_pdfs/cuit_list_sample_30.csv \
-  > ${DATA_DIR}/2_merged_data/merge_logs.log
+  --enrollment-file ${DATA_DIR}/preprocessed_csv/enrollments.json \
+  --portfolios-file ${DATA_DIR}/preprocessed_csv/portfolios.json \
+  --articles-file ${DATA_DIR}/preprocessed_csv/articles.json \
+  --projects-file ${DATA_DIR}/preprocessed_csv/calls.json \
+  --agreements-file ${DATA_DIR}/preprocessed_csv/agreements.json \
+  --output-directory ${DATA_DIR}/merged_data \
+  > ${DATA_DIR}/merged_data/merge_logs.log
+
+# Stage 03: Upload to database
+python scripts/03_01_upload_sample_to_db.py \
+  --username admin \
+  --password secret \
+  --api-url http://localhost:8000 \
+  --samples-dir ${DATA_DIR}/merged_data/
 ```
 
-## Scripts Overview
+---
 
-### 01_1_preprocess_articles.py
+# Detailed Scripts Documentation
 
-This script preprocesses articles data by reading a CSV file and saving the result.
+## Stage 01: Preprocessing Scripts
+
+### 01_1_preprocess_portfolios.py
+
+Preprocesses portfolio/researcher profile data by renaming columns using a mapping file.
 
 **Usage:**
 ```bash
-python scripts/01_1_preprocess_articles.py --articles-file <articles_csv> --output-file <output_filepath>
+python scripts/01_1_preprocess_portfolios.py --portfolios-file <portfolio_csv> --output-file <output_filepath>
+```
+
+**Arguments:**
+- `--portfolios-file`: Path to portfolio CSV file (also supports .parquet, .json)
+- `--column-names-file`: (Optional) Path to JSON file with column mappings (default: `scripts/portfolio_column_names.json`)
+- `--output-file`: Output filepath for preprocessed data (supports .csv, .parquet, .json)
+
+**Processing Steps:**
+1. Loads column mapping from JSON file
+2. Reads portfolio file (supports CSV, Parquet, JSON)
+3. Renames columns according to mapping
+4. Filters to keep only mapped columns
+5. Converts CUIT to string type
+6. Saves preprocessed data
+
+**Output format**: Supports .csv, .parquet, .json
+
+**Example:**
+```bash
+python scripts/01_1_preprocess_portfolios.py \
+  --portfolios-file data/raw/portfolios.csv \
+  --output-file data/preprocessed/portfolios.json
+```
+
+---
+
+### 01_2_preprocess_enrollments.py
+
+Preprocesses enrollment/registration data by renaming columns using a mapping file.
+
+**Usage:**
+```bash
+python scripts/01_2_preprocess_enrollments.py --enrollments-file <enrollment_csv> --output-file <output_filepath>
+```
+
+**Arguments:**
+- `--enrollments-file`: Path to enrollment CSV file (also supports .parquet, .json)
+- `--column-names-file`: (Optional) Path to JSON file with column mappings (default: `scripts/enrollments_column_names.json`)
+- `--output-file`: Output filepath for preprocessed data (supports .csv, .parquet, .json)
+
+**Processing Steps:**
+1. Loads column mapping from JSON file
+2. Reads enrollment file (supports CSV, Parquet, JSON)
+3. Renames columns according to mapping (e.g., "CUIL (sin guiones)" → "cuit")
+4. Filters to keep only mapped columns
+5. Converts CUIT to string type
+6. Saves preprocessed data
+
+**Output format**: Supports .csv, .parquet, .json
+
+**Example:**
+```bash
+python scripts/01_2_preprocess_enrollments.py \
+  --enrollments-file data/raw/enrollments.csv \
+  --output-file data/preprocessed/enrollments.json
+```
+
+---
+
+### 01_3_preprocess_articles.py
+
+Preprocesses articles/publication data by normalizing and deduplicating.
+
+**Usage:**
+```bash
+python scripts/01_3_preprocess_articles.py --articles-file <articles_csv> --output-file <output_filepath>
 ```
 
 **Arguments:**
@@ -56,21 +211,55 @@ python scripts/01_1_preprocess_articles.py --articles-file <articles_csv> --outp
 - `--output-file`: Output filepath for preprocessed data (supports .csv, .parquet, .json)
 
 **Processing Steps:**
-1. Reads article file
-2. Filters to keep only renamed columns (removes any extra columns)
-3. Converts CUIT to string type
-4. Saves preprocessed data in specified format
+1. Reads article file (semicolon-separated CSV)
+2. Removes duplicate records based on key fields
+3. Renames "cuil" column to "cuit"
+4. Converts CUIT to string type
+5. Saves preprocessed data
 
 **Output format**: Supports .csv, .parquet, .json
 
-**Examples:**
+**Example:**
 ```bash
-python scripts/01_1_preprocess_articles.py \
+python scripts/01_3_preprocess_articles.py \
   --articles-file data/raw/articles.csv \
-  --output-file data/processed/articles.parquet
+  --output-file data/preprocessed/articles.json
 ```
 
 ---
+
+### 01_4_preprocess_agreements.py
+
+Preprocesses institutional agreements data by normalizing and deduplicating.
+
+**Usage:**
+```bash
+python scripts/01_4_preprocess_agreements.py --agreements-file <agreement_csv> --output-file <output_filepath>
+```
+
+**Arguments:**
+- `--agreements-file`: Path to agreement CSV file
+- `--output-file`: Output filepath for preprocessed data (supports .csv, .parquet, .json)
+
+**Processing Steps:**
+1. Reads agreement file (semicolon-separated CSV)
+2. Removes duplicate records
+3. Renames "cuil" column to "cuit"
+4. Converts CUIT to string type
+5. Saves preprocessed data
+
+**Output format**: Supports .csv, .parquet, .json
+
+**Example:**
+```bash
+python scripts/01_4_preprocess_agreements.py \
+  --agreements-file data/raw/agreements.csv \
+  --output-file data/preprocessed/agreements.json
+```
+
+---
+
+## Stage 02: Filtering & Merging Scripts
 
 ### 01_2_preprocess_projects_and_calls.py
 
@@ -366,7 +555,7 @@ Inputs:
     - API base URL.
     - Path to the json files directory.
 
-    
+
 Format guidelines for the json files:
 Each json file is expected to have one JSON object per line, in the following formats:
 Article Format example:
@@ -480,14 +669,14 @@ python scripts/04_02_extract_intro_from_project_files.py \
     --num-words 500
 ```
 Requires:
-  
+
   python packages:
     - pymupdf (https://pymupdf.readthedocs.io/en/latest/)
     - python-docx (https://python-docx.readthedocs.io/en/latest/)
     - striprtf (https://pypi.org/project/striprtf/)
     - odf (https://pypi.org/project/odfpy/)
     - rarfile (https://rarfile.readthedocs.io/#)
-  
+
   system packages:
     - antiword (for .doc files)
     - unrar/unar/7zip/p7zip (backend for rarfile https://rarfile.readthedocs.io/#)
