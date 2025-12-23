@@ -7,7 +7,6 @@ load_dotenv()
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
 from mapa_ciencia_unc.auth import login
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -19,7 +18,6 @@ from mapa_ciencia_unc.routers import (
     projects,
     articles,
     research_topics,
-    agreements,
 )
 
 
@@ -56,25 +54,13 @@ async def health_check():
 # login route
 @app.post("/login")
 def login_route(form: OAuth2PasswordRequestForm = Depends()):
-    payload = login(form)
-    response = JSONResponse(payload)
-    access_token = payload.get("access_token")
-    if access_token:
-        response.set_cookie(
-            "token",
-            access_token,
-            httponly=True,
-            samesite="lax",
-            max_age=60 * 60,
-            path="/",
-        )
-    return response
+    return login(form)
 
 
 app.include_router(frontend.router)
+# app.include_router(frontend.public_router)
 app.include_router(api.router)
 app.include_router(researchers.router)
 app.include_router(projects.router)
 app.include_router(articles.router)
 app.include_router(research_topics.router)
-app.include_router(agreements.router)
