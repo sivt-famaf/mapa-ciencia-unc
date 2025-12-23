@@ -150,7 +150,7 @@
 
         const { search, pathname } = window.location;
         const params = new URLSearchParams(search);
-        const currentTag = params.get("tag");
+        const currentGraphKey = params.get("graph_key");
 
         const setStatus = (message, isError = false) => {
           statusEl.textContent = message;
@@ -158,12 +158,12 @@
         };
 
         const applySelectionState = () => {
-          if (currentTag) {
+          if (currentGraphKey) {
             const existingOption = [...selectEl.options].find(
-              (option) => option.value === currentTag
+              (option) => option.value === currentGraphKey
             );
             if (existingOption) {
-              selectEl.value = currentTag;
+              selectEl.value = currentGraphKey;
               return;
             }
           }
@@ -188,15 +188,15 @@
           applySelectionState();
         };
 
-        const redirectToGraph = (tag) => {
+        const redirectToGraph = (graphKey) => {
           const baseUrl = pathname;
-          if (!tag) {
+          if (!graphKey) {
             window.location.href = baseUrl;
             return;
           }
 
           const nextParams = new URLSearchParams();
-          nextParams.set("tag", tag);
+          nextParams.set("graph_key", graphKey);
           window.location.href = `${baseUrl}?${nextParams.toString()}`;
         };
 

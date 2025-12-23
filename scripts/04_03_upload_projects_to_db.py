@@ -38,8 +38,8 @@ def get_token(username, password, url):
     return response.json()["access_token"]
 
 
-def upload_data(data, batch_size, api_url, headers):
-    endpoint = api_url + BULK_ENDPOINT
+def upload_data(data, batch_size, api_url, headers, overwrite=False):
+    endpoint = api_url + BULK_ENDPOINT + f"?overwrite={str(overwrite).lower()}"
     created = 0
     skipped = 0
     for index in range(0, len(data), batch_size):
@@ -110,13 +110,15 @@ if __name__ == "__main__":
     payload = []
     for file_name, text in project_texts.items():
         cuit, codigo_tramite = parse_file_name(file_name)
+
         payload.append(
             {
                 "cuit": cuit,
                 "codigo_tramite": codigo_tramite,
                 "extracted_intro": text,
+                "file_name": file_name,
             }
         )
-    upload_data(payload, batch_size, args.api_url, headers)
+    upload_data(payload, batch_size, args.api_url, headers, overwrite=args.overwrite)
     end_time = time.time()
     print(f"Total time taken: {end_time - start_time:.2f} seconds")

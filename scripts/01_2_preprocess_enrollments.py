@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Script to preprocess portfolio data from CSV files.
+Script to preprocess enrollment data from CSV files.
 
-This script reads a portfolio CSV file, renames columns according to a mapping,
+This script reads an enrollment CSV file, renames columns according to a mapping,
 and saves the result to an output file.
 """
 
@@ -12,7 +12,7 @@ import pandas as pd
 from pathlib import Path
 import sys
 
-from mapa_ciencia_unc.data_handlers import save_output_by_extension
+from mapa_ciencia_unc.data_handlers import read_data_file, save_output_by_extension
 
 
 def load_column_mapping(column_names_file: Path) -> dict:
@@ -40,49 +40,18 @@ def load_column_mapping(column_names_file: Path) -> dict:
     return column_mapping
 
 
-def read_portfolio_file(portfolio_path: Path) -> pd.DataFrame:
+def preprocess_enrollment(df: pd.DataFrame, column_mapping: dict) -> pd.DataFrame:
     """
-    Read portfolio CSV file.
+    Preprocess enrollment data by renaming columns.
 
     Args:
-        portfolio_path: Path to portfolio CSV file
-
-    Returns:
-        DataFrame with portfolio data
-    """
-    if not portfolio_path.exists():
-        raise FileNotFoundError(f"Portfolio file does not exist: {portfolio_path}")
-
-    print(f"Reading portfolio file: {portfolio_path}")
-
-    # Read portfolio file
-    if portfolio_path.suffix == ".csv":
-        df = pd.read_csv(portfolio_path)
-    elif portfolio_path.suffix == ".parquet":
-        df = pd.read_parquet(portfolio_path)
-    elif portfolio_path.suffix == ".json":
-        df = pd.read_json(portfolio_path, lines=True)
-    else:
-        raise ValueError(f"Unsupported file format: {portfolio_path.suffix}")
-
-    print(f"  - Loaded {len(df)} portfolio records")
-    print(f"  - Columns found: {len(df.columns)}")
-
-    return df
-
-
-def preprocess_portfolio(df: pd.DataFrame, column_mapping: dict) -> pd.DataFrame:
-    """
-    Preprocess portfolio data by renaming columns.
-
-    Args:
-        df: DataFrame with raw portfolio data
+        df: DataFrame with raw enrollment data
         column_mapping: Dictionary mapping original to new column names
 
     Returns:
         DataFrame with renamed columns
     """
-    print("\nPreprocessing portfolio data...")
+    print("\nPreprocessing enrollment data...")
 
     # Rename columns
     df = df.rename(columns=column_mapping)
@@ -111,29 +80,29 @@ def preprocess_portfolio(df: pd.DataFrame, column_mapping: dict) -> pd.DataFrame
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Preprocess portfolio data from CSV file",
+        description="Preprocess enrollment data from CSV file",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --portfolios-file data/raw/portfolios.csv --output-file data/processed/portfolios.parquet
+  %(prog)s --enrollments-file data/raw/enrollments.csv --output-file data/processed/enrollments.parquet
 
   # With custom column mapping file:
-  %(prog)s --portfolios-file data/raw/portfolios.csv --column-names-file config/portfolio_columns.json --output-file data/processed/portfolios.parquet
+  %(prog)s --enrollments-file data/raw/enrollments.csv --column-names-file config/enrollment_columns.json --output-file data/processed/enrollments.parquet
         """,
     )
 
     parser.add_argument(
-        "--portfolios-file",
+        "--enrollments-file",
         type=Path,
         required=True,
-        help="Path to portfolio CSV file (also supports .parquet, .json)",
+        help="Path to enrollment CSV file (also supports .parquet, .json)",
     )
 
     parser.add_argument(
         "--column-names-file",
         type=Path,
-        default=Path("scripts/portfolio_column_names.json"),
-        help="Path to JSON file with column name mappings (default: scripts/portfolio_column_names.json)",
+        default=Path("scripts/enrollments_column_names.json"),
+        help="Path to JSON file with column name mappings (default: scripts/enrollments_column_names.json)",
     )
 
     parser.add_argument(
@@ -152,17 +121,20 @@ Examples:
         print("=" * 60)
         column_mapping = load_column_mapping(args.column_names_file)
 
-        # Read portfolio file
+        # Read enrollment file
         print("\n" + "=" * 60)
-        print("READING PORTFOLIO DATA")
+        print("READING ENROLLMENT DATA")
         print("=" * 60)
-        df_portfolio = read_portfolio_file(args.portfolios_file)
+        print(f"Reading enrollment file: {args.enrollments_file}")
+        df_enrollment = read_data_file(args.enrollments_file)
+        print(f"  - Loaded {len(df_enrollment)} enrollment records")
+        print(f"  - Columns found: {len(df_enrollment.columns)}")
 
         # Preprocess data
         print("\n" + "=" * 60)
         print("PREPROCESSING DATA")
         print("=" * 60)
-        df_processed = preprocess_portfolio(df_portfolio, column_mapping)
+        df_processed = preprocess_enrollment(df_enrollment, column_mapping)
 
         # Save output
         print("\n" + "=" * 60)
