@@ -87,7 +87,9 @@ if (!container) {
 const renderer = new SigmaRenderer(graph, container);
 
 const urlParams = new URLSearchParams(window.location.search);
-const currentGraphTag = urlParams.get("tag");
+// Backwards compatibility: accept legacy ?tag= param
+const currentGraphKey =
+  urlParams.get("graph_key") ?? urlParams.get("tag");
 
 const state = {
   hoveredNode: null,
@@ -111,8 +113,8 @@ renderer.on("leaveNode", () => {
 
 renderer.on("clickNode", ({ node }) => {
   const baseUrl = `/researcher/${encodeURIComponent(node)}`;
-  const url = currentGraphTag
-    ? `${baseUrl}?tag=${encodeURIComponent(currentGraphTag)}`
+  const url = currentGraphKey
+    ? `${baseUrl}?graph_key=${encodeURIComponent(currentGraphKey)}`
     : baseUrl;
   window.open(url, "_blank", "noopener");
 

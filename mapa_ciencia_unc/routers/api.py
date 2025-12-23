@@ -5,6 +5,7 @@ from mapa_ciencia_unc.controllers.graph import (
     get_researcher_graph,
     compute_graph,
     get_available_graphs,
+    generate_graph_key,
 )
 
 
@@ -25,17 +26,18 @@ async def get_available_graph_tags():
 
 
 @router.get("/compute_graph")
-async def compute_graph_data(embeddings_tag: str, overwrite: bool = False):
-    if not overwrite:
-        exists = embeddings_tag in get_available_graphs()
-        if exists:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Graph already exists. Use overwrite=true to overwrite it.",
-            )
+async def compute_graph_data(tag: str, model: str, overwrite: bool = False):
+    graph_key = generate_graph_key(tag, model)
+    exists = graph_key in get_available_graphs()
+
+    if exists and not overwrite:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Graph already exists. Use overwrite=true to overwrite it.",
+        )
 
     try:
-        graph = await compute_graph(embeddings_tag)
+        graph = await compute_graph(tag, model)
         return {
             "graph": graph.title,
             "nodes": len(graph.nodes),

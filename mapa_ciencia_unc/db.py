@@ -1,5 +1,6 @@
 from beanie import init_beanie
-from motor.motor_asyncio import AsyncIOMotorClient
+
+from pymongo import AsyncMongoClient
 import os
 from mapa_ciencia_unc.models.researcher import Researcher
 from mapa_ciencia_unc.models.article import Article
@@ -13,7 +14,7 @@ async def init_db():
     host = os.getenv("MONGO_HOST", "mongo")
     port = os.getenv("MONGO_PORT", 27018)
     mongo_uri = f"mongodb://{user}:{password}@{host}:{port}"
-    client = AsyncIOMotorClient(mongo_uri)
+    client = AsyncMongoClient(mongo_uri)
     db = client[os.getenv("MONGO_DB")]
 
     await init_beanie(
