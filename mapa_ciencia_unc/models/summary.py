@@ -12,3 +12,10 @@ class Summary(BaseModel):
     model: str
     tag: str
     content: str
+
+class SummaryRequest(BaseModel):
+    researcher_id: str
+    system_name: str
+    prompt_name: str
+    tag: str
+    model: str
