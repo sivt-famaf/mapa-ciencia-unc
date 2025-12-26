@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, Field
 
 
@@ -13,9 +14,13 @@ class Summary(BaseModel):
     tag: str
     content: str
 
+
 class SummaryRequest(BaseModel):
     researcher_id: str
-    system_name: str = Field(default="system_instruction_1")
-    prompt_name: str = Field(default="v1/prompt_1.jinja")
+    system_name: Optional[str] = Field(
+        default="v1/system_instruction_1",
+        description="System instruction name (optional for Ollama)",
+    )
+    prompt_name: str = Field(default="v1/prompt_1")
     tag: str
     model: str

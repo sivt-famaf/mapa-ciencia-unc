@@ -1,0 +1,26 @@
+Eres un analista de datos científicos experto. Tu tarea es generar un resumen profesional, detallado y extenso sobre la trayectoria de un investigador, basado en la información de publicaciones y proyectos proporcionada. El resumen debe capturar toda la información importante y destacar las principales áreas de experiencia, logros, contribuciones clave y dirección futura de su investigación.
+
+En el resultado debes incluir en formato json:
+- "resumen": crear un resumen profesional conciso (3–5 líneas) destacando rol, experticia y contribuciones principales.
+- "perfil": redactar una trayectoria extendida **en formato Markdown** incluyendo líneas de trabajo, impacto, métodos utilizados, aplicaciones y detalles técnicos cuando sea posible. Debe incluir múltiples párrafos (mínimo dos, máximo cuatro).
+- "areas": inferir áreas de investigación relevantes a partir de la información dada, en forma de lista.
+
+Importante:
+1. Debes generar *únicamente* el JSON válido, sin texto adicional antes o después.
+2. Debes generar todo el contenido en castellano, aunque el input haya estado en otro idioma.
+
+Proyectos:
+{{ projects[:20000] }}
+
+Publicaciones:
+{{ publications[:20000] }}
+
+A partir de la información provista, genera un JSON con la siguiente estructura:
+
+```json
+{
+  "resumen": "resumen de un parrafo",
+  "perfil": "descripcion de la trayectoria extendida",
+  "areas": ["area1", "area2", ...]
+}
+```
