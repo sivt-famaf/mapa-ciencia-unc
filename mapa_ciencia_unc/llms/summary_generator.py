@@ -1,131 +1,180 @@
 import json
 import logging
+import requests
+
 from pathlib import Path
 from google import genai
 from google.genai import types
-from typing import List
 
-from mapa_ciencia_unc.llms.prompt_builder import render_prompt
-from mapa_ciencia_unc.models.article import Article
-from mapa_ciencia_unc.models.project import Project
-from mapa_ciencia_unc.config import GEMINI_API_KEY
+from mapa_ciencia_unc.llms.utils import render_prompt, clean_and_parse_json
+from mapa_ciencia_unc.config import GEMINI_API_KEY, OLLAMA_HOST, OLLAMA_API_KEY
 
 
 logger = logging.getLogger(__name__)
 
 
-def generate_researcher_summary(
-    full_researcher_info: str,
-    system_instruction_path: Path,
-    prompt_path: Path,
-    model_name: str = "gemini-2.5-flash",
-) -> dict:
-    """
-    Generate structured researcher summary using Gemini models + Jinja templates.
+class SummaryGenerator:
+    """"""
 
-    Args:
-        full_researcher_info : Full concatenated information about the researcher.
-        system_instruction_path : Path object pointing to the .jinja system instruction file.
-        prompt_path : Path object pointing to the .jinja prompt template.
+    @classmethod
+    def generate_researcher_summary(
+        cls,
+        context: str,
+        system_instruction_path: Path,
+        prompt_path: Path,
+        model_name: str = "gemini-2.5-flash",
+    ):
+        """
+        Generate structured researcher summary using LLM models + Jinja templates.
 
-    Returns:
-        Dictionary containing the generated summary and keywords.
-    """
+        Args:
+            context : Full concatenated information about the researcher.
+            system_instruction_path : Path object pointing to the .jinja system instruction file.
+            prompt_path : Path object pointing to the .jinja prompt template.
+            model_name : Name of the model to use (e.g., "gemini-2.5-flash" or "ollama")
 
-    # Validate file existence
-    if not system_instruction_path.exists():
-        raise FileNotFoundError(
-            f"System instruction missing: {system_instruction_path}"
-        )
-
-    if not prompt_path.exists():
-        raise FileNotFoundError(f"User prompt template missing: {prompt_path}")
-
-    # Render templates
-    system_instruction, prompt = render_prompt(
-        system_instruction_path, prompt_path, full_researcher_info
-    )
-
-    # Schema
-    response_schema = types.Schema(
-        type=types.Type.OBJECT,
-        properties={
-            "brief": types.Schema(type=types.Type.STRING),
-            "profile": types.Schema(type=types.Type.STRING),
-            "areas": types.Schema(
-                type=types.Type.ARRAY, items=types.Schema(type=types.Type.STRING)
-            ),
-        },
-        required=["brief", "profile", "areas"],
-    )
-    client = genai.Client(api_key=GEMINI_API_KEY)
-
-    config = types.GenerateContentConfig(
-        system_instruction=system_instruction,
-        response_schema=response_schema,
-        response_mime_type="application/json",
-        temperature=0.7,
-    )
-
-    try:
-        response = client.models.generate_content(
-            model=model_name, contents=prompt, config=config
-        )
-        return json.loads(response.text)
-
-    except Exception as e:
-        logger.error("Error creating summary:", e)
-        return {
-            "brief": "Error generating brief.",
-            "profile": "Error generating profile.",
-            "areas": ["Error"],
-        }
-
-
-def build_researcher_llm_inputs(
-    articles: List[Article],
-    projects: List[Project],
-) -> dict[str, str]:
-    """
-    Build separated textual inputs for projects and publications
-    to be injected into a Jinja template.
-
-    Args:
-        articles: List of articles (publications) associated with a researcher.
-            Only the title and abstract are used.
-        projects: List of projects associated with a researcher.
-            Only the project title and summary are used.
-
-    Returns:
-        Dictionary with two keys:
-            - "projects": concatenated text of project titles and summaries.
-            - "publications": concatenated text of article titles and abstracts.
-    """
-
-    publications_parts: list[str] = []
-    projects_parts: list[str] = []
-
-    for article in sorted(articles, key=lambda x: x.year, reverse=True):
-        publications_parts.append("Título: " + article.titulo + f" ({article.year}) ")
-
-        if article.resumen:
-            publications_parts.append("Abstract: " + article.resumen)
-
-    def project_year(project):
-        if project.fecha_alta and hasattr(project.fecha_alta, "year"):
-            return project.fecha_alta.year
+        Returns:
+            Dictionary containing the generated summary and keywords.
+        """
+        if "gemini" in model_name:
+            return SummaryGeneratorGemini.generate_researcher_summary(
+                context, system_instruction_path, prompt_path, model_name
+            )
+        elif ("ollama" in model_name) or ("gemma" in model_name):
+            return SummaryGeneratorOllama.generate_researcher_summary(
+                context, prompt_path, model_name
+            )
         else:
-            return None
+            raise ValueError(f"Model {model_name} not supported.")
 
-    for project in sorted(projects, key=project_year, reverse=True):
-        projects_parts.append(
-            "Título: " + project.titulo_proyecto + f" ({project_year(project)})"
+
+class SummaryGeneratorGemini:
+
+    @classmethod
+    def generate_researcher_summary(
+        cls,
+        context: str,
+        system_instruction_path: Path,
+        prompt_path: Path,
+        model_name: str = "gemini-2.5-flash",
+    ) -> dict:
+        # Render templates - Make sure prompt corresponds to schema
+        system_instruction, prompt = render_prompt(
+            system_instruction_path, prompt_path, context
         )
 
-        if project.resumen_proyecto:
-            projects_parts.append(project.resumen_proyecto)
+        # Schema
+        response_schema = types.Schema(
+            type=types.Type.OBJECT,
+            properties={
+                "brief": types.Schema(type=types.Type.STRING),
+                "profile": types.Schema(type=types.Type.STRING),
+                "areas": types.Schema(
+                    type=types.Type.ARRAY, items=types.Schema(type=types.Type.STRING)
+                ),
+            },
+            required=["brief", "profile", "areas"],
+        )
+        client = genai.Client(api_key=GEMINI_API_KEY)
 
-    return {
-        "projects": "\n\n".join(projects_parts),
-        "publications": "\n\n".join(publications_parts),
-    }
+        config = types.GenerateContentConfig(
+            system_instruction=system_instruction,
+            response_schema=response_schema,
+            response_mime_type="application/json",
+            temperature=0.7,
+        )
+
+        try:
+            response = client.models.generate_content(
+                model=model_name, contents=prompt, config=config
+            )
+            return json.loads(response.text)
+
+        except Exception as e:
+            logger.error("Error creating summary:", e)
+            return {
+                "brief": "Error generating brief.",
+                "profile": "Error generating profile.",
+                "areas": ["Error"],
+            }
+
+
+class SummaryGeneratorOllama:
+
+    @classmethod
+    def generate_completion(cls, prompt, model):
+        url = f'{OLLAMA_HOST}/api/chat/completions'
+        headers = {
+            'Authorization': f'Bearer {OLLAMA_API_KEY}',
+            'Content-Type': 'application/json'
+        }
+        data = {
+            "model": model,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        }
+        logger.info("Sending request to Ollama API...")
+        response = requests.post(url, headers=headers, json=data, timeout=300)
+        return response.json()
+
+    @classmethod
+    def extract_response(cls, response):
+        try:
+            return response['choices'][0]['message']['content']
+        except Exception as e:
+            logger.error("Error in Ollama model output")
+            raise e
+
+    @classmethod
+    def generate_researcher_summary(
+        cls,
+        context: str,
+        prompt_path: Path,
+        model_name: str = "gemma3:4b",
+    ) -> dict:
+        """
+        Generate structured researcher summary using Ollama models via remote HTTP API.
+
+        Args:
+            context: Full concatenated information about the researcher.
+            prompt_path: Path object pointing to the .jinja prompt template
+                (combined prompt for Ollama).
+            model_name: Name identifier.
+
+        Returns:
+            Dictionary containing the generated summary and keywords.
+        """
+        # For Ollama, we use a combined prompt template that includes both system instruction
+        # and user prompt. We only render the prompt_path and ignore system_instruction_path.
+        _, full_prompt = render_prompt(
+            system_path=None, prompt_path=prompt_path, context=context
+        )
+
+        # Prepare the request to Ollama API
+        try:
+            response = cls.generate_completion(prompt=full_prompt, model=model_name)
+            response_text = cls.extract_response(response)
+        except Exception as e:
+            logger.error("Error calling Ollama API:")
+            raise e
+
+        # Parse the JSON response using robust cleaning function
+        try:
+            parsed_response = clean_and_parse_json(response_text)
+        except ValueError as e:
+            logger.error("Error parsing Ollama response as JSON")
+            raise e
+
+        # Rename fields
+        if parsed_response:
+            parsed_response = {
+                "brief": parsed_response.get("resumen", "Resumen no disponible."),
+                "profile": parsed_response.get("perfil", "Perfil no disponible."),
+                "areas": parsed_response.get("areas", []),
+            }
+
+        return parsed_response

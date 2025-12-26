@@ -1,9 +1,9 @@
 import json
 from fastapi import APIRouter, Depends, HTTPException, status
 from beanie import PydanticObjectId
-from pathlib import Path
 
 from mapa_ciencia_unc.auth import require_auth
+from mapa_ciencia_unc.llms.utils import build_researcher_llm_inputs
 from mapa_ciencia_unc.models.summary import MultipleSummariesCreate, Summary
 from mapa_ciencia_unc.models.researcher import Researcher
 from mapa_ciencia_unc.models.article import Article
@@ -11,8 +11,7 @@ from mapa_ciencia_unc.models.project import Project
 
 from mapa_ciencia_unc.models.summary import SummaryRequest
 from mapa_ciencia_unc.llms.summary_generator import (
-    generate_researcher_summary,
-    build_researcher_llm_inputs,
+    SummaryGenerator,
 )
 from mapa_ciencia_unc.config import SYSTEMS_DIR, USER_PROMPTS_DIR
 
@@ -26,13 +25,26 @@ router = APIRouter(
 async def generate_summaries(req: SummaryRequest):
     """
     Generate a summary for a single researcher using data stored in MongoDB.
-    """
 
+    For Ollama models, system_name can be None or omitted since the combined prompt
+    template includes both system instruction and user prompt.
+    """
+    # Optional system_name
+    if req.system_name:
+        system_path = SYSTEMS_DIR / f"{req.system_name}.jinja"
+        if req.system_name and not system_path.exists():
+            raise FileNotFoundError(f"System instruction missing: {system_path}")
+
+    # Mandatory prompt
+    prompt_path = USER_PROMPTS_DIR / f"{req.prompt_name}.jinja"
+    if not prompt_path.exists():
+        raise FileNotFoundError(f"User prompt template missing: {prompt_path}")
+
+    # Search objects in db
     researcher = await Researcher.get(
         PydanticObjectId(req.researcher_id),
         fetch_links=False,
     )
-
     if not researcher:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -46,13 +58,8 @@ async def generate_summaries(req: SummaryRequest):
         projects=projects,
     )
 
-    system_path = SYSTEMS_DIR / f"{req.system_name}.jinja"
-    prompt_path = USER_PROMPTS_DIR / f"{req.prompt_name}.jinja"
-
-    content = generate_researcher_summary(
-        full_researcher_info=context,
-        system_instruction_path=system_path,
-        prompt_path=prompt_path,
+    content = SummaryGenerator.generate_researcher_summary(
+        context, system_path, prompt_path, model_name=req.model
     )
     if not isinstance(content, str):
         content = json.dumps(content)
