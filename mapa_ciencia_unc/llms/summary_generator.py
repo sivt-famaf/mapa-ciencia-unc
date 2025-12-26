@@ -1,18 +1,21 @@
 import json
+import logging
 from pathlib import Path
 from google import genai
-from jinja2 import Environment, FileSystemLoader
-from .prompt_builder import render_prompt
 from google.genai import types
 from typing import List
 
+from mapa_ciencia_unc.llms.prompt_builder import render_prompt
 from mapa_ciencia_unc.models.article import Article
 from mapa_ciencia_unc.models.project import Project
 from mapa_ciencia_unc.config import GEMINI_API_KEY
 
 
+logger = logging.getLogger(__name__)
+
+
 def generate_researcher_summary(
-    info_completa_investigador: str,
+    full_researcher_info: str,
     system_instruction_path: Path,
     prompt_path: Path,
     model_name: str = "gemini-2.5-flash",
@@ -21,7 +24,7 @@ def generate_researcher_summary(
     Generate structured researcher summary using Gemini models + Jinja templates.
 
     Args:
-        info_completa_investigador : Full concatenated information about the researcher.
+        full_researcher_info : Full concatenated information about the researcher.
         system_instruction_path : Path object pointing to the .jinja system instruction file.
         prompt_path : Path object pointing to the .jinja prompt template.
 
@@ -40,7 +43,7 @@ def generate_researcher_summary(
 
     # Render templates
     system_instruction, prompt = render_prompt(
-        system_instruction_path, prompt_path, info_completa_investigador
+        system_instruction_path, prompt_path, full_researcher_info
     )
 
     # Schema
@@ -55,7 +58,6 @@ def generate_researcher_summary(
         },
         required=["brief", "profile", "areas"],
     )
-
     client = genai.Client(api_key=GEMINI_API_KEY)
 
     config = types.GenerateContentConfig(
@@ -72,7 +74,7 @@ def generate_researcher_summary(
         return json.loads(response.text)
 
     except Exception as e:
-        print("Error:", e)
+        logger.error("Error creating summary:", e)
         return {
             "brief": "Error generating brief.",
             "profile": "Error generating profile.",
@@ -103,14 +105,22 @@ def build_researcher_llm_inputs(
     publications_parts: list[str] = []
     projects_parts: list[str] = []
 
-    for article in articles:
-        publications_parts.append(article.titulo)
+    for article in sorted(articles, key=lambda x: x.year, reverse=True):
+        publications_parts.append("Título: " + article.titulo + f" ({article.year}) ")
 
         if article.resumen:
-            publications_parts.append(article.resumen)
+            publications_parts.append("Abstract: " + article.resumen)
 
-    for project in projects:
-        projects_parts.append(project.titulo_proyecto)
+    def project_year(project):
+        if project.fecha_alta and hasattr(project.fecha_alta, "year"):
+            return project.fecha_alta.year
+        else:
+            return None
+
+    for project in sorted(projects, key=project_year, reverse=True):
+        projects_parts.append(
+            "Título: " + project.titulo_proyecto + f" ({project_year(project)})"
+        )
 
         if project.resumen_proyecto:
             projects_parts.append(project.resumen_proyecto)

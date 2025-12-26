@@ -2,7 +2,7 @@ from typing import List
 
 from beanie import PydanticObjectId
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from mapa_ciencia_unc.auth import require_auth
 from mapa_ciencia_unc.models.researcher import (
@@ -14,7 +14,6 @@ from mapa_ciencia_unc.models.embedding import (
     EmbeddingCreate,
     MultipleEmbeddingsCreate,
 )
-from mapa_ciencia_unc.models.summary import Summary, MultipleSummariesCreate
 
 
 router = APIRouter(
@@ -68,8 +67,30 @@ async def create_researchers_bulk(payload: List[ResearcherCreate]):
 
 
 @router.get("", response_model=List[Researcher])
-async def list_researchers():
-    researchers = await Researcher.find_all(fetch_links=False).to_list()
+async def list_researchers(
+    skip: int = Query(0, ge=0, description="Number of researchers to skip"),
+    limit: int = Query(
+        10, ge=1, le=1000, description="Maximum number of researchers to return"
+    ),
+):
+    """
+    List researchers with pagination.
+
+    Parameters:
+    - skip: Number of researchers to skip (default: 0)
+    - limit: Maximum number of researchers to return (default: 10, max: 1000)
+
+    To retrieve all researchers:
+    - Set limit to 1000 and make multiple requests with increasing skip values
+    - Example: skip=0&limit=1000, then skip=1000&limit=1000, etc.
+    - Continue until the response returns fewer items than the limit
+
+    Returns:
+    - List of Researcher objects
+    """
+    researchers = (
+        await Researcher.find_all(fetch_links=False).skip(skip).limit(limit).to_list()
+    )
     return researchers
 
 
@@ -218,80 +239,4 @@ async def create_multiple_embeddings(payload: MultipleEmbeddingsCreate):
         "created_embeddings": created_embeddings,
         "failed_embeddings": failed_embeddings,
         "skipped_embeddings": skipped_embeddings,
-    }
-
-
-@router.post("/{researcher_id}/summaries", response_model=Researcher)
-async def create_researcher_summary(researcher_id: str, payload: Summary):
-    researcher = await Researcher.get(
-        PydanticObjectId(researcher_id), fetch_links=False
-    )
-    if not researcher:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Researcher not found.",
-        )
-
-    summary = Summary(
-        **payload.model_dump(),
-    )
-
-    researcher.summaries.append(summary)
-
-    await researcher.save()
-    return researcher
-
-
-@router.post("/summaries/bulk", response_model=dict)
-async def create_multiple_summaries(payload: MultipleSummariesCreate):
-    created_summaries = 0
-    skipped_summaries = {}
-    failed_summaries = []
-    for researcher_id, content in payload.content_mapping.items():
-        try:
-            researcher = await Researcher.get(
-                PydanticObjectId(researcher_id), fetch_links=False
-            )
-            if not researcher:
-                continue
-
-            summary = Summary(
-                model=payload.model,
-                tag=payload.tag,
-                content=content,
-            )
-
-            if not payload.overwrite:
-                # Check if a summary with the same model and tag already exists
-                existing_summary = next(
-                    (
-                        s
-                        for s in researcher.summaries
-                        if s.model == payload.model and s.tag == payload.tag
-                    ),
-                    None,
-                )
-                if existing_summary:
-                    skipped_summaries[researcher_id] = "Summary with tag already exists"
-                    continue  # Skip creating this summary
-
-            if payload.overwrite:
-                # Remove existing summaries with the same model and tag
-                researcher.summaries = [
-                    s
-                    for s in researcher.summaries
-                    if not (s.model == payload.model and s.tag == payload.tag)
-                ]
-
-            researcher.summaries.append(summary)
-
-            await researcher.save()
-            created_summaries += 1
-        except Exception:
-            failed_summaries.append(researcher_id)
-
-    return {
-        "created_summaries": created_summaries,
-        "skipped_summaries": skipped_summaries,
-        "failed_summaries": failed_summaries,
     }
