@@ -19,6 +19,7 @@ from mapa_ciencia_unc.routers import (
     articles,
     research_topics,
     agreements,
+    summaries
 )
 
 
@@ -66,3 +67,4 @@ app.include_router(projects.router)
 app.include_router(articles.router)
 app.include_router(research_topics.router)
 app.include_router(agreements.router)
+app.include_router(summaries.router)

@@ -3,23 +3,18 @@ from beanie import PydanticObjectId
 
 from mapa_ciencia_unc.auth import require_auth
 from mapa_ciencia_unc.models.researcher import Researcher
-from mapa_ciencia_unc.models.embedding import (
-    Embedding,
-    EmbeddingRequest
-)
+from mapa_ciencia_unc.models.embedding import Embedding, EmbeddingRequest
 from mapa_ciencia_unc.llms.embedding_generator import generate_gemini_embedding
 
 router = APIRouter(
-    prefix="/api/embeddings",
-    tags=["embeddings"],
-    dependencies=[Depends(require_auth)])
+    prefix="/api/embeddings", tags=["embeddings"], dependencies=[Depends(require_auth)]
+)
 
 
 @router.post(
     "/researchers/{researcher_id}/embeddings",
     status_code=status.HTTP_201_CREATED,
 )
-
 async def generate_researcher_embedding(
     researcher_id: str,
     req: EmbeddingRequest,
@@ -38,7 +33,6 @@ async def generate_researcher_embedding(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Researcher not found.",
         )
-    
 
     summary = next(
         (s for s in researcher.summaries if s.tag == req.summary_tag),
@@ -50,7 +44,6 @@ async def generate_researcher_embedding(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Summary with tag '{req.summary_tag}' not found.",
         )
-
 
     vector = generate_gemini_embedding(
         profile_summary=summary.content,

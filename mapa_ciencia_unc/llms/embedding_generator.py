@@ -1,8 +1,11 @@
+import logging
 from typing import List
 from google import genai
 from google.genai import types
 
 from mapa_ciencia_unc.config import GEMINI_API_KEY
+
+logger = logging.getLogger(__name__)
 
 def generate_gemini_embedding(
     profile_summary: str,
@@ -20,14 +23,15 @@ def generate_gemini_embedding(
     Returns:
         List with a single embedding vector with reduced dimensionality.
     """
+    if not GEMINI_API_KEY:
+        raise ValueError("Variable GEMINI_API_KEY not set. Provide a value in .env file")
+
+    client = genai.Client(api_key = GEMINI_API_KEY)
+    config = types.EmbedContentConfig(
+        output_dimensionality=output_dim
+    )
 
     try:
-        client = genai.Client(api_key = GEMINI_API_KEY)
-
-        config = types.EmbedContentConfig(
-            output_dimensionality=output_dim
-        )
-
         response = client.models.embed_content(
             model="gemini-embedding-001",
             contents=profile_summary,
@@ -37,5 +41,5 @@ def generate_gemini_embedding(
         return response.embeddings[0].values
 
     except Exception as e:
-        print(f"Error generating the embedding: {e}")
+        logger.error(f"Error generating the embedding: {e}")
         return []

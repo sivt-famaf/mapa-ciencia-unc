@@ -2,13 +2,11 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 
-BASE_DIR = Path(__file__).resolve().parent   # mapa_ciencia_unc
+BASE_DIR = Path(".")  # mapa_ciencia_unc
 
-ENV_FILE = BASE_DIR / ".env"
+load_dotenv(".env")
 
-load_dotenv(ENV_FILE)
-
-PROFILE_SUMMARY_DIR = BASE_DIR / "prompts" / "profile_summary"
+PROFILE_SUMMARY_DIR = BASE_DIR / "mapa_ciencia_unc" / "prompts" / "profile_summary"
 SYSTEMS_DIR = PROFILE_SUMMARY_DIR / "system"
 USER_PROMPTS_DIR = PROFILE_SUMMARY_DIR / "user"
 

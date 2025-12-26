@@ -23,6 +23,7 @@ dependencies = [
     "dotenv>=0.9.9",
     "pandas>=2.3.3",
     "jose>=1.0.0",
+    "google-genai>=1.56.0",
 ]
 
 [project.optional-dependencies]

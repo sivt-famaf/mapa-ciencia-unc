@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class MultipleSummariesCreate(BaseModel):
@@ -15,7 +15,7 @@ class Summary(BaseModel):
 
 class SummaryRequest(BaseModel):
     researcher_id: str
-    system_name: str
-    prompt_name: str
+    system_name: str = Field(default="system_instruction_1")
+    prompt_name: str = Field(default="v1/prompt_1.jinja")
     tag: str
     model: str
