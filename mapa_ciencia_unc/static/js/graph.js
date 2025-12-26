@@ -86,6 +86,33 @@ if (!container) {
 
 const renderer = new SigmaRenderer(graph, container);
 
+const getStoredToken = () => {
+  const localToken = localStorage.getItem("jwtToken");
+  if (localToken) return localToken;
+  const cookieMatch = document.cookie.match(/(?:^|; )token=([^;]+)/);
+  return cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+};
+
+const syncCookieFromStorage = () => {
+  const token = localStorage.getItem("jwtToken");
+  if (!token) return;
+  const maxAgeSeconds = 60 * 60;
+  document.cookie = `token=${token}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax`;
+};
+
+const ensureToken = () => {
+  const token = getStoredToken();
+  if (!token) {
+    window.location.href = "/login";
+    throw new Error("Authentication required");
+  }
+  return token;
+};
+
+// Ensure token exists when landing on graph page
+syncCookieFromStorage();
+ensureToken();
+
 const urlParams = new URLSearchParams(window.location.search);
 const currentGraphKey = urlParams.get("graph_key");
 

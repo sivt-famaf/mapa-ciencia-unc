@@ -61,7 +61,6 @@ def login_route(form: OAuth2PasswordRequestForm = Depends()):
 
 app.include_router(frontend.router)
 app.include_router(api.router)
-app.include_router(api.public_router)
 app.include_router(researchers.router)
 app.include_router(projects.router)
 app.include_router(articles.router)

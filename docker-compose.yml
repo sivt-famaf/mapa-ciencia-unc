@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
     env_file:
       - .env
+    volumes:
+      - ./project_files:/app/project_files
     ports:
       - "8123:8000"
     depends_on:

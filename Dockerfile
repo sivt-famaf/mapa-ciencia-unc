@@ -15,7 +15,7 @@ COPY mapa_ciencia_unc /app/mapa_ciencia_unc
 
 RUN pip install --upgrade pip && pip install .
 
-COPY . /app
+COPY ./mapa_ciencia_unc /app
 
 EXPOSE 8000
 
