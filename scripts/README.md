@@ -543,11 +543,12 @@ Script to upload the sample .json files to the database.
 Files to upload:
 - articles.json
 - projects.json
+- agreements.json
 - enrollments.json
 
 Steps, for each file:
 1. Read the JSON file.
-2. Parse the JSON data into the corresponding data formats (i.e. language str -> list[str])
+2. Parse the JSON data into the corresponding data formats (i.e. language str -> list[str], dates to ISO format)
 3. Use the api endpoints to upload the data to the database in batches to avoid overloading the server.
 
 Inputs:
@@ -558,64 +559,92 @@ Inputs:
 
 Format guidelines for the json files:
 Each json file is expected to have one JSON object per line, in the following formats:
-Article Format example:
-    {
-        "autores": "string1; string2; string3",
-        "titulo": "string",
-        "resumen": "string",
-        "cuit": "12341234123",
-        "lugar_de_trabajo": "string"
-    }
 
-Project Format example:
-    {
-        "convocatoria_id": 123123123,
-        "codigo_tramite": "12312312312312CB",
-        "titulo_proyecto": "string",
-        "resumen_proyecto": "string",
-        "palabrasclaves": "string1; string2; string3",
-        "rol_grupo": "string",
-        "nombre": "string",
-        "apellido": "string",
-        "comision": "string",
-        "tema_periodo": "string",
-        "tema_periodo_ingles": "string",
-        "especialidad": null,
-        "cuit": 12341234123,
-        "fecha_alta": "2012-02-23 18:42:44",
-        "estado_tramie": "string",
-        "convocatoria": "string",
-        "objeto_evaluacion": "string",
-        "grupo_oe": "string",
-        "postulante": "string",
-        "rol": "string"
-    }
+**Article Format example:**
+```json
+{
+    "autores": "string1; string2; string3",
+    "titulo": "string",
+    "resumen": "string",
+    "cuit": "12341234123",
+    "lugar_de_trabajo": "string"
+}
+```
 
-Enrollment Format example:
-    {
-        "email": "example@domain.com",
-        "name": "string",
-        "last_name": "string",
-        "cuit": 12341234123,
-        "orcid_number": "0000-0001-0002-0003",
-        "gender": "string",
-        "academic_unit": "string1,string2,string3",
-        "highest_position": "string",
-        "languages": "string1,string2,string3",
-        "research_center": "string",
-        "research_area": "string",
-        "last_project_title": "string",
-        "ods": "string1,string2,string3",
-        "maturity_level": "string",
-        "international_research_links": "string"
-    }
+**Project Format example:**
+```json
+{
+    "convocatoria_id": 123123123,
+    "codigo_tramite": "12312312312312CB",
+    "titulo_proyecto": "string",
+    "resumen_proyecto": "string",
+    "palabrasclaves": "string1; string2; string3",
+    "rol_grupo": "string",
+    "nombre": "string",
+    "apellido": "string",
+    "comision": "string",
+    "tema_periodo": "string",
+    "tema_periodo_ingles": "string",
+    "especialidad": null,
+    "cuit": 12341234123,
+    "fecha_alta": "2012-02-23 18:42:44",
+    "estado_tramie": "string",
+    "convocatoria": "string",
+    "objeto_evaluacion": "string",
+    "grupo_oe": "string",
+    "postulante": "string",
+    "rol": "string"
+}
+```
+
+**Agreement Format example:**
+```json
+{
+    "nombre": "ALEJANDRO MANUEL",
+    "apellido": "GRANADOS",
+    "cuit": 20174675962,
+    "descripcion": "Determinación de proporción...",
+    "tipo_produccion_tecnologica": "Servicios analíticos",
+    "campo_aplicacion": "Química",
+    "destinatario": null,
+    "fecha_inicio": "2009-07-01 00:00:00.0",
+    "fecha_fin": "2009-07-10 00:00:00.0"
+}
+```
+
+**Enrollment Format example:**
+```json
+{
+    "email": "example@domain.com",
+    "name": "string",
+    "last_name": "string",
+    "cuit": 12341234123,
+    "orcid_number": "0000-0001-0002-0003",
+    "gender": "string",
+    "academic_unit": "string1,string2,string3",
+    "highest_position": "string",
+    "languages": "string1,string2,string3",
+    "research_center": "string",
+    "research_area": "string",
+    "last_project_title": "string",
+    "ods": "string1,string2,string3",
+    "maturity_level": "string",
+    "international_research_links": "string"
+}
+```
+
+**Data Transformations:**
+- **Articles**: `autores` (semicolon-separated) → list of strings
+- **Projects**: `palabrasclaves` (semicolon-separated) → list of strings; `fecha_alta` → ISO datetime format
+- **Agreements**: `cuit` → string; `fecha_inicio`/`fecha_fin` → ISO datetime format (handles milliseconds)
+- **Enrollments**: `languages`, `academic_unit`, `ods` (comma-separated) → lists; `international_research_links` → boolean
 
 Example usage:
-```
+```bash
 python scripts/03_01_upload_sample_to_db.py \
     --username admin \
     --password secret \
-    --api-url http://localhost:8123 \
+    --api-url http://localhost:8000 \
     --samples-dir path/to/samples
 ```
 

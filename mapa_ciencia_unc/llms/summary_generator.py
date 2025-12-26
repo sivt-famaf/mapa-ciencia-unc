@@ -10,11 +10,12 @@ from mapa_ciencia_unc.models.article import Article
 from mapa_ciencia_unc.models.project import Project
 from mapa_ciencia_unc.config import GEMINI_API_KEY
 
+
 def generate_researcher_summary(
     info_completa_investigador: str,
     system_instruction_path: Path,
     prompt_path: Path,
-    model_name: str = "gemini-2.5-flash"
+    model_name: str = "gemini-2.5-flash",
 ) -> dict:
     """
     Generate structured researcher summary using Gemini models + Jinja templates.
@@ -30,16 +31,16 @@ def generate_researcher_summary(
 
     # Validate file existence
     if not system_instruction_path.exists():
-        raise FileNotFoundError(f"System instruction missing: {system_instruction_path}")
+        raise FileNotFoundError(
+            f"System instruction missing: {system_instruction_path}"
+        )
 
     if not prompt_path.exists():
         raise FileNotFoundError(f"User prompt template missing: {prompt_path}")
 
     # Render templates
     system_instruction, prompt = render_prompt(
-        system_instruction_path,
-        prompt_path,
-        info_completa_investigador
+        system_instruction_path, prompt_path, info_completa_investigador
     )
 
     # Schema
@@ -49,14 +50,13 @@ def generate_researcher_summary(
             "brief": types.Schema(type=types.Type.STRING),
             "profile": types.Schema(type=types.Type.STRING),
             "areas": types.Schema(
-                type=types.Type.ARRAY,
-                items=types.Schema(type=types.Type.STRING)
+                type=types.Type.ARRAY, items=types.Schema(type=types.Type.STRING)
             ),
         },
         required=["brief", "profile", "areas"],
     )
 
-    client = genai.Client(api_key = GEMINI_API_KEY)
+    client = genai.Client(api_key=GEMINI_API_KEY)
 
     config = types.GenerateContentConfig(
         system_instruction=system_instruction,
@@ -67,9 +67,7 @@ def generate_researcher_summary(
 
     try:
         response = client.models.generate_content(
-            model=model_name,
-            contents=prompt,
-            config=config
+            model=model_name, contents=prompt, config=config
         )
         return json.loads(response.text)
 
@@ -78,9 +76,9 @@ def generate_researcher_summary(
         return {
             "brief": "Error generating brief.",
             "profile": "Error generating profile.",
-            "areas": ["Error"]
+            "areas": ["Error"],
         }
-    
+
 
 def build_researcher_llm_inputs(
     articles: List[Article],

@@ -2,9 +2,10 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from typing import Mapping, Any
 
+
 def render_prompt(
-    system_path: Path, 
-    prompt_path: Path, 
+    system_path: Path,
+    prompt_path: Path,
     context: Mapping[str, Any],
 ) -> tuple[str, str]:
     """
