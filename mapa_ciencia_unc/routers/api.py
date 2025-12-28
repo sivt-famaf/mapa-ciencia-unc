@@ -49,16 +49,24 @@ async def compute_graph_data(request: ComputeGraphRequest):
 
     2. **UMAP (Uniform Manifold Approximation and Projection)**
        - Two-step non-linear projection for better cluster preservation
-       - Step 1: PCA reduces from original dimensions to 50D (removes noise)
-       - Step 2: UMAP reduces from 50D to 2D (preserves local structure)
+       - Step 1: PCA reduces from original dimensions to 150D (removes noise)
+       - Step 2: UMAP reduces from 150D to 2D (preserves local structure)
        - Time complexity: O(n^1.14) approximately
+
+    3. **t-SNE (t-Distributed Stochastic Neighbor Embedding)**
+       - Two-step non-linear projection emphasizing local structure
+       - Step 1: PCA reduces from original dimensions to 50D (removes noise)
+       - Step 2: t-SNE reduces from 50D to 2D (preserves local neighborhoods)
+       - Parameters: perplexity=30, learning_rate=200, n_iter=1000, init='pca'
+       - Time complexity: O(n²) worst case, optimized in practice
 
     **Request Body:**
     - `tag`: Tag identifier for the embeddings (e.g., "v1_embeddings", "embeddings_v1_avg")
     - `model`: Model used to generate embeddings (e.g., "gemini-embedding-001")
     - `strategy`: Dimensionality reduction strategy (default: "pca")
       - "pca": Fast linear projection, preserves global variance
-      - "umap": Slower non-linear projection, preserves local clusters
+      - "umap": Non-linear projection, preserves local clusters (balanced)
+      - "tsne": Non-linear projection, emphasizes tight local clusters
     - `overwrite`: Whether to overwrite existing graph (default: false)
 
     **Returns:**
@@ -78,7 +86,7 @@ async def compute_graph_data(request: ComputeGraphRequest):
     }
     ```
 
-    UMAP projection (better clustering):
+    UMAP projection (balanced clustering):
     ```json
     {
         "tag": "embeddings_v1_avg",
@@ -88,10 +96,19 @@ async def compute_graph_data(request: ComputeGraphRequest):
     }
     ```
 
+    t-SNE projection (tight clusters):
+    ```json
+    {
+        "tag": "embeddings_v1_avg",
+        "model": "gemini-embedding-001",
+        "strategy": "tsne"
+    }
+    ```
+
     **Raises:**
     - `400 Bad Request`: If graph already exists and overwrite=false
     - `404 Not Found`: If no researchers have embeddings with the given tag/model
-    - `501 Not Implemented`: If an unsupported strategy is specified (not 'pca' or 'umap')
+    - `501 Not Implemented`: If an unsupported strategy is specified (not 'pca', 'umap', or 'tsne')
     - `500 Internal Server Error`: If computation fails unexpectedly
 
     **Additional Notes:**

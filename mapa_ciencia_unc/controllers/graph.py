@@ -6,6 +6,7 @@ from mapa_ciencia_unc.models.graph import ResearcherGraph, ResearcherNode
 from mapa_ciencia_unc.models.researcher import Researcher
 
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 import umap
 
 logger = logging.getLogger(__name__)
@@ -188,7 +189,7 @@ def _project_with_umap(vectors: list[list[float]]) -> list[tuple[float, float]]:
 
     This function uses a two-step dimensionality reduction approach:
     1. PCA to reduce from original dimensions to 50 dimensions
-    2. UMAP to reduce from 50 dimensions to 2 dimensions
+    2. UMAP to reduce from 150 dimensions to 2 dimensions
 
     This approach is more efficient and often produces better results than
     applying UMAP directly to very high-dimensional data.
@@ -209,7 +210,7 @@ def _project_with_umap(vectors: list[list[float]]) -> list[tuple[float, float]]:
     # Use 50 or the number of samples minus 1, whichever is smaller
     n_samples = len(vectors)
     n_features = len(vectors[0])
-    pca_components = min(50, n_samples - 1, n_features)
+    pca_components = min(150, n_samples - 1, n_features)
 
     logger.info(
         f"UMAP projection: Step 1 - PCA from {n_features}D to {pca_components}D"
@@ -235,6 +236,61 @@ def _project_with_umap(vectors: list[list[float]]) -> list[tuple[float, float]]:
     return [(float(pos[0]), float(pos[1])) for pos in emb_2d]
 
 
+def _project_with_tsne(vectors: list[list[float]]) -> list[tuple[float, float]]:
+    """
+    Project high-dimensional vectors to 2D using a two-step process: PCA then t-SNE.
+
+    This function uses a two-step dimensionality reduction approach:
+    1. PCA to reduce from original dimensions to 50 dimensions
+    2. t-SNE to reduce from 50 dimensions to 2 dimensions
+
+    This approach is more efficient than applying t-SNE directly to very
+    high-dimensional data and helps t-SNE focus on meaningful structure.
+
+    Args:
+        vectors: List of embedding vectors (each vector is a list of floats)
+
+    Returns:
+        List of 2D coordinates as (x, y) tuples
+
+    Raises:
+        ValueError: If vectors is empty or vectors have inconsistent dimensions
+    """
+    if not vectors:
+        raise ValueError("Cannot project empty vector list")
+
+    # Determine the number of components for PCA
+    # Use 50 or the number of samples minus 1, whichever is smaller
+    n_samples = len(vectors)
+    n_features = len(vectors[0])
+    pca_components = min(50, n_samples - 1, n_features)
+
+    logger.info(
+        f"t-SNE projection: Step 1 - PCA from {n_features}D to {pca_components}D"
+    )
+
+    # Step 1: Reduce to 50 dimensions with PCA (or fewer if we have fewer samples)
+    pca = PCA(n_components=pca_components)
+    vectors_pca = pca.fit_transform(vectors)
+
+    logger.info(f"t-SNE projection: Step 2 - t-SNE from {pca_components}D to 2D")
+
+    # Step 2: Reduce from 50 dimensions to 2 dimensions with t-SNE
+    tsne = TSNE(
+        n_components=2,
+        random_state=42,  # For reproducibility
+        perplexity=30,  # Balance between local and global structure
+        learning_rate=200,  # Standard learning rate
+        max_iter=1000,  # Number of iterations
+        metric="euclidean",
+        init="pca",  # Initialize with PCA for better results
+    )
+    emb_2d = tsne.fit_transform(vectors_pca)
+
+    # Convert numpy array to list of tuples for easier handling
+    return [(float(pos[0]), float(pos[1])) for pos in emb_2d]
+
+
 async def compute_graph(tag: str, model: str, strategy: str = "pca") -> ResearcherGraph:
     """
     Compute a 2D graph visualization of researchers based on their embeddings.
@@ -247,9 +303,10 @@ async def compute_graph(tag: str, model: str, strategy: str = "pca") -> Research
         tag: Tag identifier for the embeddings (e.g., "v1_embeddings")
         model: Model identifier used to generate embeddings (e.g., "gemini-embedding-001")
         strategy: Dimensionality reduction strategy to use (default: "pca")
-                  Currently supported: "pca", "umap"
+                  Currently supported: "pca", "umap", "tsne"
                   - "pca": Principal Component Analysis (direct to 2D)
                   - "umap": Two-step process (PCA to 50D, then UMAP to 2D)
+                  - "tsne": Two-step process (PCA to 50D, then t-SNE to 2D)
 
     Returns:
         ResearcherGraph object with nodes positioned in 2D space
@@ -263,7 +320,7 @@ async def compute_graph(tag: str, model: str, strategy: str = "pca") -> Research
     """
     # Validate strategy
     strategy_lower = strategy.lower()
-    supported_strategies = ["pca", "umap"]
+    supported_strategies = ["pca", "umap", "tsne"]
     if strategy_lower not in supported_strategies:
         raise NotImplementedError(
             f"Unsupported strategy: {strategy}. Supported strategies: {', '.join(supported_strategies)}"
@@ -279,6 +336,8 @@ async def compute_graph(tag: str, model: str, strategy: str = "pca") -> Research
         positions_2d = _project_with_pca(vectors)
     elif strategy_lower == "umap":
         positions_2d = _project_with_umap(vectors)
+    elif strategy_lower == "tsne":
+        positions_2d = _project_with_tsne(vectors)
     else:
         raise NotImplementedError(f"Unsupported strategy: {strategy}")
 
