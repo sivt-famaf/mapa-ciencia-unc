@@ -1,14 +1,14 @@
 import json
-from pathlib import Path
+import logging
 
-from mapa_ciencia_unc.models.graph import ResearcherGraph, ResearcherNode, Edge
-from mapa_ciencia_unc.models.embedding import Embedding
+from mapa_ciencia_unc.config import GRAPHS_DIR
+from mapa_ciencia_unc.models.graph import ResearcherGraph, ResearcherNode
 from mapa_ciencia_unc.models.researcher import Researcher
 
 from sklearn.decomposition import PCA
 
+logger = logging.getLogger(__name__)
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "graphs"
 
 ACADEMIC_UNIT_COLORS = {
     "FP": "#FFB300",
@@ -30,17 +30,51 @@ ACADEMIC_UNIT_COLORS = {
 
 
 def generate_graph_key(tag: str, model: str) -> str:
+    """
+    Generate a unique key for a graph based on tag and model.
+
+    Args:
+        tag: Tag identifier for the embeddings (e.g., "v1_embeddings")
+        model: Model identifier used to generate embeddings (e.g., "gemini-embedding-001")
+
+    Returns:
+        A string key in the format "{tag}_{model}"
+    """
     return f"{tag}_{model}"
 
 
 def get_available_graphs() -> list[str]:
+    """
+    Get list of all available pre-computed graph files.
+
+    Scans the GRAPHS_DIR directory for JSON files and returns their names
+    without the .json extension.
+
+    Returns:
+        List of graph keys (filenames without extension)
+    """
     graphs = []
-    for graph_file in DATA_DIR.glob("*.json"):
+    for graph_file in GRAPHS_DIR.glob("*.json"):
         graphs.append(graph_file.stem)
     return graphs
 
 
 def get_researcher_graph(graph_key: str | None = None) -> ResearcherGraph:
+    """
+    Load a pre-computed researcher graph from disk.
+
+    If no graph_key is provided, loads the first available graph.
+
+    Args:
+        graph_key: Unique identifier for the graph (tag_model format).
+                   If None, uses the first available graph.
+
+    Returns:
+        ResearcherGraph object loaded from JSON file
+
+    Raises:
+        ValueError: If no graphs are available or if the specified graph_key is not found
+    """
     # if no graphs are available, raise an error
     graphs = get_available_graphs()
     if not graphs:
@@ -53,7 +87,7 @@ def get_researcher_graph(graph_key: str | None = None) -> ResearcherGraph:
     if graph_key not in graphs:
         raise ValueError(f"Graph {graph_key} not found")
 
-    graph_file_path = DATA_DIR / f"{graph_key}.json"
+    graph_file_path = GRAPHS_DIR / f"{graph_key}.json"
     with open(graph_file_path, "r", encoding="utf-8") as f:
         graph_data = json.load(f)
 
@@ -63,11 +97,25 @@ def get_researcher_graph(graph_key: str | None = None) -> ResearcherGraph:
     return graph
 
 
-async def compute_graph(tag: str, model: str, strategy: str = "PCA") -> ResearcherGraph:
-    # Only PCA is supported for now
-    if strategy != "PCA":
-        raise NotImplementedError(f"Unsupported strategy: {strategy}")
+async def get_researcher_embedding(tag: str, model: str) -> tuple[list[Researcher], list[list[float]]]:
+    """
+    Retrieve researchers and their embedding vectors for a specific tag and model.
 
+    Uses MongoDB aggregation to efficiently filter researchers who have embeddings
+    matching the specified tag and model. For each researcher, returns the most
+    recently created embedding.
+
+    Args:
+        tag: Tag identifier for the embeddings (e.g., "v1_embeddings")
+        model: Model identifier used to generate embeddings (e.g., "gemini-embedding-001")
+
+    Returns:
+        Tuple containing:
+        - List of Researcher objects with matching embeddings
+        - List of embedding vectors (each vector is a list of floats)
+
+        Both lists are aligned by index (researchers[i] corresponds to vectors[i])
+    """
     pipeline = [
         # 1. First, find the researchers who have at least one matching embedding
         {"$match": {"embeddings": {"$elemMatch": {"tag": tag, "model": model}}}},
@@ -105,10 +153,76 @@ async def compute_graph(tag: str, model: str, strategy: str = "PCA") -> Research
         latest_embedding = embeddings_sorted[0]
         vectors.append(latest_embedding.vector)
 
+    return researchers, vectors
+
+
+def _project_with_pca(vectors: list[list[float]]) -> list[tuple[float, float]]:
+    """
+    Project high-dimensional vectors to 2D using Principal Component Analysis (PCA).
+
+    Args:
+        vectors: List of embedding vectors (each vector is a list of floats)
+
+    Returns:
+        List of 2D coordinates as (x, y) tuples
+
+    Raises:
+        ValueError: If vectors is empty or vectors have inconsistent dimensions
+    """
+    if not vectors:
+        raise ValueError("Cannot project empty vector list")
+
     pca = PCA(n_components=2)
     emb_2d = pca.fit_transform(vectors)
+
+    # Convert numpy array to list of tuples for easier handling
+    return [(float(pos[0]), float(pos[1])) for pos in emb_2d]
+
+
+async def compute_graph(tag: str, model: str, strategy: str = "pca") -> ResearcherGraph:
+    """
+    Compute a 2D graph visualization of researchers based on their embeddings.
+
+    This function retrieves researcher embeddings, projects them to 2D space using
+    the specified strategy, and creates a graph with nodes positioned according to
+    the projection. Each node is colored by academic unit.
+
+    Args:
+        tag: Tag identifier for the embeddings (e.g., "v1_embeddings")
+        model: Model identifier used to generate embeddings (e.g., "gemini-embedding-001")
+        strategy: Dimensionality reduction strategy to use (default: "pca")
+                  Currently supported: "pca"
+
+    Returns:
+        ResearcherGraph object with nodes positioned in 2D space
+
+    Raises:
+        NotImplementedError: If an unsupported strategy is specified
+        ValueError: If no researchers have embeddings with the given tag/model
+
+    Note:
+        The graph is automatically saved to GRAPHS_DIR as "{tag}_{model}.json"
+    """
+    # Only pca is supported for now
+    if strategy.lower() != "pca":
+        raise NotImplementedError(f"Unsupported strategy: {strategy}")
+
+    # Get researchers and their embedding vectors
+    researchers, vectors = await get_researcher_embedding(tag, model)
+
+    # Project vectors to 2D based on strategy
+    logger.info(f"Computing graph for tag: {tag}, model: {model}, strategy: {strategy}")
+
+    if strategy == "pca":
+        positions_2d = _project_with_pca(vectors)
+    # Future strategies can be added here:
+
+    else:
+        raise NotImplementedError(f"Unsupported strategy: {strategy}")
+
+    # Create nodes from researchers and their 2D positions
     nodes = []
-    for researcher, pos in zip(researchers, emb_2d):
+    for researcher, (x, y) in zip(researchers, positions_2d):
         if researcher.research_area:
             description = f"{researcher.research_area} at {researcher.research_center}"
         else:
@@ -124,20 +238,26 @@ async def compute_graph(tag: str, model: str, strategy: str = "PCA") -> Research
         node = ResearcherNode(
             id=str(researcher.id),
             label=label,
-            x=float(pos[0]),
-            y=float(pos[1]),
+            x=x,
+            y=y,
             description=description,
             color=color,
         )
 
         nodes.append(node)
 
+    # Create graph with no edges (edges can be added in the future)
     edges = []
     graph = ResearcherGraph(
         title=f"Researcher Graph - Summary/Embeddings tag: {tag} and model: {model} ({strategy})",
         nodes=nodes,
         edges=edges,
     )
+
+    # Save graph to disk
     graph_key = generate_graph_key(tag, model)
-    graph.dump_to_json(DATA_DIR / f"{graph_key}.json")
+    output_filename = GRAPHS_DIR / f"{graph_key}.json"
+    logging.info(f"Saving graph to file {output_filename}")
+    graph.dump_to_json(output_filename)
+
     return graph
