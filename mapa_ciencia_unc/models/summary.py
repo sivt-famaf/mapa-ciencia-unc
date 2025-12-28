@@ -3,10 +3,19 @@ from pydantic import BaseModel, Field
 
 
 class MultipleSummariesCreate(BaseModel):
+    """
+    Model for creating multiple summaries in bulk.
+
+    The content_mapping keys can be either:
+    - researcher_id (MongoDB ObjectId as string)
+    - researcher_cuit (CUIT identifier as string)
+
+    The endpoint will try researcher_id first, then fall back to CUIT lookup.
+    """
     overwrite: bool = False
     model: str
     tag: str
-    content_mapping: dict[str, str]  # Mapping of researcher IDs to summary content
+    content_mapping: dict[str, str]  # Mapping of researcher identifier (ID or CUIT) to summary JSON string
 
 
 class Summary(BaseModel):
