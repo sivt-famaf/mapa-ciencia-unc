@@ -13,6 +13,15 @@ class EmbeddingCreate(BaseModel):
 
 
 class MultipleEmbeddingsCreate(BaseModel):
+    """
+    Model for creating multiple embeddings in bulk.
+
+    The vector_mapping keys can be either:
+    - researcher_id (MongoDB ObjectId as string)
+    - researcher_cuit (CUIT identifier as string)
+
+    The endpoint will try researcher_id first, then fall back to CUIT lookup.
+    """
     overwrite: bool = False
     model: str = Field(
         ..., examples=["embedding-model-v1"], description="Embedding model name"
@@ -20,7 +29,7 @@ class MultipleEmbeddingsCreate(BaseModel):
     tag: str = Field(..., description="tag for the embeddings", examples=["batch-1"])
     vector_mapping: dict[str, List[float]] = Field(
         ...,
-        description="Mapping of researcher IDs to embedding vectors",
+        description="Mapping of researcher identifier (ID or CUIT) to embedding vectors",
         min_items=1,
     )
 
