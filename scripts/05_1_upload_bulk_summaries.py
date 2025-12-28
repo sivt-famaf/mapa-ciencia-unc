@@ -10,7 +10,8 @@ Input JSON Format:
     Each object must have either 'researcher_id' or 'researcher_cuit' (or both):
     [
         {
-            "researcher_id": "507f1f77bcf86cd799439011",
+            "researcher_cuit": "20337008268",
+            "model_id": "gemini-2.5-pro",
             "tag": "user_academic_temp05",
             "summary": {
                 "brief": "Brief summary text",
@@ -19,7 +20,8 @@ Input JSON Format:
             }
         },
         {
-            "researcher_cuit": "27273268885",
+            "researcher_id": "507f1f77bcf86cd799439011",
+            "model_id": "gemini-2.5-pro",
             "tag": "user_academic_temp05",
             "summary": {
                 "brief": "Another summary",
@@ -34,6 +36,8 @@ Input JSON Format:
     - researcher_cuit should be a CUIT identifier (numeric string)
     - If both fields are present, researcher_id takes precedence
     - At least one identifier field must be present
+    - model_id is optional in JSON if --model is provided via command line
+    - All summaries must have the same model_id if specified in JSON
 
 Process:
     1. Read the JSON array from file
@@ -47,7 +51,8 @@ Arguments:
     --api-url: Base URL for the API (e.g., http://localhost:8123)
     --summaries-file: Path to the JSON file containing summaries
     --tag: Tag to assign to all summaries (optional, will use tag from file if not provided)
-    --model: Model name to assign to all summaries (optional, defaults to "unknown")
+    --model: Model name to assign to all summaries (optional, defaults
+        to model in the first summary or "unknown")
     --overwrite: Whether to overwrite existing summaries with the same tag (flag, default: False)
 
 Example usage:
@@ -71,7 +76,7 @@ import json
 import argparse
 import requests
 import time
-from typing import Dict
+from typing import Dict, Tuple, Optional
 
 
 LOGIN_ENDPOINT = "/login"
@@ -101,7 +106,7 @@ def get_token(username: str, password: str, url: str) -> str:
     return response.json()["access_token"]
 
 
-def read_summaries_file(file_path: str) -> Dict[str, dict]:
+def read_summaries_file(file_path: str) -> Tuple[Dict[str, dict], Optional[str]]:
     """
     Read summaries from a JSON array file.
 
@@ -109,6 +114,7 @@ def read_summaries_file(file_path: str) -> Dict[str, dict]:
     - researcher_id OR researcher_cuit: str (at least one required)
     - tag: str
     - summary: dict (will be converted to JSON string)
+    - model_id: str (optional, if not provided via --model argument)
 
     If both researcher_id and researcher_cuit are present, researcher_id takes precedence.
 
@@ -278,8 +284,7 @@ Example:
     parser.add_argument(
         "--model",
         type=str,
-        default="unknown",
-        help="Model name to assign to summaries (default: unknown)",
+        help="Model name to assign to summaries (optional if model_id present in JSON)",
     )
     parser.add_argument(
         "--overwrite",
@@ -336,6 +341,20 @@ def main():
             return
         print(f"Using tag from JSON file: {tag}\n")
 
+    # Determine model to use (command line takes precedence)
+    if args.model:
+        model = args.model
+        print(f"Using model from command line: {model}\n")
+    else:
+        first_summary = next(iter(summaries.values()))
+        model = first_summary.get("model_id")
+        if not model:
+            print(
+                "     Error: No model specified. Provide --model argument or include model_id in JSON"
+            )
+            return
+        print(f"Using model from JSON file: {model}\n")
+
     # Build content mapping
     content_mapping = build_content_mapping(summaries)
 
@@ -357,7 +376,7 @@ def main():
         print(f"  Created summaries: {result['created_summaries']}")
 
         if result.get("skipped_summaries"):
-            print(f"  � Skipped summaries: {len(result['skipped_summaries'])}")
+            print(f"   Skipped summaries: {len(result['skipped_summaries'])}")
             if len(result["skipped_summaries"]) <= 5:
                 for researcher_id, reason in result["skipped_summaries"].items():
                     print(f"    - Researcher {researcher_id}: {reason}")
