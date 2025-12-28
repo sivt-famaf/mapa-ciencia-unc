@@ -22,8 +22,8 @@ class ComputeGraphRequest(BaseModel):
     )
     strategy: str = Field(
         default="pca",
-        description="Dimensionality reduction strategy (currently only 'pca' is supported)",
-        examples=["pca"],
+        description="Dimensionality reduction strategy. Options: 'pca' (direct to 2D) or 'umap' (PCA to 50D, then UMAP to 2D)",
+        examples=["pca", "umap"],
     )
     overwrite: bool = Field(
         default=False,
