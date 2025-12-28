@@ -84,7 +84,7 @@ async def generate_researcher_embedding(
     }
 
 
-@router.post("/upload_bulk", response_model=dict)
+@router.post("/upload/bulk", response_model=dict)
 async def upload_multiple_embeddings(payload: MultipleEmbeddingsCreate):
     """
     Upload multiple embeddings to researchers in bulk.
