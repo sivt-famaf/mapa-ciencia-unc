@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class SummaryGenerator:
-    """"""
+    """Factory class for SummaryGenerators."""
 
     @classmethod
     def generate_researcher_summary(
@@ -103,20 +103,12 @@ class SummaryGeneratorOllama:
 
     @classmethod
     def generate_completion(cls, prompt, model):
-        url = f'{OLLAMA_HOST}/api/chat/completions'
+        url = f"{OLLAMA_HOST}/api/chat/completions"
         headers = {
-            'Authorization': f'Bearer {OLLAMA_API_KEY}',
-            'Content-Type': 'application/json'
+            "Authorization": f"Bearer {OLLAMA_API_KEY}",
+            "Content-Type": "application/json",
         }
-        data = {
-            "model": model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        }
+        data = {"model": model, "messages": [{"role": "user", "content": prompt}]}
         logger.info("Sending request to Ollama API...")
         response = requests.post(url, headers=headers, json=data, timeout=300)
         return response.json()
@@ -124,7 +116,7 @@ class SummaryGeneratorOllama:
     @classmethod
     def extract_response(cls, response):
         try:
-            return response['choices'][0]['message']['content']
+            return response["choices"][0]["message"]["content"]
         except Exception as e:
             logger.error("Error in Ollama model output")
             raise e

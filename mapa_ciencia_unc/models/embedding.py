@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import List, Annotated
-from beanie import Document, Indexed
+from typing import List
 
 
 class EmbeddingCreate(BaseModel):
@@ -12,7 +11,7 @@ class EmbeddingCreate(BaseModel):
     tag: str = Field(..., description="tag for the embedding", examples=["test-run-1"])
 
 
-class MultipleEmbeddingsCreate(BaseModel):
+class MultipleEmbeddingsUpload(BaseModel):
     """
     Model for creating multiple embeddings in bulk.
 

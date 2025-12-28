@@ -5,10 +5,11 @@ from mapa_ciencia_unc.auth import require_auth
 from mapa_ciencia_unc.models.researcher import Researcher
 from mapa_ciencia_unc.models.embedding import (
     Embedding,
+    EmbeddingCreate,
     EmbeddingRequest,
-    MultipleEmbeddingsCreate,
+    MultipleEmbeddingsUpload,
 )
-from mapa_ciencia_unc.llms.embedding_generator import generate_gemini_embedding
+from mapa_ciencia_unc.llms.embedding_generator import EmbeddingGenerator
 
 router = APIRouter(
     prefix="/api/embeddings", tags=["embeddings"], dependencies=[Depends(require_auth)]
@@ -16,7 +17,7 @@ router = APIRouter(
 
 
 @router.post(
-    "/researchers/{researcher_id}/embeddings",
+    "/researcher/{researcher_id}",
     status_code=status.HTTP_201_CREATED,
 )
 async def generate_researcher_embedding(
@@ -25,6 +26,39 @@ async def generate_researcher_embedding(
 ):
     """
     Generate and persist an embedding for a researcher based on an existing summary.
+
+    Retrieves a researcher's summary, generates a dense vector embedding
+    using the specified model, and stores it. The embedding replaces any existing
+    embedding with the same tag
+
+    **Process:**
+    1. Fetches the researcher by ID
+    2. Retrieves the summary with the specified tag
+    3. Generates an embedding vector using the specified model and dimensions (if applicable)
+    4. Removes any existing embedding with the same tag (if present)
+    5. Stores the new embedding with the researcher
+
+    **Request Body:**
+    - `summary_tag`: Tag of the summary to use as input (e.g., "user_academic_v1")
+    - `embedding_tag`: Tag to assign to the generated embedding (e.g., "v1_embeddings")
+    - `model`: Embedding model to use (e.g., "gemini-embedding-001", "text-embedding-004")
+    - `output_dim`: Dimensionality of the output vector (default: 768)
+
+    **Supported Models:**
+    - Gemini models: "gemini-embedding-001", "text-embedding-004"
+    - Ollama models: Coming soon (will raise NotImplementedError)
+
+    **Returns:**
+    - `researcher_id`: ID of the researcher
+    - `summary_tag`: Tag of the summary used as input
+    - `embedding_tag`: Tag assigned to the embedding
+    - `model`: Model used for generation
+    - `dimensions`: Actual dimensionality of the generated vector
+
+    **Raises:**
+    - `404 Not Found`: If researcher or summary with tag not found
+    - `500 Internal Server Error`: If embedding generation fails
+    - `501 Not Implemented`: If using an Ollama model (not yet supported)
     """
 
     researcher = await Researcher.get(
@@ -49,10 +83,23 @@ async def generate_researcher_embedding(
             detail=f"Summary with tag '{req.summary_tag}' not found.",
         )
 
-    vector = generate_gemini_embedding(
-        profile_summary=summary.content,
-        output_dim=req.output_dim,
-    )
+    # Generate embedding using the new EmbeddingGenerator class
+    try:
+        vector = EmbeddingGenerator.generate_embedding(
+            text=summary.content,
+            model_name=req.model,
+            output_dim=req.output_dim,
+        )
+    except NotImplementedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=str(e),
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 
     if not vector:
         raise HTTPException(
@@ -60,6 +107,7 @@ async def generate_researcher_embedding(
             detail="Failed to generate embedding.",
         )
 
+    # Remove existing embeddings with the same tag
     researcher.embeddings = [
         e for e in researcher.embeddings if e.tag != req.embedding_tag
     ]
@@ -85,7 +133,7 @@ async def generate_researcher_embedding(
 
 
 @router.post("/upload/bulk", response_model=dict)
-async def upload_multiple_embeddings(payload: MultipleEmbeddingsCreate):
+async def upload_multiple_embeddings(payload: MultipleEmbeddingsUpload):
     """
     Upload multiple embeddings to researchers in bulk.
 
@@ -112,19 +160,6 @@ async def upload_multiple_embeddings(payload: MultipleEmbeddingsCreate):
     - `created_embeddings`: Count of successfully created embeddings
     - `skipped_embeddings`: Dictionary of researcher_id -> reason for skipping
     - `failed_embeddings`: List of researcher identifiers that failed
-
-    **Example Request:**
-    ```json
-    {
-        "vector_mapping": {
-            "507f1f77bcf86cd799439011": [0.1, 0.2, 0.3, ...],
-            "27273268885": [0.4, 0.5, 0.6, ...]
-        },
-        "tag": "v1-embeddings",
-        "model": "gemini-embedding-001",
-        "overwrite": false
-    }
-    ```
 
     **Notes:**
     - The first key uses researcher_id (MongoDB ObjectId)
@@ -199,3 +234,25 @@ async def upload_multiple_embeddings(payload: MultipleEmbeddingsCreate):
         "failed_embeddings": failed_embeddings,
         "skipped_embeddings": skipped_embeddings,
     }
+
+
+@router.post("/researcher/{researcher_id}/upload", response_model=Researcher)
+async def create_researcher_embedding(researcher_id: str, payload: EmbeddingCreate):
+    researcher = await Researcher.get(
+        PydanticObjectId(researcher_id), fetch_links=False
+    )
+    if not researcher:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Researcher not found.",
+        )
+
+    embedding = Embedding(
+        **payload.model_dump(),
+        dimensions=len(payload.vector),
+    )
+
+    researcher.embeddings.append(embedding)
+
+    await researcher.save()
+    return researcher
