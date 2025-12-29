@@ -4,7 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from beanie import PydanticObjectId
 
 from mapa_ciencia_unc.auth import require_auth
-from mapa_ciencia_unc.llms.utils import build_researcher_llm_inputs
+from mapa_ciencia_unc.llms.utils import (
+    process_articles,
+    process_projects,
+)
 from mapa_ciencia_unc.models.summary import MultipleSummariesCreate, Summary
 from mapa_ciencia_unc.models.researcher import Researcher
 from mapa_ciencia_unc.models.article import Article
@@ -25,10 +28,87 @@ router = APIRouter(
 @router.post("/generate")
 async def generate_summaries(req: SummaryRequest):
     """
-    Generate a summary for a single researcher using data stored in MongoDB.
+    Generate and persist a summary for a researcher using LLM or template-based generation.
 
-    For Ollama models, system_name can be None or omitted since the combined prompt
-    template includes both system instruction and user prompt.
+    Retrieves a researcher's profile, articles, and projects from the database,
+    processes the data through the specified model, and stores the generated summary.
+    The summary replaces any existing summary with the same tag.
+
+    **Process:**
+    1. Validates system instruction and prompt template files exist
+    2. Fetches researcher by ID
+    3. Retrieves all articles and projects for the researcher (matched by CUIT)
+    4. Processes articles and projects into context format
+    5. Generates summary using specified model
+    6. Removes any existing summary with the same tag
+    7. Stores the new summary with the researcher
+
+    **Supported Models:**
+    - **Gemini models**: "gemini-2.5-flash", "gemini-2.5-pro", etc.
+      - Requires both system_name and prompt_name
+      - Generates structured JSON output with brief, profile, and areas
+    - **Ollama models**: "gemma3:4b", "llama3.1", etc.
+      - system_name is optional (combined prompt includes instructions)
+      - Generates structured JSON output
+    - **Full-text**: "full-text"
+      - No LLM processing, renders Jinja template with raw data
+      - system_name not used
+      - Outputs formatted markdown text
+
+    **Templates:**
+    - System instructions: `mapa_ciencia_unc/prompts/profile_summary/system/<system_name>.jinja`
+    - User prompts: `mapa_ciencia_unc/prompts/profile_summary/user/<prompt_name>.jinja`
+    - Full-text template: `mapa_ciencia_unc/prompts/full_description.jinja`
+
+    **Request Body:**
+    - `researcher_id`: MongoDB ObjectId of the researcher (required)
+    - `model`: Model identifier (e.g., "gemini-2.5-flash", "gemma3:4b", "full-text")
+    - `tag`: Tag to assign to the summary (e.g., "user_academic_v1")
+    - `prompt_name`: Name of the prompt template (e.g., "v2/user_academic")
+    - `system_name`: Name of the system instruction template (optional for Ollama/full-text)
+
+    **Returns:**
+    - `researcher_id`: ID of the researcher
+    - `tag`: Tag assigned to the summary
+    - `model`: Model used for generation
+    - `summary`: Generated summary content (JSON string or text)
+
+    **Raises:**
+    - `404 Not Found`: Researcher not found
+    - `FileNotFoundError`: Template file missing
+
+    **Examples:**
+
+    Generate with Gemini model:
+    ```json
+    {
+        "researcher_id": "507f1f77bcf86cd799439011",
+        "model": "gemini-2.5-flash",
+        "tag": "test-user_academic_v1",
+        "system_name": "v1/system_instruction_1",
+        "prompt_name": "v2/user_academic"
+    }
+    ```
+
+    Generate with Ollama model:
+    ```json
+    {
+        "researcher_id": "507f1f77bcf86cd799439011",
+        "model": "gemma3:4b",
+        "tag": "test-ollama",
+        "prompt_name": "v2/combined_prompt"
+    }
+    ```
+
+    Generate full-text description:
+    ```json
+    {
+        "researcher_id": "507f1f77bcf86cd799439011",
+        "model": "full-text",
+        "tag": "test-full-text",
+        "prompt_name": "v2/full_description"
+    }
+    ```
     """
     # Optional system_name
     if req.system_name:
@@ -54,10 +134,14 @@ async def generate_summaries(req: SummaryRequest):
 
     articles = await Article.find(Article.cuit == researcher.cuit).to_list()
     projects = await Project.find(Project.cuit == researcher.cuit).to_list()
-    context = build_researcher_llm_inputs(
-        articles=articles,
-        projects=projects,
-    )
+    context = {
+        "researcher": {
+            "research_area": researcher.research_area,
+            "last_project_title": researcher.last_project_title
+        },
+        "publications": process_articles(articles),
+        "projects": process_projects(projects),
+    }
 
     content = SummaryGenerator.generate_researcher_summary(
         context, system_path, prompt_path, model_name=req.model
@@ -92,10 +176,11 @@ async def create_multiple_summaries(payload: MultipleSummariesCreate):
     This endpoint accepts a mapping of researcher identifiers to summary content
     and creates or updates summaries for multiple researchers in a single request.
 
-    **Researcher Identification:**
     - Tries to find researcher by `researcher_id` (MongoDB ObjectId) first
     - If not found or invalid ObjectId, tries to find by `cuit` (CUIT identifier)
     - This allows flexibility in how researchers are identified
+    - With `overwrite=True`: Replaces existing summaries with the same tag
+    - With `overwrite=False`: Skips researchers who already have a summary with the same tag
 
     **Request Body:**
     - `content_mapping`: Dictionary mapping researcher identifier (ID or CUIT) to summary JSON string
@@ -103,32 +188,10 @@ async def create_multiple_summaries(payload: MultipleSummariesCreate):
     - `model`: Model name used to generate summaries (e.g., "gemini-2.5-flash")
     - `overwrite`: Whether to replace existing summaries with the same tag (default: False)
 
-    **Behavior:**
-    - With `overwrite=True`: Replaces existing summaries with the same tag
-    - With `overwrite=False`: Skips researchers who already have a summary with the same tag
-
     **Returns:**
     - `created_summaries`: Count of successfully created summaries
     - `skipped_summaries`: Dictionary of researcher_id -> reason for skipping
     - `failed_summaries`: List of researcher identifiers that failed
-
-    **Example Request:**
-    ```json
-    {
-        "content_mapping": {
-            "507f1f77bcf86cd799439011": "{\"brief\": \"...\", \"profile\": \"...\", \"areas\": [...]}",
-            "27273268885": "{\"brief\": \"...\", \"profile\": \"...\", \"areas\": [...]}"
-        },
-        "tag": "user_academic_v1",
-        "model": "gemini-2.5-flash",
-        "overwrite": false
-    }
-    ```
-
-    **Notes:**
-    - The first key uses researcher_id (MongoDB ObjectId)
-    - The second key uses CUIT (will be looked up automatically)
-    - Summary content should be a JSON string (will be stored as-is)
     """
     created_summaries = 0
     skipped_summaries = {}
