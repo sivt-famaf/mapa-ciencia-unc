@@ -160,6 +160,18 @@
         return token;
       };
 
+      const getInitialGraphId = () => {
+        const graphDataEl = document.getElementById("graph-data");
+        if (!graphDataEl) return null;
+        try {
+          const parsed = JSON.parse(graphDataEl.textContent || "{}");
+          return parsed?._id ?? parsed?.id ?? null;
+        } catch (error) {
+          console.warn("Unable to parse initial graph data", error);
+          return null;
+        }
+      };
+
       (function initGraphTagSelector() {
         const selectEl = document.getElementById("graph-tag-select");
         const statusEl = document.getElementById("graph-tag-status");
@@ -167,7 +179,8 @@
 
         const { search, pathname } = window.location;
         const params = new URLSearchParams(search);
-        const currentGraphKey = params.get("graph_key");
+        const currentGraphId = params.get("graph_id");
+        const initialGraphId = getInitialGraphId();
 
         const setStatus = (message, isError = false) => {
           statusEl.textContent = message;
@@ -175,45 +188,49 @@
         };
 
         const applySelectionState = () => {
-          if (currentGraphKey) {
+          const desiredId = currentGraphId || initialGraphId;
+          if (desiredId) {
             const existingOption = [...selectEl.options].find(
-              (option) => option.value === currentGraphKey
+              (option) => option.value === desiredId
             );
             if (existingOption) {
-              selectEl.value = currentGraphKey;
+              selectEl.value = desiredId;
               return;
             }
           }
           selectEl.selectedIndex = -1;
         };
 
-        const renderOptions = (tags) => {
+        const renderOptions = (graphs) => {
           selectEl.innerHTML = "";
 
-          const defaultOption = document.createElement("option");
-          defaultOption.value = "system4_prompt2_temp07";
-          defaultOption.textContent = "Default graph";
-          selectEl.appendChild(defaultOption);
+          const placeholder = document.createElement("option");
+          placeholder.value = "";
+          placeholder.textContent = "Select a graph";
+          placeholder.disabled = true;
+          placeholder.selected = !currentGraphId;
+          placeholder.hidden = true;
+          selectEl.appendChild(placeholder);
 
-          tags.forEach((tag) => {
+          graphs.forEach((graph) => {
             const option = document.createElement("option");
-            option.value = tag;
-            option.textContent = tag;
+            option.value = graph?._id ?? "";
+            option.textContent = graph?.title ?? graph?._id ?? "Untitled graph";
             selectEl.appendChild(option);
           });
 
           applySelectionState();
         };
 
-        const redirectToGraph = (graphKey) => {
+        const redirectToGraph = (graphId) => {
           const baseUrl = pathname;
-          if (!graphKey) {
+          if (!graphId) {
             window.location.href = baseUrl;
             return;
           }
 
           const nextParams = new URLSearchParams();
-          nextParams.set("graph_key", graphKey);
+          nextParams.set("graph_id", graphId);
           window.location.href = `${baseUrl}?${nextParams.toString()}`;
         };
 
@@ -221,10 +238,10 @@
           redirectToGraph(event.target.value);
         });
 
-        const fetchAvailableTags = async () => {
+        const fetchAvailableGraphs = async () => {
           const token = requireToken();
           try {
-            const response = await fetch("/api/available_graph_tags", {
+            const response = await fetch("/api/graphs", {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
@@ -238,29 +255,25 @@
             }
 
             const payload = await response.json();
-            const tags =
-              payload?.available_graph_tags ??
-              payload?.graphs ??
-              payload?.tags ??
-              [];
+            const graphs = Array.isArray(payload) ? payload : [];
 
-            if (!Array.isArray(tags) || tags.length === 0) {
-              throw new Error("No available graph tags returned.");
+            if (!Array.isArray(graphs) || graphs.length === 0) {
+              throw new Error("No available graphs returned.");
             }
 
-            renderOptions(tags);
-            setStatus("Select a tag to change the graph.");
+            renderOptions(graphs);
+            setStatus("Select a graph to load it.");
           } catch (error) {
-            console.error("Failed to load graph tags", error);
+            console.error("Failed to load graphs", error);
             renderOptions([]);
             setStatus(
-              "Unable to load available graphs. Showing default dataset.",
+              "Unable to load available graphs. Please try again.",
               true
             );
           }
         };
 
-        fetchAvailableTags();
+        fetchAvailableGraphs();
       })();
     </script>
     <script type="module" src="/static/js/graph.js"></script>

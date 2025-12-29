@@ -1,7 +1,6 @@
 import json
 import logging
 
-from mapa_ciencia_unc.config import GRAPHS_DIR
 from mapa_ciencia_unc.models.graph import ResearcherGraph, ResearcherNode
 from mapa_ciencia_unc.models.researcher import Researcher
 
@@ -29,74 +28,6 @@ ACADEMIC_UNIT_COLORS = {
     "FCC": "#F4C800",
     "Otros": "#53377A",
 }
-
-
-def generate_graph_key(tag: str, model: str) -> str:
-    """
-    Generate a unique key for a graph based on tag and model.
-
-    Args:
-        tag: Tag identifier for the embeddings (e.g., "v1_embeddings")
-        model: Model identifier used to generate embeddings (e.g., "gemini-embedding-001")
-
-    Returns:
-        A string key in the format "{tag}_{model}"
-    """
-    return f"{tag}_{model}"
-
-
-def get_available_graphs() -> list[str]:
-    """
-    Get list of all available pre-computed graph files.
-
-    Scans the GRAPHS_DIR directory for JSON files and returns their names
-    without the .json extension.
-
-    Returns:
-        List of graph keys (filenames without extension)
-    """
-    graphs = []
-    for graph_file in GRAPHS_DIR.glob("*.json"):
-        graphs.append(graph_file.stem)
-    return graphs
-
-
-def get_researcher_graph(graph_key: str | None = None) -> ResearcherGraph:
-    """
-    Load a pre-computed researcher graph from disk.
-
-    If no graph_key is provided, loads the first available graph.
-
-    Args:
-        graph_key: Unique identifier for the graph (tag_model format).
-                   If None, uses the first available graph.
-
-    Returns:
-        ResearcherGraph object loaded from JSON file
-
-    Raises:
-        ValueError: If no graphs are available or if the specified graph_key is not found
-    """
-    # if no graphs are available, raise an error
-    graphs = get_available_graphs()
-    if not graphs:
-        raise ValueError("No available graphs")
-
-    # if no tag is provided, use the first available graph
-    if not graph_key:
-        graph_key = graphs[0]
-
-    if graph_key not in graphs:
-        raise ValueError(f"Graph {graph_key} not found")
-
-    graph_file_path = GRAPHS_DIR / f"{graph_key}.json"
-    with open(graph_file_path, "r", encoding="utf-8") as f:
-        graph_data = json.load(f)
-
-        # Convert the loaded data into Graph model for field validation
-        graph = ResearcherGraph(**graph_data)
-
-    return graph
 
 
 async def get_researcher_embedding(
@@ -291,7 +222,13 @@ def _project_with_tsne(vectors: list[list[float]]) -> list[tuple[float, float]]:
     return [(float(pos[0]), float(pos[1])) for pos in emb_2d]
 
 
-async def compute_graph(tag: str, model: str, strategy: str = "pca") -> ResearcherGraph:
+async def compute_graph(
+    embedding_tag: str,
+    embedding_model: str,
+    summary_tag: str,
+    summary_model: str,
+    strategy: str,
+) -> ResearcherGraph:
     """
     Compute a 2D graph visualization of researchers based on their embeddings.
 
@@ -300,8 +237,10 @@ async def compute_graph(tag: str, model: str, strategy: str = "pca") -> Research
     the projection. Each node is colored by academic unit.
 
     Args:
-        tag: Tag identifier for the embeddings (e.g., "v1_embeddings")
-        model: Model identifier used to generate embeddings (e.g., "gemini-embedding-001")
+        embedding_tag: Tag identifier for the embeddings (e.g., "v1_embeddings")
+        embedding_model: Model identifier used to generate embeddings (e.g., "gemini-embedding-001")
+        summary_tag: Tag identifier for the summary (e.g., "v1_summary")
+        summary_model: Model identifier used to generate the summary (e.g., "gemini-summary-001")
         strategy: Dimensionality reduction strategy to use (default: "pca")
                   Currently supported: "pca", "umap", "tsne"
                   - "pca": Principal Component Analysis (direct to 2D)
@@ -316,7 +255,7 @@ async def compute_graph(tag: str, model: str, strategy: str = "pca") -> Research
         ValueError: If no researchers have embeddings with the given tag/model
 
     Note:
-        The graph is automatically saved to GRAPHS_DIR as "{tag}_{model}.json"
+        The graph is automatically stored in the database upon creation.
     """
     # Validate strategy
     strategy_lower = strategy.lower()
@@ -327,10 +266,14 @@ async def compute_graph(tag: str, model: str, strategy: str = "pca") -> Research
         )
 
     # Get researchers and their embedding vectors
-    researchers, vectors = await get_researcher_embedding(tag, model)
+    researchers, vectors = await get_researcher_embedding(
+        embedding_tag, embedding_model
+    )
 
     # Project vectors to 2D based on strategy
-    logger.info(f"Computing graph for tag: {tag}, model: {model}, strategy: {strategy}")
+    logger.info(
+        f"Computing graph for embedding_tag: {embedding_tag}, embedding_model: {embedding_model}, strategy: {strategy}"
+    )
 
     if strategy_lower == "pca":
         positions_2d = _project_with_pca(vectors)
@@ -370,15 +313,13 @@ async def compute_graph(tag: str, model: str, strategy: str = "pca") -> Research
     # Create graph with no edges (edges can be added in the future)
     edges = []
     graph = ResearcherGraph(
-        title=f"Researcher Graph - Summary/Embeddings tag: {tag} and model: {model} ({strategy})",
+        title=f"Researcher Graph - Summary: {summary_tag}/{summary_model}, Embedding: {embedding_tag}/{embedding_model} ({strategy})",
         nodes=nodes,
         edges=edges,
+        embedding={"tag": embedding_tag, "model": embedding_model},
+        summary={"tag": summary_tag, "model": summary_model},
+        strategy=strategy_lower,
     )
-
-    # Save graph to disk
-    graph_key = generate_graph_key(tag, model)
-    output_filename = GRAPHS_DIR / f"{graph_key}.json"
-    logging.info(f"Saving graph to file {output_filename}")
-    graph.dump_to_json(output_filename)
+    await graph.insert()
 
     return graph

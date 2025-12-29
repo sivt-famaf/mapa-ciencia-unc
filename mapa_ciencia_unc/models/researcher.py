@@ -47,13 +47,17 @@ class ResearcherPublicView(BaseModel):
     def from_researcher(
         cls,
         researcher: "Researcher",
-        tag: str | None = None,
-        model: str | None = None,
+        summary_tag: str | None = None,
+        summary_model: str | None = None,
     ) -> "ResearcherPublicView":
         summary_content = None
-        if tag and model:
+        if summary_tag and summary_model:
             summary = next(
-                (s for s in researcher.summaries if s.tag == tag and s.model == model),
+                (
+                    s
+                    for s in researcher.summaries
+                    if s.tag == summary_tag and s.model == summary_model
+                ),
                 None,
             )
             if summary:
@@ -65,8 +69,8 @@ class ResearcherPublicView(BaseModel):
             research_center=researcher.research_center,
             research_area=researcher.research_area or "N/A",
             last_project_title=researcher.last_project_title or "N/A",
-            tag=tag,
-            model=model,
+            tag=summary_tag,
+            model=summary_model,
             summary=summary_content,
         )
 

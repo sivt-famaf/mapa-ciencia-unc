@@ -13,10 +13,10 @@ from fastapi.security import OAuth2PasswordRequestForm
 from mapa_ciencia_unc.db import init_db
 from mapa_ciencia_unc.routers import (
     agreements,
-    api,
     articles,
     embeddings,
     frontend,
+    graphs,
     projects,
     research_topics,
     researchers,
@@ -61,7 +61,7 @@ def login_route(form: OAuth2PasswordRequestForm = Depends()):
 
 
 app.include_router(frontend.router)
-app.include_router(api.router)
+app.include_router(graphs.router)
 app.include_router(researchers.router)
 app.include_router(projects.router)
 app.include_router(articles.router)
