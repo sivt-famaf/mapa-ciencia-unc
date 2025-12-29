@@ -9,10 +9,6 @@ from mapa_ciencia_unc.models.researcher import (
     Researcher,
     ResearcherCreate,
 )
-from mapa_ciencia_unc.models.embedding import (
-    Embedding,
-    EmbeddingCreate,
-)
 
 
 router = APIRouter(
@@ -159,26 +155,4 @@ async def get_researcher(researcher_id: str):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Researcher not found.",
         )
-    return researcher
-
-
-@router.post("/{researcher_id}/embeddings", response_model=Researcher)
-async def create_researcher_embedding(researcher_id: str, payload: EmbeddingCreate):
-    researcher = await Researcher.get(
-        PydanticObjectId(researcher_id), fetch_links=False
-    )
-    if not researcher:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Researcher not found.",
-        )
-
-    embedding = Embedding(
-        **payload.model_dump(),
-        dimensions=len(payload.vector),
-    )
-
-    researcher.embeddings.append(embedding)
-
-    await researcher.save()
     return researcher
