@@ -234,6 +234,62 @@
         background: rgba(59, 130, 246, 0.22);
         border-color: rgba(59, 130, 246, 0.35);
       }
+      section.articles {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        border-radius: 18px;
+        background: rgba(129, 140, 248, 0.08);
+        border: 1px solid rgba(129, 140, 248, 0.2);
+      }
+      section.articles h2 {
+        margin: 0 0 0.75rem;
+        font-size: 1.25rem;
+        letter-spacing: 0.04em;
+      }
+      .article-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 0.75rem;
+        max-height: 480px;
+        overflow-y: auto;
+        padding-right: 0.25rem;
+      }
+      .article-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .article-header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        flex: 1;
+        min-width: 0;
+      }
+      .article-title {
+        margin: 0;
+        font-size: 1.05rem;
+        color: #e5e7eb;
+      }
+      .article-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: #94a3b8;
+      }
+      .article-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-left: auto;
+        flex-wrap: wrap;
+      }
       .summary-empty {
         padding: 1rem 1.25rem;
         border-radius: 14px;
@@ -369,11 +425,12 @@
       </div>
       {% endif %}
 
-      {% if projects %}
+      {% set project_list = projects|default([], true) %}
       <section class="downloads">
-        <h2>Project files ({{ projects|length }})</h2>
+        <h2>Project files ({{ project_list|length }})</h2>
+        {% if project_list %}
         <ul class="download-list">
-          {% for project in projects %}
+          {% for project in project_list %}
           <li class="download-item">
             <div class="project-info">
               <p
@@ -410,8 +467,45 @@
           </li>
           {% endfor %}
         </ul>
+        {% else %}
+        <div class="summary-empty">No projects available.</div>
+        {% endif %}
       </section>
-      {% endif %}
+
+      {% set article_list = articles|default([], true) %}
+      <section class="articles">
+        <h2>Articles ({{ article_list|length }})</h2>
+        {% if article_list %}
+        <ul class="article-list">
+          {% for article in article_list %}
+          <li class="article-card">
+            <div class="article-header">
+              <h3 class="article-title">{{ article.titulo }}</h3>
+              <div class="article-meta">
+                <span>Year: {{ article.year|default('N/A', true) }}</span>
+                <span>ISSN: {{ article.issn|default('N/A', true) }}</span>
+                <span>eISSN: {{ article.eissn|default('N/A', true) }}</span>
+                <span>Editorial: {{ article.editorial|default('N/A', true) }}</span>
+              </div>
+            </div>
+            <div class="article-actions">
+              <button
+                class="preview-btn article-preview"
+                type="button"
+                data-summary="{{ article.resumen }}"
+                data-title="{{ article.titulo }}"
+                aria-label="Preview article summary"
+              >
+                🔍
+              </button>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="summary-empty">No articles available.</div>
+        {% endif %}
+      </section>
 
       {% if similar_researchers %}
       <section class="similar">
@@ -513,6 +607,16 @@
             const code = btn.dataset.code || 'Project';
             const preview = truncateText(intro, 500);
             openModal(`Preview · ${code}`, preview);
+          });
+        });
+
+        // Wire article preview buttons
+        document.querySelectorAll('.article-preview').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const summary = btn.dataset.summary || 'No summary available.';
+            const title = btn.dataset.title || 'Article';
+            const preview = truncateText(summary, 500);
+            openModal(`Article · ${title}`, preview);
           });
         });
       });
