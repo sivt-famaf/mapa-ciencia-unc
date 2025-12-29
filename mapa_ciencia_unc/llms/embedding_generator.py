@@ -1,4 +1,5 @@
 import logging
+import requests
 from typing import List
 
 from google import genai
@@ -22,7 +23,7 @@ class EmbeddingGenerator:
         cls,
         text: str,
         model_name: str = "gemini-embedding-001",
-        output_dim: int = 768,
+        output_dim: int = 512,
     ) -> List[float]:
         """
         Generate a semantic embedding vector for the given text using specified model.
@@ -33,8 +34,8 @@ class EmbeddingGenerator:
         Args:
             text: Text content to embed (e.g., researcher profile, summary, abstract)
             model_name: Name of the embedding model to use
-                        - "gemini-embedding-001" or similar for Gemini models
-                        - "ollama" or model names containing "ollama" for Ollama models
+                - "gemini-embedding-001" or similar for Gemini models
+                - "ollama" or model names containing "ollama" or "nomic" for Ollama models
             output_dim: Target dimensionality for the embedding vector (default: 768)
 
         Returns:
@@ -43,15 +44,6 @@ class EmbeddingGenerator:
 
         Raises:
             ValueError: If the model name is not supported
-
-        Examples:
-            >>> embedding = EmbeddingGenerator.generate_embedding(
-            ...     text="Researcher specializing in machine learning",
-            ...     model_name="gemini-embedding-001",
-            ...     output_dim=768
-            ... )
-            >>> len(embedding)
-            768
         """
         if "gemini" in model_name:
             return EmbeddingGeneratorGemini.generate_embedding(
@@ -59,7 +51,7 @@ class EmbeddingGenerator:
                 model_name=model_name,
                 output_dim=output_dim,
             )
-        elif "ollama" in model_name:
+        elif ("ollama" in model_name) or ("nomic" in model_name):
             return EmbeddingGeneratorOllama.generate_embedding(
                 text=text,
                 model_name=model_name,
@@ -69,7 +61,7 @@ class EmbeddingGenerator:
             raise ValueError(
                 f"Model '{model_name}' not supported. "
                 "Supported models: Gemini models (containing 'gemini'), "
-                "Ollama models (containing 'ollama')"
+                "Ollama models (containing 'ollama' or 'nomic')"
             )
 
 
@@ -100,11 +92,7 @@ class EmbeddingGeneratorGemini:
                   (e.g., researcher profile, paper abstract, summary).
                   Works best with text between 10-2000 words.
             model_name: Gemini model identifier (default: "gemini-embedding-001")
-                        - "gemini-embedding-001": Standard embedding model (768D default)
-                        - "text-embedding-004": Latest embedding model
             output_dim: Target dimensionality for the embedding vector.
-                        Supported values depend on the model (typically up to 768).
-                        Lower dimensions may lose some information but are faster.
 
         Returns:
             List of floats representing the embedding vector with length=output_dim.
@@ -116,17 +104,6 @@ class EmbeddingGeneratorGemini:
         Notes:
             - Requires GEMINI_API_KEY to be set in .env file
             - The embedding is L2-normalized by the API
-            - Embedding generation typically takes 100-500ms
-            - Maximum input text length varies by model (typically 2048 tokens)
-
-        Examples:
-            >>> embeddings = EmbeddingGeneratorGemini.generate_embedding(
-            ...     text="Machine learning researcher with focus on NLP",
-            ...     model_name="gemini-embedding-001",
-            ...     output_dim=512
-            ... )
-            >>> len(embeddings)
-            512
         """
         if not GEMINI_API_KEY:
             raise ValueError(
@@ -136,92 +113,66 @@ class EmbeddingGeneratorGemini:
         client = genai.Client(api_key=GEMINI_API_KEY)
         config = types.EmbedContentConfig(output_dimensionality=output_dim)
 
-        try:
-            response = client.models.embed_content(
-                model=model_name,
-                contents=text,
-                config=config,
-            )
+        response = client.models.embed_content(
+            model=model_name,
+            contents=text,
+            config=config,
+        )
 
-            return response.embeddings[0].values
-
-        except Exception as e:
-            logger.error(f"Error generating embedding with Gemini: {e}")
-            return []
+        return response.embeddings[0].values
 
 
 class EmbeddingGeneratorOllama:
     """
-    Ollama-based embedding generator implementation (placeholder).
-
-    This class is a placeholder for future implementation of Ollama-based
-    embedding generation via remote HTTP API.
-
-    Note:
-        This implementation will be completed in the future. For now, it raises
-        NotImplementedError when called.
+    Ollama-based embedding generator using remote HTTP API.
     """
 
     @classmethod
     def generate_embedding(
         cls,
         text: str,
-        model_name: str = "nomic-embed-text",
-        output_dim: int = 768,
+        model_name: str = "nomic-embed-text:latest",
+        output_dim: int = 768,  # Unused
     ) -> List[float]:
         """
-        Generate a semantic embedding using Ollama embedding models (NOT IMPLEMENTED).
-
-        This method is a placeholder for future implementation of Ollama-based
-        embedding generation.
+        Generate embedding using Ollama models via HTTP API.
 
         Args:
-            text: Text content to embed
-            model_name: Ollama model identifier (e.g., "nomic-embed-text", "mxbai-embed-large")
-            output_dim: Target dimensionality for the embedding vector
+            text: Text to embed
+            model_name: Ollama model (e.g., "nomic-embed-text:latest", "mxbai-embed-large:latest")
+            output_dim: Not used (Ollama models have fixed dimensions)
 
         Returns:
             List of floats representing the embedding vector
 
         Raises:
-            NotImplementedError: This method is not yet implemented
-
-        Future Implementation:
-            - Will connect to OLLAMA_HOST via HTTP API
-            - Will support various Ollama embedding models
-            - Will use OLLAMA_API_KEY for authentication
-            - Will implement similar error handling as Gemini implementation
+            ValueError: If OLLAMA_HOST or OLLAMA_API_KEY not set
+            requests.HTTPError: If API request fails
         """
-        raise NotImplementedError(
-            "EmbeddingGeneratorOllama is not yet implemented. "
-            "This will be added in a future update to support Ollama-based embeddings."
-        )
+        if not OLLAMA_HOST:
+            raise ValueError("OLLAMA_HOST not set in .env file")
+        if not OLLAMA_API_KEY:
+            raise ValueError("OLLAMA_API_KEY not set in .env file")
 
+        url = f"{OLLAMA_HOST}/api/embeddings"
+        headers = {
+            "Authorization": f"Bearer {OLLAMA_API_KEY}",
+            "Content-Type": "application/json",
+        }
+        data = {
+            "model": model_name,
+            "input": text,
+        }
 
-# Backward compatibility: Keep the original function name as an alias
-def generate_gemini_embedding(
-    profile_summary: str,
-    output_dim: int = 768,
-) -> List[float]:
-    """
-    Generate a semantic embedding using the Gemini model (backward compatibility).
+        logger.info(f"Requesting Ollama embedding: model={model_name}")
+        response = requests.post(url, headers=headers, json=data, timeout=60)
+        response.raise_for_status()
 
-    This function is maintained for backward compatibility. New code should use
-    EmbeddingGenerator.generate_embedding() or EmbeddingGeneratorGemini.generate_embedding().
+        result = response.json()
 
-    Args:
-        profile_summary: Researcher's summarized profile or any text to embed
-        output_dim: Target dimensionality for the embedding (default: 768)
-
-    Returns:
-        List of floats representing the embedding vector
-
-    See Also:
-        EmbeddingGenerator.generate_embedding(): New recommended interface
-        EmbeddingGeneratorGemini.generate_embedding(): Direct Gemini implementation
-    """
-    return EmbeddingGeneratorGemini.generate_embedding(
-        text=profile_summary,
-        model_name="gemini-embedding-001",
-        output_dim=output_dim,
-    )
+        # Extract embedding from response
+        # Format: {"data": [{"embedding": [....]} ]}
+        try:
+            return result["data"][0]["embedding"]
+        except Exception:
+            raise ValueError(f"Unexpected response format: {result}")
