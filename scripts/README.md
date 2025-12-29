@@ -721,26 +721,6 @@ Requires:
     - antiword (for .doc files)
     - unrar/unar/7zip/p7zip (backend for rarfile https://rarfile.readthedocs.io/#)
 
-### 04_03_upload_projects_to_db.py
-This process uploads projects texts from a json file to the database.
-The json file should be the ouput of the script 04_02_extract_intro_from_project_files.py
-
-Inputs:
-    - A json file with project texts. The json keys are expected to be "<cuit>_<codigo_tramite>_<filename>"
-    - The API url to upload the data to.
-    - Username and password for API authentication.
-    - Overwrite flag to indicate whether to overwrite existing entries in the database. (based on cuit and codigo_tramite)
-
-Example usage:
-```
-python scripts/04_03_upload_projects_to_db.py \
-    --input-file path/to/project_texts.json \
-    --api-url http://example.com \
-    --username admin \
-    --password secret \
-    --overwrite
-```
-
 ---
 
 ## Stage 05: Bulk Upload Scripts
@@ -990,3 +970,48 @@ python scripts/05_2_upload_bulk_embeddings.py \
     --model gemini-embedding-001 \
     --overwrite
 ```
+
+### 05_3_upload_bulk_projects.py
+
+Uploads bulk project texts from a JSON file to the database.
+
+**Purpose**: Upload project text extracts that were extracted from project files to the database using the bulk projects API endpoint.
+
+**Input JSON Format:**
+
+The file should be a JSON object mapping file names to extracted text. Keys follow the format `"<cuit>_<codigo_tramite>_<filename>"`:
+
+```json
+{
+    "20337008268_CB123456_plan_trabajo.pdf": "Extracted project text...",
+    "27273268885_CB789012_fundamentacion.pdf": "Another project text..."
+}
+```
+
+**Usage:**
+```bash
+python scripts/05_3_upload_bulk_projects.py \
+    --input-file path/to/project_texts.json \
+    --api-url http://localhost:8000 \
+    --username admin \
+    --password secret \
+    --overwrite
+```
+
+**Arguments:**
+- `--input-file`: Path to the JSON file with project texts (required)
+- `--api-url`: Base URL for the API endpoints (required)
+- `--username`: Username for API authentication (required)
+- `--password`: Password for API authentication (required)
+- `--overwrite`: Flag to overwrite existing entries (optional, default: False)
+
+**Processing Steps:**
+1. Authenticates with the API to get JWT token
+2. Reads project texts from JSON file
+3. Parses file names to extract cuit and codigo_tramite
+4. Uploads projects in batches of 25
+5. Reports results (created, skipped)
+
+**Output:**
+- Console output showing upload progress and results
+- Returns counts of created and skipped project entries
