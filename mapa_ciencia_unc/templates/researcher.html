@@ -109,10 +109,15 @@
         font-size: 1.4rem;
         letter-spacing: 0.04em;
       }
-      section.summary p {
+      section.summary .summary-content {
         margin-bottom: 0;
         line-height: 1.6;
         color: #e0f2fe;
+      }
+      section.summary .summary-content ul,
+      section.summary .summary-content ol {
+        padding-left: 1.25rem;
+        margin: 0.5rem 0;
       }
       section.downloads {
         margin-top: 2rem;
@@ -168,47 +173,122 @@
         margin: 0;
         display: grid;
         gap: 0.75rem;
+        max-height: 480px; /* approx. 4-5 cards */
+        overflow-y: auto;
+        padding-right: 0.25rem;
       }
       .download-item {
         display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        min-height: 90px;
       }
-      .download-item a {
+      .project-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex: 1;
+        min-width: 0;
+      }
+      .project-intro {
+        margin: 0;
+        font-size: 1rem;
+        color: #e2e8f0;
+        line-height: 1.5;
+      }
+      .project-meta {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.75rem 1rem;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: #bfdbfe;
-        text-decoration: none;
-        transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+        font-size: 0.85rem;
+        color: #94a3b8;
       }
-      .download-item a:hover {
-        transform: translateY(-1px);
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 255, 255, 0.2);
+      .project-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-left: auto;
       }
-      .intro-btn {
+      .download-btn,
+      .preview-btn {
         display: inline-flex;
         align-items: center;
-        gap: 0.4rem;
-        padding: 0.65rem 0.95rem;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
         border-radius: 10px;
+        text-decoration: none;
         border: 1px solid rgba(255, 255, 255, 0.12);
-        background: rgba(15, 23, 42, 0.9);
-        color: #e5e7eb;
-        cursor: pointer;
-        font: inherit;
+        background: rgba(59, 130, 246, 0.15);
+        color: #bfdbfe;
         transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+        cursor: pointer;
       }
-      .intro-btn:hover {
+      .download-btn:hover,
+      .preview-btn:hover {
         transform: translateY(-1px);
+        background: rgba(59, 130, 246, 0.22);
+        border-color: rgba(59, 130, 246, 0.35);
+      }
+      section.articles {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        border-radius: 18px;
+        background: rgba(129, 140, 248, 0.08);
+        border: 1px solid rgba(129, 140, 248, 0.2);
+      }
+      section.articles h2 {
+        margin: 0 0 0.75rem;
+        font-size: 1.25rem;
+        letter-spacing: 0.04em;
+      }
+      .article-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 0.75rem;
+        max-height: 480px;
+        overflow-y: auto;
+        padding-right: 0.25rem;
+      }
+      .article-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 14px;
         background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .article-header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        flex: 1;
+        min-width: 0;
+      }
+      .article-title {
+        margin: 0;
+        font-size: 1.05rem;
+        color: #e5e7eb;
+      }
+      .article-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: #94a3b8;
+      }
+      .article-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-left: auto;
+        flex-wrap: wrap;
       }
       .summary-empty {
         padding: 1rem 1.25rem;
@@ -337,7 +417,7 @@
       {% if researcher.summary %}
       <section class="summary">
         <h2>Summary{% if researcher.tag %} · {{ researcher.tag }} {% endif %}{% if researcher.model %} · {{ researcher.model }}{% endif %}</h2>
-        <p>{{ researcher.summary }}</p>
+        <div class="summary-content" id="summaryContent">{{ researcher.summary }}</div>
       </section>
       {% elif researcher.tag %}
       <div class="summary-empty">
@@ -345,28 +425,87 @@
       </div>
       {% endif %}
 
-      {% if projects %}
+      {% set project_list = projects|default([], true) %}
       <section class="downloads">
-        <h2>Project files</h2>
+        <h2>Project files ({{ project_list|length }})</h2>
+        {% if project_list %}
         <ul class="download-list">
-          {% for project in projects %}
+          {% for project in project_list %}
           <li class="download-item">
-            <a href="{{ project.download_url }}" target="_blank" rel="noopener">
-              {{ project.codigo_tramite }}
-            </a>
-            <button
-              class="intro-btn"
-              type="button"
-              data-intro="{{ project.intro }}"
-              data-code="{{ project.codigo_tramite }}"
-            >
-              Intro
-            </button>
+            <div class="project-info">
+              <p
+                class="project-intro"
+                data-intro="{{ project.intro }}"
+                data-code="{{ project.codigo_tramite }}"
+              >
+                {{ project.intro }}
+              </p>
+              <div class="project-meta">
+                <span>Project code: {{ project.codigo_tramite }}</span>
+              </div>
+            </div>
+            <div class="project-actions">
+              <button
+                class="preview-btn project-preview"
+                type="button"
+                data-intro="{{ project.intro }}"
+                data-code="{{ project.codigo_tramite }}"
+                aria-label="Preview intro"
+              >
+                🔍
+              </button>
+              <a
+                class="download-btn"
+                href="{{ project.download_url }}"
+                target="_blank"
+                rel="noopener"
+                title="Download {{ project.codigo_tramite }}"
+              >
+                &#8681;
+              </a>
+            </div>
           </li>
           {% endfor %}
         </ul>
+        {% else %}
+        <div class="summary-empty">No projects available.</div>
+        {% endif %}
       </section>
-      {% endif %}
+
+      {% set article_list = articles|default([], true) %}
+      <section class="articles">
+        <h2>Articles ({{ article_list|length }})</h2>
+        {% if article_list %}
+        <ul class="article-list">
+          {% for article in article_list %}
+          <li class="article-card">
+            <div class="article-header">
+              <h3 class="article-title">{{ article.titulo }}</h3>
+              <div class="article-meta">
+                <span>Year: {{ article.year|default('N/A', true) }}</span>
+                <span>ISSN: {{ article.issn|default('N/A', true) }}</span>
+                <span>eISSN: {{ article.eissn|default('N/A', true) }}</span>
+                <span>Editorial: {{ article.editorial|default('N/A', true) }}</span>
+              </div>
+            </div>
+            <div class="article-actions">
+              <button
+                class="preview-btn article-preview"
+                type="button"
+                data-summary="{{ article.resumen }}"
+                data-title="{{ article.titulo }}"
+                aria-label="Preview article summary"
+              >
+                🔍
+              </button>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="summary-empty">No articles available.</div>
+        {% endif %}
+      </section>
 
       {% if similar_researchers %}
       <section class="similar">
@@ -402,6 +541,8 @@
       </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
     <script>
       // Truncate text to 30 words
       function truncateText(text, wordLimit) {
@@ -413,11 +554,26 @@
         return words.slice(0, wordLimit).join(' ') + '...';
       }
 
+      // Truncate by characters
+      function truncateChars(text, charLimit) {
+        if (!text) return '';
+        if (text.length <= charLimit) return text;
+        return text.slice(0, charLimit) + '...';
+      }
+
       // Truncate all info-card paragraphs on page load
       window.addEventListener('DOMContentLoaded', function() {
         const researchAreaText = document.getElementById('research-area-text');
         const centerText = document.getElementById('center-text');
         const projectText = document.getElementById('project-text');
+        const projectIntros = document.querySelectorAll('.project-intro');
+        const summaryContent = document.getElementById('summaryContent');
+
+        if (summaryContent && window.marked && window.DOMPurify) {
+          const markdown = summaryContent.textContent || '';
+          const html = DOMPurify.sanitize(marked.parse(markdown));
+          summaryContent.innerHTML = html;
+        }
 
         if (researchAreaText) {
           const fullText = researchAreaText.textContent;
@@ -437,12 +593,30 @@
           projectText.textContent = truncateText(fullText, 30);
         }
 
-        // Wire intro buttons to open modal with intro text
-        document.querySelectorAll('.intro-btn').forEach((btn) => {
+        // Truncate project intro text to 50 characters for cards
+        projectIntros.forEach((introEl) => {
+          const fullIntro = introEl.dataset.intro || introEl.textContent || '';
+          introEl.setAttribute('data-full-intro', fullIntro);
+          introEl.textContent = truncateChars(fullIntro, 50);
+        });
+
+        // Wire preview buttons to open modal with up to 500 words
+        document.querySelectorAll('.project-preview').forEach((btn) => {
           btn.addEventListener('click', () => {
             const intro = btn.dataset.intro || 'No introduction available.';
             const code = btn.dataset.code || 'Project';
-            openModal(`Intro · ${code}`, intro);
+            const preview = truncateText(intro, 500);
+            openModal(`Preview · ${code}`, preview);
+          });
+        });
+
+        // Wire article preview buttons
+        document.querySelectorAll('.article-preview').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const summary = btn.dataset.summary || 'No summary available.';
+            const title = btn.dataset.title || 'Article';
+            const preview = truncateText(summary, 500);
+            openModal(`Article · ${title}`, preview);
           });
         });
       });

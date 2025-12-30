@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from mapa_ciencia_unc.controllers.researchers import get_similar_researchers
 from mapa_ciencia_unc.models.researcher import Researcher, ResearcherPublicView
 from mapa_ciencia_unc.models.project import ProjectExtractedIntro
+from mapa_ciencia_unc.models.article import Article
 from mapa_ciencia_unc.models.graph import ResearcherGraph, ResearcherGraphListItem
 from beanie import PydanticObjectId
 from mapa_ciencia_unc.auth import verify_jwt_token
@@ -117,6 +118,22 @@ async def researcher_view(
         {"cuit": researcher_doc.cuit}
     ).to_list()
 
+    articles = await Article.find(
+        {"cuit": researcher_doc.cuit},
+    ).to_list()
+
+    articles_list = [
+        {
+            "titulo": article.titulo,
+            "resumen": article.resumen,
+            "issn": article.issn,
+            "eissn": article.eissn,
+            "year": article.year,
+            "editorial": article.editorial,
+        }
+        for article in articles
+    ]
+
     projects = [
         {
             "codigo_tramite": project.codigo_tramite,
@@ -139,6 +156,7 @@ async def researcher_view(
             "request": request,
             "researcher": researcher_public_view.model_dump(),
             "projects": projects,
+            "articles": articles_list,
             "similar_researchers": similar_researchers,
             "graph_id": graph_id,
         },
