@@ -1,0 +1,256 @@
+[
+  {
+    "researcher_id": 20115248732,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "La trayectoria se centra en la hidrometeorología y la gestión integral de los recursos hídricos, con un énfasis particular en la mitigación de eventos extremos como inundaciones y sequías. Su investigación combina el modelado hidrológico avanzado, la aplicación de técnicas de Computación de Alto Desempeño (HPC) y el desarrollo de Sistemas de Alerta Temprana (SATH) para mejorar la predicción y la respuesta ante desastres naturales. Destaca por su enfoque en la reducción de incertidumbres en la estimación de caudales máximos y la caracterización de sequías, contribuyendo significativamente a la planificación estratégica y la seguridad de las poblaciones en Argentina y América Latina.",
+      "profile": "El perfil se caracteriza por una sólida base en ingeniería hidráulica e hidrología, complementada con una profunda expertise en técnicas computacionales avanzadas. Metodológicamente, el investigador/a ha liderado la implementación y calibración de modelos de pronóstico hidrológico robustos como el Génie Rural Prévision (GRP) en diversas escalas territoriales, buscando optimizar la eficacia de los SATH. Un componente crucial de su trabajo es la aplicación de la Computación de Alto Desempeño (HPC), incluyendo el uso de GPU, arquitecturas Multi-Core, Cluster y Many-Core, así como el modelado de flujo de datos y Redes de Petri, para acelerar simulaciones complejas en hidrometeorología, ingeniería y biología (ej., modelos WRF para pronóstico atmosférico 3D y OpenFOAM para cuerpos de agua 3D).\n\nEn el diseño experimental y de campo, se ha enfocado en la caracterización hidrogeomorfológica y los balances hídricos de cuencas complejas interjurisdiccionales, como la Laguna La Picasa, para comprender su funcionamiento y desarrollar estrategias de gestión integrada frente a inundaciones y sequías. Ha investigado activamente en la reducción de incertidumbres en la estimación de caudales máximos, combinando datos sistemáticos e información histórica, y ha desarrollado metodologías para la caracterización espacial y temporal de sequías meteorológicas e hidrológicas utilizando índices estandarizados de precipitación (SPI) y considerando la influencia de fenómenos macroclimáticos como ENSO. Las aplicaciones de su investigación son extensas, abarcando desde la propuesta de medidas de mitigación innovadoras, como la cosecha de agua de lluvia en entornos urbanos, hasta la integración de sensores hidrometeorológicos (radares Doppler como el RMA1 del SINARAME y VANT con sensores ultraespectrales) para el monitoreo y alerta en tiempo real. Ha contribuido a la definición de estrategias de largo plazo para la gestión integrada de inundaciones rurales y urbanas en la provincia de Córdoba, plasmadas en manuales y cursos para tomadores de decisión. Su trabajo se extiende a la estimación de parámetros hidrológicos unitarios para la planificación urbana en diversas ciudades de América Latina, en colaboración con el Grupo Aguas Urbanas del Programa Hidrológico Internacional-UNESCO. La trayectoria también enfatiza la formación de recursos humanos de posgrado, dirigiendo a numerosos doctorandos y magísteres, y una activa participación en redes de colaboración interinstitucionales y multidisciplinarias a nivel nacional (UNC, INTA, INA, CONAE) e internacional (Francia, UNESCO).",
+      "areas": [
+        "Hidrometeorología y Eventos Extremos",
+        "Modelado Hidrológico y Pronóstico de Inundaciones",
+        "Gestión Integrada de Recursos Hídricos y Cuencas",
+        "Computación de Alto Desempeño (HPC) en Ciencias Ambientales",
+        "Sistemas de Alerta Temprana (SATH)",
+        "Análisis y Caracterización de Sequías",
+        "Sensores Remotos y Radares Meteorológicos",
+        "Optimización Multi-Objetivo y Algoritmos Genéticos",
+        "Hidráulica Fluvial y Calidad del Agua",
+        "Planificación Urbana y Drenaje Sostenible"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20143654843,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "La trayectoria se centra en la investigación de la agroecología, la sustentabilidad y la soberanía alimentaria, con un énfasis particular en el contexto rural y periurbano de la provincia de Córdoba, Argentina. Su trabajo aborda la compleja interacción entre los sistemas de producción agroindustrial y agroecológico, la gestión de recursos naturales como el agua, y el impacto de las políticas públicas agropecuarias. La relevancia de su investigación radica en la búsqueda de modelos productivos más equitativos y ambientalmente sostenibles, así como en la promoción de la participación activa de los actores locales en la construcción de soluciones y la visibilización de sistemas productivos alternativos.",
+      "profile": "El perfil se distingue por un enfoque profundamente transdisciplinario y participativo en el estudio de los sistemas agroalimentarios. Metodológicamente, el investigador aplica una combinación de técnicas cualitativas y cuantitativas, incluyendo el análisis económico-ecológico de agroecosistemas (como el método Lume) y el Marco de Evaluación de Sistemas de Manejo de Recursos Naturales (MESMIS). Se prioriza la investigación-acción participativa, involucrando activamente a productores, agricultores familiares y movimientos sociales a través de entrevistas, grupos focales y talleres para la construcción colectiva de conocimiento e indicadores de sustentabilidad. El diseño de la investigación se centra en estudios de caso comparativos entre sistemas agroindustriales y agroecológicos, así como en el análisis de la implementación de políticas públicas como las Buenas Prácticas Agropecuarias (BPAs) en entornos periurbanos y rurales. Teóricamente, se adopta una perspectiva de pensamiento complejo para analizar la multidimensionalidad de la sustentabilidad, cuestionando el enfoque cartesiano tradicional y promoviendo un diálogo entre las ciencias físicas y sociales. Las aplicaciones de su investigación se extienden a la formulación de políticas públicas diferenciales orientadas a la sustentabilidad, el fortalecimiento de cadenas de comercialización de productos agroecológicos y la mejora de la gestión del agua en la agricultura familiar. La participación en redes de colaboración es inherente a su metodología, buscando generar un conocimiento colectivo que contribuya a la transformación de la realidad y al desarrollo socioterritorial equitativo, especialmente en la provincia de Córdoba.",
+      "areas": [
+        "Agroecología y Transición Agroecológica",
+        "Sustentabilidad de Sistemas Agroalimentarios",
+        "Soberanía Alimentaria y Agricultura Familiar",
+        "Gestión del Agua en Contextos Rurales",
+        "Análisis y Diseño de Políticas Públicas Agropecuarias",
+        "Comercialización de Productos Agroecológicos y Mercados de Proximidad",
+        "Desarrollo Rural y Socioterritorial",
+        "Metodologías Participativas de Investigación-Acción"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20147242426,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "La trayectoria se centra en las Neurociencias, con un fuerte énfasis en los Ritmos Biológicos y la Fototransducción, y sus implicaciones en la Neurodegeneración y la Neurooncología. Los temas predominantes incluyen la comprensión de las bases moleculares y celulares de los relojes circadianos, la percepción de la luz no visual en la retina y el metabolismo lipídico. La investigación busca dilucidar los mecanismos fisiopatológicos en enfermedades como las retinopatías y los gliomas, con el objetivo final de contribuir al diagnóstico temprano y al desarrollo de nuevas estrategias terapéuticas.",
+      "profile": "El perfil se caracteriza por un enfoque robusto e interdisciplinario en el estudio del sistema nervioso. Metodológicamente, el trabajo abarca una amplia gama de técnicas, incluyendo el uso extensivo de modelos animales (pollos, ratas, ratones, hámsteres, C. elegans) y diversos sistemas de cultivo celular (células neuronales y gliales primarias, líneas inmortalizadas como RGC-5, NIH 3T3, gliomas T98G, hepatocarcinoma HepG2). Los diseños experimentales implican frecuentemente la manipulación de ciclos luz/oscuridad (LD, DD, LL, luz azul, luz UV) y la aplicación de agentes farmacológicos para estudiar su impacto en los procesos celulares. Las principales áreas de investigación incluyen la Fototransducción y los Ritmos Circadianos. El investigador ha sido pionero en estudios sobre la fotosensibilidad intrínseca de las células de la retina interna (células ganglionares retinianas, células horizontales, células gliales de Müller), identificando nuevas opsinas no visuales (Melanopsina/Opn4, Encefalopsina/Opn3, Neuropsina/Opn5) y dilucidando sus cascadas de señalización, incluyendo el ciclo de fosfoinosítidos y la movilización intracelular de Ca2+. Una contribución significativa es la caracterización de la retina como un oscilador circadiano autónomo, capaz de una síntesis rítmica de melatonina y fosfolípidos, incluso en modelos de ceguera (ej. pollos GUCY1*). Este trabajo subraya el papel crucial de la retina en la sincronización del organismo con la luz ambiental, más allá de la formación de imágenes. En Neurodegeneración, la investigación aborda los mecanismos de degeneración retiniana inducida por la exposición excesiva a la luz (contaminación lumínica), centrándose en el estrés oxidativo, el metabolismo de la glucosa, la apoptosis y la formación de gránulos de estrés. Se explora activamente el papel protector de moléculas como la AANAT y el potencial de agentes neuroprotectores, como nanopartículas cargadas de melatonina y fitoquímicos (Carvacrol). Dentro de la Neurooncología, se estudia el impacto del sistema circadiano en el crecimiento y la respuesta al tratamiento de tumores cerebrales (gliomas) y cáncer de mama. Esto implica el examen de los relojes moleculares y metabólicos en células tumorales, su susceptibilidad a la quimioterapia cronobiológica (ej. usando SR9009 o bortezomib), y la doble función de proteínas como c-Fos en la regulación del metabolismo lipídico y el crecimiento tumoral. Además, el perfil abarca el Metabolismo Lipídico y la Señalización Celular, explorando la regulación circadiana de la biosíntesis de glicerofosfolípidos y melatonina en diversos tejidos y líneas celulares, identificando enzimas clave (AANAT, PAP-1, LPLAT, ChoK, CCT) y sus actividades rítmicas. El trabajo también se extiende al Neurodesarrollo, investigando la polaridad neuronal y la señalización en condiciones como los Trastornos del Espectro Autista y el Síndrome de Rett. El investigador participa activamente en el fortalecimiento de la infraestructura institucional, liderando proyectos para la adquisición de equipos esenciales como sistemas de agua ultrapura, instalaciones avanzadas de cultivo celular, analizadores de metabolismo celular en tiempo real (Agilent Seahorse) y equipos de computación de alto rendimiento para Bioinformática y Modelado Molecular. Estos esfuerzos apoyan un ecosistema colaborativo, fomentando la investigación interdisciplinaria en Química, Psicología y otros campos, y contribuyendo significativamente a la formación de recursos humanos, incluyendo numerosas tesis doctorales.",
+      "areas": [
+        "Neurociencias",
+        "Ritmos Circadianos y Cronobiología",
+        "Fototransducción y Fotorrecepción No-Visual",
+        "Neurodegeneración y Retinopatías",
+        "Neurooncología y Terapia Antitumoral",
+        "Metabolismo Lipídico y Señalización Celular",
+        "Bioinformática y Modelado Molecular",
+        "Desarrollo de Terapias y Neuroprotección",
+        "Biología Celular y Molecular del Sistema Nervioso",
+        "Estrés Oxidativo y Celular",
+        "Infraestructura Científica y Formación de Recursos Humanos"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20169046280,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "La trayectoria se centra en la investigación histórico-crítica y epistemológica de las prácticas clínicas, la medicalización y la salud mental, con un énfasis particular en el programa psicoanalítico. Se dedica a desentrañar las bases filosóficas y las tensiones históricas entre diversas corrientes (e.g., medicina galénica vs. hipocrática, psicoanálisis freudiano vs. lacaniano) que han moldeado el campo. La investigación es crucial para cuestionar paradigmas hegemónicos, reevaluar conceptos diagnósticos como el autismo y analizar la emergencia de nuevas prácticas como el acompañamiento terapéutico, destacando la relevancia de la perspectiva histórico-epistemológica en los debates actuales.",
+      "profile": "El perfil se caracteriza por un enfoque riguroso en la epistemología y la historia crítica de la ciencia, aplicando predominantemente la Metodología de los Programas de Investigación Científica (MPIC) de Imre Lakatos y metodologías cualitativas para abordajes empíricos. La investigación aborda las coordenadas teóricas y prácticas de la clínica psicológica y psiquiátrica, rastreando sus orígenes desde la antigüedad (tensiones entre la medicina galénica intervencionista y la hipocrática expectante) hasta los siglos XIX y XX. Un eje central es el análisis comparativo del psicoanálisis freudiano y lacaniano, examinando rupturas y continuidades en sus supuestos ontológicos, antropológicos y metafísicos. Se postula que el psicoanálisis lacaniano, influenciado por la tradición fenomenológico-existencial, podría constituir un 'Programa de investigación metafísico' en lugar de un PIC lakatosiano, lo que implicaría su exclusión del campo de la ciencia en ciertos aspectos, aunque se reconoce su esfuerzo por restaurar elementos clave de la praxiología clínica freudiana. Además, el trabajo se extiende a la medicalización de problemáticas sociales, la evolución histórica y conceptual del autismo infantil (contrastando la descripción de Kanner con interpretaciones cognitivas) y la emergencia del Acompañamiento Terapéutico en Argentina, explorando sus fundamentos y efectos. La investigación también profundiza en los supuestos implícitos del razonamiento clínico y los factores sociológicos que inciden en la práctica. La trayectoria incluye la dirección de proyectos de investigación con la integración de doctorandos y alumnos de grado, promoviendo la traducción y análisis de obras fundacionales y estableciendo colaboraciones con investigadores de universidades nacionales e internacionales (J.F. Kennedy, UNAM México), con el fin de reconstruir una 'Filosofía Crítica realista postkantiana' y enriquecer la filosofía de la ciencia.",
+      "areas": [
+        "Epistemología e Historia Crítica",
+        "Salud Mental",
+        "Medicalización",
+        "Psicoanálisis (Freud y Lacan)",
+        "Metodología de Programas de Investigación Científica (Lakatos)",
+        "Autismo Infantil",
+        "Acompañamiento Terapéutico",
+        "Filosofía de la Ciencia",
+        "Prácticas Clínicas (Galénica vs. Hipocrática)",
+        "Psicología de la Música"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20181776790,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "La trayectoria se centra en la intersección crítica entre la arquitectura, el diseño de mobiliario y equipamiento, y la regeneración urbana. Su investigación aborda la readaptación tipológica de edificios en desuso para nuevas formas de habitar, con un énfasis particular en la incidencia del mobiliario y el equipamiento como herramientas clave para la mutación y refuncionalización del objeto arquitectónico. Además, su labor se extiende a la pedagogía del diseño, promoviendo una cultura proyectual que integre la historia crítica con el desarrollo de competencias profesionales, siempre con una perspectiva de sostenibilidad y compromiso social.",
+      "profile": "El perfil se distingue por una aproximación holística al hábitat, investigando cómo el diseño de objetos y el equipamiento pueden generar nuevos modos de habitar lo existente, explorando las posibilidades de transformación y re-uso del objeto arquitectónico sin necesariamente modificar su estructura original. Metodológicamente, se enfoca en el desarrollo de prácticas programáticas y la significación de los equipos para determinar y habilitar espacios, con un interés particular en la \"acupuntura urbana\" y la revitalización de microcentros urbanos, como el de Córdoba, mediante intervenciones con tecnologías ligeras y secas. Participa activamente en la promoción del diseño regional, como lo demuestra su involucramiento con el \"Sello Buen Diseño Argentino\" y la exportación de productos, destacando el diseño sustentable a través del reciclado de materiales. Su investigación también profundiza en la dimensión filosófica del diseño, argumentando que los objetos poseen \"memoria\" en lugar de \"identidad\" y que el diseño debe ser un factor intrínseco desde la génesis del producto, no un valor agregado. En el ámbito académico, como coordinador del curso de posgrado en Diseño de Muebles (Dimu) de la FAUD-UNC, co-dirige proyectos que buscan fortalecer la enseñanza de la historia de la arquitectura y el diseño, fomentando una mirada crítica que vincule el pasado con las problemáticas actuales, y la formación de profesionales capaces de dar respuestas pertinentes y sostenibles a la sociedad. Su trabajo subraya la importancia de la producción de bibliografía específica para la disciplina del equipamiento, un campo históricamente subdocumentado.",
+      "areas": [
+        "Rehabilitación y Reuso Arquitectónico",
+        "Diseño de Mobiliario y Equipamiento para el Hábitat",
+        "Regeneración Urbana y Acupuntura Urbana",
+        "Diseño Sustentable y Reciclaje de Materiales",
+        "Pedagogía de la Arquitectura y el Diseño",
+        "Teoría y Filosofía del Diseño",
+        "Promoción y Desarrollo del Diseño Regional"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20182832848,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "La trayectoria se centra en la sociología de la cultura, la historia intelectual y los estudios del libro y la edición, con un profundo énfasis en la circulación internacional de ideas y la traducción. Su investigación ilumina los complejos mecanismos de intercambio cultural, las dinámicas de poder en la producción de conocimiento y el papel fundamental de las instituciones y políticas culturales en la configuración de paisajes intelectuales, especialmente en el contexto latinoamericano, con un foco particular en Argentina y Brasil. Un área relevante de su trabajo también abarca la preservación y puesta en valor del patrimonio cultural y científico.",
+      "profile": "El perfil se caracteriza por una aproximación metodológica rigurosa y multidisciplinar, que integra la antropología histórica, la sociología de la cultura, la historia del libro y la edición, y la etnografía. La investigación se apoya en la construcción y análisis de extensas bases de datos estadísticas sobre flujos de traducción (intraduc-ción y extraduc-ción) de libros entre diversas naciones y lenguas, complementadas con metodologías cualitativas como entrevistas a editores, agentes literarios y académicos, así como la reconstrucción de trayectorias sociales y profesionales. Se realiza un estudio detallado de material de archivo, incluyendo correspondencia y cuadernos de campo, para desentrañar las mediaciones y los intereses que subyacen a los intercambios culturales. Los proyectos exploran la configuración de mercados editoriales internacionales, la influencia de las ferias del libro (como la de Frankfurt) y el impacto de factores políticos y económicos (como las dictaduras militares y la globalización) en la producción y legitimación de las ciencias sociales y humanas (CSH). Se examina cómo las formas de publicación (libros vs. revistas indexadas) han evolucionado como criterios de prestigio académico y cómo las ideas circulan y se apropian en distintos campos intelectuales. Además, se destaca la participación en proyectos de preservación y valorización de colecciones científicas patrimonializadas, promoviendo el acceso abierto y la conservación preventiva mediante el reacondicionamiento de acervos físicos y la digitalización. Esta labor se enmarca en un esfuerzo por fortalecer procesos identitarios y revalorizar memorias comunitarias. La colaboración es un pilar central, manifestada en la dirección y participación en equipos de investigación multidisciplinares (como el Programa de Historia y Antropología de la Cultura) y el establecimiento de vínculos estables con instituciones académicas de renombre nacional e internacional, lo que subraya una vocación por el trabajo colectivo y la formación de recursos humanos especializados.",
+      "areas": [
+        "Sociología de la Cultura",
+        "Historia Intelectual",
+        "Estudios del Libro y la Edición",
+        "Sociología de la Traducción",
+        "Circulación Internacional de Ideas",
+        "Políticas Culturales",
+        "Preservación y Gestión del Patrimonio Cultural",
+        "Museología y Archivística",
+        "Antropología Social",
+        "Historia del Arte",
+        "Estudios Latinoamericanos (Argentina y Brasil)",
+        "Teoría de los Campos (Bourdieu)",
+        "Etnografía de Archivos y Ferias del Libro",
+        "Ciencia Abierta y Datos Justos"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20200737165,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "La trayectoria se centra en la epidemiología molecular y la genética poblacional de Streptococcus mutans, investigando su variabilidad genética y su relación con la caries dental. Se complementa con estudios sobre factores de virulencia bacterianos, hábitos de higiene bucal y consumo de sacarosa en poblaciones pediátricas y adolescentes. Además, abarca la odontopediatría y la salud bucal pública, incluyendo la adaptación de la atención y la educación dental en contextos de pandemia.",
+      "profile": "El perfil se distingue por un enfoque multidisciplinario que fusiona la biología molecular, la genética de poblaciones, la odontología clínica y la salud pública. Metodológicamente, el investigador/a es experto/a en el uso de técnicas de tipado de secuencias multilocus (MLST) y PCR para la caracterización genética de cepas de Streptococcus mutans, incluyendo la secuenciación de genes de mantenimiento (como aroE, gltA, gyrA, lepC, tkt, glnA, glk, murI) y genes de virulencia clave (spa-P, gtfB). Esto permite dilucidar la estructura genética, la diversidad y la historia demográfica de la bacteria, empleando análisis de inferencia bayesiana para evaluar la recombinación, el flujo genético y las expansiones poblacionales históricas. La investigación integra exámenes clínico-odontológicos (según criterios OMS e ICDAS) y encuestas socio-demográficas para correlacionar la variabilidad genética bacteriana con la experiencia de caries y los factores de riesgo del huésped. Un aspecto notable es la participación en proyectos de colaboración internacional (Argentina, España, Brasil) y la contribución a la innovación educativa en odontopediatría, como la implementación de metodologías COIL y la adaptación de protocolos de atención dental durante la pandemia de COVID-19, demostrando una capacidad para abordar desafíos complejos en la salud bucal.",
+      "areas": [
+        "Epidemiología Molecular",
+        "Genética Poblacional Bacteriana",
+        "Caries Dental",
+        "Factores de Virulencia Microbiana",
+        "Odontopediatría",
+        "Salud Pública Bucal",
+        "Biología Molecular",
+        "Bioinformática",
+        "Educación Odontológica",
+        "Microbiología Oral"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20238939837,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "La trayectoria se centra en el Diseño Industrial, la Movilidad Urbana Sostenible y la Innovación en Procesos de Diseño. Sus temas predominantes incluyen la intermodalidad como estrategia para un transporte urbano eficiente y sostenible, la aplicación de la antropometría en el diseño de productos urbanos, y la integración de la innovación metodológica y tecnológica, como la fabricación aditiva, en la enseñanza y la investigación. Su relevancia radica en la capacidad de desarrollar soluciones prácticas y estratégicas para desafíos urbanos complejos, mejorar la calidad de la vida a través del diseño y potenciar el crecimiento académico y profesional mediante la adopción de tecnologías avanzadas y enfoques pedagógicos innovadores.",
+      "profile": "El perfil se caracteriza por una sólida base en la resolución estratégica de problemas dentro del Diseño Industrial, con un enfoque particular en la integración planificada de la innovación en cada etapa del proceso de diseño. Metodológicamente, su trabajo incorpora la investigación aplicada, destacando el uso de la antropometría para informar el diseño de productos y sistemas de movilidad. En el ámbito de la movilidad urbana, ha desarrollado y promovido el concepto de \"intermodalidad utilitaria\" como una estrategia clave para mitigar el impacto negativo del transporte vehicular en entornos urbanos densificados, analizando las complejas interconexiones entre vehículos, peatones, escalas y entornos. Su investigación también aborda la evolución del espacio urbano en la era post-fósil, con un énfasis en el diseño de bicicletas de uso público y la aplicación de datos antropométricos. En el plano educativo y tecnológico, ha sido un impulsor fundamental de la modernización de la infraestructura de investigación y docencia, liderando proyectos para la incorporación de equipamiento tecnológico avanzado, como la impresión 3D. Este laboratorio de fabricación aditiva se concibe como un espacio dinámico y colaborativo que trasciende las fronteras disciplinares, fomentando el prototipado, la fabricación y la exploración de nuevas aplicaciones tecnológicas. Su enfoque busca no solo mejorar las capacidades analíticas y de diseño mediante software avanzado, sino también hacer que los estudiantes sean conscientes del proceso proyectual y la articulación de sus componentes internos. Participa activamente en redes de colaboración, como las mencionadas en el contexto de Gestión Sustentable en Universidades, y busca fortalecer vínculos con instituciones como CONICET-UNC para impulsar la investigación interdisciplinaria y generar proyectos innovadores que beneficien tanto a la comunidad académica como a la sociedad en general.",
+      "areas": [
+        "Diseño Industrial",
+        "Movilidad Urbana Sostenible",
+        "Intermodalidad",
+        "Innovación en Procesos de Diseño",
+        "Fabricación Aditiva (Impresión 3D)",
+        "Antropometría Aplicada al Diseño",
+        "Estrategias Didácticas en Diseño",
+        "Urbanismo Sostenible",
+        "Gestión Tecnológica en Investigación"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20259177791,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "La trayectoria se centra en la investigación de mecanismos celulares y moleculares fundamentales en procesos fisiológicos y patológicos, con un énfasis particular en la endocrinología, especialmente en el estudio de tumores hipofisarios. Su trabajo abarca la identificación de biomarcadores para el diagnóstico temprano y la optimización de estrategias terapéuticas en enfermedades crónicas prevalentes, integrando enfoques avanzados en microscopía, nanotecnología y el análisis de factores nutricionales y ambientales.",
+      "profile": "El perfil se caracteriza por una sólida base en biología celular y molecular, aplicando metodologías avanzadas como cultivos celulares, microscopía electrónica de transmisión de alta resolución, HPLC, espectrofotometría, espectroscopía de rayos X, inmunohistoquímica, Western blot, citometría de flujo y qPCR. La investigación se diseña a través de estudios experimentales in vitro e in vivo, utilizando modelos animales (ratas Wistar, F344) y líneas celulares (GH3, GH3B6), así como el análisis de muestras humanas (adenomas hipofisarios, tejido placentario).\n\nUn eje central de su investigación es la comprensión de los mecanismos de proliferación, migración, invasión, diferenciación, senescencia, autofagia y muerte celular en condiciones fisiológicas y patológicas. Esto incluye el estudio detallado de la regulación hormonal (estradiol, insulina, IGF-1, TRH, somatostatina) y la participación de factores de crecimiento (FGF-2, EGF, TGF-beta1) y sus receptores (ERα, ERβ, FGFRs, SSTRs, TLR4, HER2) en la homeostasis y la tumorigénesis hipofisaria. Se investigan activamente las vías de señalización intracelular como PKC, ERK1/2, PI3K/Akt, Smads, Nrf2 y NF-kB, así como las alteraciones genéticas y epigenéticas (EZH2/H3K27me3) que influyen en la divergencia funcional y la resistencia terapéutica de los tumores.\n\nLa aplicación de estos conocimientos se traduce en la identificación y validación de biomarcadores metabólicos, inflamatorios y oncológicos, con el fin de mejorar el diagnóstico temprano y pronóstico de enfermedades crónicas no transmisibles. Además, se exploran nuevas estrategias terapéuticas, incluyendo la modulación de la respuesta a fármacos convencionales (octreótida, bromocriptina) y el desarrollo de terapias dirigidas (trastuzumab) y formulaciones bioactivas a partir de fuentes naturales, sintéticas o agroindustriales.\n\nLa trayectoria del investigador también se extiende al campo de la nanotecnología, con el desarrollo y caracterización de nanomateriales (nanopartículas de óxido cuproso, alginato/quitosano) para diversas aplicaciones biomédicas, como la inactivación de virus (SARS-CoV-2) y la mejora de la administración de fármacos (rifampicina, acetazolamida, hidroclorotiazida). La microscopía electrónica de transmisión de alta resolución es una herramienta clave en esta línea, ofreciendo servicios especializados a la comunidad científica e industrial.\n\nSe observa una fuerte participación en redes de colaboración multidisciplinarias, involucrando a múltiples facultades (FCM, FO, FCE, FCEFN, FAMAF) y centros de investigación (CME, IBC, LAMARX) de la Universidad Nacional de Córdoba, lo que subraya un enfoque integral y traslacional en su investigación, con una clara proyección epidemiológica y de salud pública. La formación de recursos humanos especializados en estas tecnologías y áreas de investigación es también un componente fundamental de su labor.",
+      "areas": [
+        "Endocrinología Celular y Molecular",
+        "Tumores Hipofisarios y Resistencia Terapéutica",
+        "Mecanismos de Proliferación, Diferenciación y Muerte Celular",
+        "Biomarcadores para Diagnóstico y Terapéutica de Enfermedades Crónicas",
+        "Nanotecnología y Microscopía Avanzada para Aplicaciones Biomédicas",
+        "Modulación Nutricional y Ambiental en Enfermedades Crónicas No Transmisibles",
+        "Genética y Epigenética en Patologías Endocrinas",
+        "Inmunología y Parasitología"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20268633198,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "Error generating brief.",
+      "profile": "Error generating profile.",
+      "areas": [
+        "Error"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20276532732,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "Error generating brief.",
+      "profile": "Error generating profile.",
+      "areas": [
+        "Error"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20276705394,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "Error generating brief.",
+      "profile": "Error generating profile.",
+      "areas": [
+        "Error"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20281270924,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "Error generating brief.",
+      "profile": "Error generating profile.",
+      "areas": [
+        "Error"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20309616694,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "Error generating brief.",
+      "profile": "Error generating profile.",
+      "areas": [
+        "Error"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20327869958,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "Error generating brief.",
+      "profile": "Error generating profile.",
+      "areas": [
+        "Error"
+      ]
+    }
+  },
+  {
+    "researcher_id": 20333807778,
+    "tag": "user_academic_temp05",
+    "summary": {
+      "brief": "Error generating brief.",
+      "profile": "Error generating profile.",
+      "areas": [
+        "Error"
+      ]
+    }
+  }
+]
