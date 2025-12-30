@@ -1,8 +1,9 @@
-Con la información provista sobre el investigador, analiza su trayectoria, líneas de investigación y producción científica.
+Con la información provista sobre el investigador/a, analiza su trayectoria, líneas de investigación y producción científica.
 
 Datos para analizar:
 - Proyectos: {{ projects }}
 - Publicaciones: {{ publications }}
+- PDF: {{pdf}}
 
 Producción esperada (formato Markdown con JSON):
 
@@ -13,8 +14,8 @@ Producción esperada (formato Markdown con JSON):
 }
 
 Criterios:
-- "brief": síntesis académica precisa que identifique campo, temas predominantes y relevancia.
-- "profile": narrativa técnica detallada abarcando fundamentos metodológicos, diseño experimental, enfoques matemáticos o computacionales, aplicaciones y participación en redes de colaboración.
+- "brief": síntesis académica precisa que identifique campo, temas predominantes y relevancia. Comienza con: "La trayectoría se ..."
+- "profile": narrativa técnica detallada abarcando fundamentos metodológicos, diseño experimental, enfoques matemáticos o computacionales, aplicaciones y participación en redes de colaboración. Comienza con "El perfil se ..."
 - "areas": derivar áreas temáticas a partir de palabras clave, tópicos recurrentes y metodologías mencionadas.
 
 Seguir estrictamente el response_schema definido.
