@@ -6,12 +6,13 @@ from beanie import PydanticObjectId
 from mapa_ciencia_unc.auth import require_auth
 from mapa_ciencia_unc.llms.utils import (
     process_articles,
+    process_project_intros,
     process_projects,
 )
 from mapa_ciencia_unc.models.summary import MultipleSummariesCreate, Summary
 from mapa_ciencia_unc.models.researcher import Researcher
 from mapa_ciencia_unc.models.article import Article
-from mapa_ciencia_unc.models.project import Project
+from mapa_ciencia_unc.models.project import Project, ProjectExtractedIntro
 
 from mapa_ciencia_unc.models.summary import SummaryRequest
 from mapa_ciencia_unc.llms.summary_generator import (
@@ -66,38 +67,6 @@ async def generate_summaries(req: SummaryRequest):
     **Raises:**
     - `404 Not Found`: Researcher not found
     - `FileNotFoundError`: Template file missing
-
-    **Examples:**
-
-    Generate with Gemini model:
-    ```json
-    {
-        "researcher_id": "507f1f77bcf86cd799439011",
-        "model": "gemini-2.5-flash",
-        "tag": "test-user_academic_v1",
-        "system_name": "v1/system_instruction_1",
-        "prompt_name": "v2/user_academic"
-    }
-    ```
-
-    Generate with Ollama model:
-    ```json
-    {
-        "researcher_id": "507f1f77bcf86cd799439011",
-        "model": "gemma3:4b",
-        "tag": "test-ollama",
-        "prompt_name": "v2/combined_prompt"
-    }
-    ```
-
-    Generate full-text description:
-    ```json
-    {
-        "researcher_id": "507f1f77bcf86cd799439011",
-        "model": "full-text",
-        "tag": "test-full-text",
-        "prompt_name": "v2/full_description"
-    }
     ```
     """
     # Optional system_name
@@ -124,13 +93,17 @@ async def generate_summaries(req: SummaryRequest):
 
     articles = await Article.find(Article.cuit == researcher.cuit).to_list()
     projects = await Project.find(Project.cuit == researcher.cuit).to_list()
+    projects_intro = await ProjectExtractedIntro.find(
+        ProjectExtractedIntro.cuit == researcher.cuit
+    ).to_list()
     context = {
         "researcher": {
             "research_area": researcher.research_area,
-            "last_project_title": researcher.last_project_title
+            "last_project_title": researcher.last_project_title,
         },
         "publications": process_articles(articles),
         "projects": process_projects(projects),
+        "projects_intro": process_project_intros(projects_intro),
     }
 
     content = SummaryGenerator.generate_researcher_summary(

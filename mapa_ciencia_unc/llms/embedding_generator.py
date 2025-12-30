@@ -171,7 +171,6 @@ class EmbeddingGeneratorOllama:
 
         logger.info(f"Requesting Ollama embedding: model={model_name}")
         response = requests.post(url, headers=headers, json=data, timeout=120)
-        import ipdb; ipdb.set_trace()
         if (
             response.status_code == 500
             and "length exceeds" in str(response.content)

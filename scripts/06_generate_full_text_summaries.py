@@ -47,7 +47,7 @@ def get_all_researchers(api_url, headers):
     response = requests.get(
         api_url + RESEARCHERS_ENDPOINT,
         headers=headers,
-        params={"limit": 10},
+        params={"limit": 1000},
     )
     response.raise_for_status()
     return response.json()

@@ -6,7 +6,7 @@ from jinja2 import Environment, FileSystemLoader
 from typing import List, Mapping, Any, Optional
 
 from mapa_ciencia_unc.models.article import Article
-from mapa_ciencia_unc.models.project import Project
+from mapa_ciencia_unc.models.project import Project, ProjectExtractedIntro
 
 
 logger = logging.getLogger(__name__)
@@ -250,4 +250,39 @@ def process_projects(
             projects_parts.append(resumen)
 
     return "\n\n".join(projects_parts)
+
+
+def process_project_intros(
+    project_intros: List[ProjectExtractedIntro],
+    max_length: Optional[int] = None,
+    max_intros: Optional[int] = None,
+) -> str:
+    """
+    Process project extracted intros into formatted text for LLM input.
+
+    Args:
+        project_intros: List of project extracted intros associated with a researcher.
+        max_length: Optional maximum number of words for each extracted intro.
+        max_intros: Optional maximum number of project intros to include.
+
+    Returns:
+        Concatenated text of project intros, sorted by creation date (newest first).
+    """
+    intros_parts: list[str] = []
+
+    # Sort by created_at date (newest first) and limit number
+    sorted_intros = sorted(project_intros, key=lambda x: x.created_at, reverse=True)
+    if max_intros:
+        sorted_intros = sorted_intros[:max_intros]
+
+    for intro in sorted_intros:
+        if intro.extracted_intro:
+            intro_text = intro.extracted_intro
+            if max_length:
+                words = intro_text.split()
+                if len(words) > max_length:
+                    intro_text = " ".join(words[:max_length])
+            intros_parts.append(intro_text)
+
+    return "\n\n".join(intros_parts)
 
