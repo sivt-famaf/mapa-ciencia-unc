@@ -256,3 +256,60 @@ async def create_researcher_embedding(researcher_id: str, payload: EmbeddingCrea
 
     await researcher.save()
     return researcher
+
+
+@router.delete("/tag/{tag}")
+async def delete_embeddings_by_tag(tag: str):
+    """
+    Delete all embeddings with the specified tag across all researchers.
+
+    Finds all researchers with embeddings matching the given tag and removes them.
+    Useful for cleanup or regenerating embeddings with different parameters.
+
+    Args:
+        tag: Tag identifier for embeddings to delete (e.g., "embeddings-v1", "test-embeddings")
+
+    Returns:
+        - deleted_count: Number of embeddings deleted
+        - researchers_affected: Number of researchers that had embeddings removed
+
+    Example:
+    ```
+    DELETE /api/embeddings/tag/embeddings-v1
+    ```
+
+    Returns:
+    ```json
+    {
+        "deleted_count": 150,
+        "researchers_affected": 150
+    }
+    ```
+    """
+    researchers = await Researcher.find_all().to_list()
+
+    deleted_count = 0
+    researchers_affected = 0
+
+    for researcher in researchers:
+        # Count embeddings with this tag
+        embeddings_before = len(researcher.embeddings)
+
+        # Remove embeddings with the specified tag
+        researcher.embeddings = [
+            e for e in researcher.embeddings if e.tag != tag
+        ]
+
+        embeddings_after = len(researcher.embeddings)
+        embeddings_removed = embeddings_before - embeddings_after
+
+        # Save if embeddings were removed
+        if embeddings_removed > 0:
+            await researcher.save()
+            deleted_count += embeddings_removed
+            researchers_affected += 1
+
+    return {
+        "deleted_count": deleted_count,
+        "researchers_affected": researchers_affected,
+    }
