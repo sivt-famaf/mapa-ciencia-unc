@@ -38,7 +38,7 @@ async def generate_summaries(req: SummaryRequest):
     1. Validates system instruction and prompt template files exist
     2. Fetches researcher by ID
     3. Retrieves all articles and projects for the researcher (matched by CUIT)
-    4. Processes articles and projects into context format
+    4. Processes articles and projects into context format (sorted by year, newest first)
     5. Generates summary using specified model
     6. Removes any existing summary with the same tag
     7. Stores the new summary with the researcher
@@ -46,19 +46,9 @@ async def generate_summaries(req: SummaryRequest):
     **Supported Models:**
     - **Gemini models**: "gemini-2.5-flash", "gemini-2.5-pro", etc.
       - Requires both system_name and prompt_name
-      - Generates structured JSON output with brief, profile, and areas
     - **Ollama models**: "gemma3:4b", "llama3.1", etc.
-      - system_name is optional (combined prompt includes instructions)
-      - Generates structured JSON output
-    - **Full-text**: "full-text"
-      - No LLM processing, renders Jinja template with raw data
-      - system_name not used
-      - Outputs formatted markdown text
-
-    **Templates:**
-    - System instructions: `mapa_ciencia_unc/prompts/profile_summary/system/<system_name>.jinja`
-    - User prompts: `mapa_ciencia_unc/prompts/profile_summary/user/<prompt_name>.jinja`
-    - Full-text template: `mapa_ciencia_unc/prompts/full_description.jinja`
+    - **Full-text**: "full-text": No LLM processing, renders Jinja template with
+      researcher's raw data
 
     **Request Body:**
     - `researcher_id`: MongoDB ObjectId of the researcher (required)
@@ -168,8 +158,8 @@ async def generate_summaries(req: SummaryRequest):
     }
 
 
-@router.post("/bulk", response_model=dict)
-async def create_multiple_summaries(payload: MultipleSummariesCreate):
+@router.post("/upload/bulk", response_model=dict)
+async def upload_multiple_summaries(payload: MultipleSummariesCreate):
     """
     Upload multiple summaries to researchers in bulk.
 

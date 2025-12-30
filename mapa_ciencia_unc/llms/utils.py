@@ -170,38 +170,55 @@ def render_prompt(
     return system_instruction, prompt
 
 
-def process_articles(articles: List[Article], max_length: Optional[int] = None) -> str:
+def process_articles(
+    articles: List[Article],
+    max_length: Optional[int] = None,
+    max_articles: Optional[int] = None,
+) -> str:
     """
     Process articles into formatted text for LLM input.
 
     Args:
         articles: List of articles (publications) associated with a researcher.
-        max_length: Optional maximum length for each abstract (characters).
+        max_length: Optional maximum number of words for each abstract.
+        max_articles: Optional maximum number of articles to include.
 
     Returns:
         Concatenated text of article titles and abstracts, sorted by year (newest first).
     """
     publications_parts: list[str] = []
 
-    for article in sorted(articles, key=lambda x: x.year, reverse=True):
+    # Sort and limit number of articles
+    sorted_articles = sorted(articles, key=lambda x: x.year, reverse=True)
+    if max_articles:
+        sorted_articles = sorted_articles[:max_articles]
+
+    for article in sorted_articles:
         publications_parts.append("Título: " + article.titulo + f" ({article.year}) ")
 
         if article.resumen:
             abstract = article.resumen
-            if max_length and len(abstract) > max_length:
-                abstract = abstract[:max_length]
+            if max_length:
+                words = abstract.split()
+                if len(words) > max_length:
+                    abstract = " ".join(words[:max_length])
             publications_parts.append("Abstract: " + abstract)
 
     return "\n\n".join(publications_parts)
 
 
-def process_projects(projects: List[Project], max_length: Optional[int] = None) -> str:
+def process_projects(
+    projects: List[Project],
+    max_length: Optional[int] = None,
+    max_projects: Optional[int] = None,
+) -> str:
     """
     Process projects into formatted text for LLM input.
 
     Args:
         projects: List of projects associated with a researcher.
-        max_length: Optional maximum length for each project summary (characters).
+        max_length: Optional maximum number of words for each project summary.
+        max_projects: Optional maximum number of projects to include.
 
     Returns:
         Concatenated text of project titles and summaries, sorted by year (newest first).
@@ -214,15 +231,22 @@ def process_projects(projects: List[Project], max_length: Optional[int] = None) 
         else:
             return None
 
-    for project in sorted(projects, key=project_year, reverse=True):
+    # Sort and limit number of projects
+    sorted_projects = sorted(projects, key=project_year, reverse=True)
+    if max_projects:
+        sorted_projects = sorted_projects[:max_projects]
+
+    for project in sorted_projects:
         projects_parts.append(
             "Título: " + project.titulo_proyecto + f" ({project_year(project)})"
         )
 
         if project.resumen_proyecto:
             resumen = project.resumen_proyecto
-            if max_length and len(resumen) > max_length:
-                resumen = resumen[:max_length]
+            if max_length:
+                words = resumen.split()
+                if len(words) > max_length:
+                    resumen = " ".join(words[:max_length])
             projects_parts.append(resumen)
 
     return "\n\n".join(projects_parts)
