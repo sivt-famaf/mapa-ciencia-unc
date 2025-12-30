@@ -35,7 +35,7 @@ class EmbeddingGenerator:
             text: Text content to embed (e.g., researcher profile, summary, abstract)
             model_name: Name of the embedding model to use
                 - "gemini-embedding-001" or similar for Gemini models
-                - "ollama" or model names containing "ollama" or "nomic" for Ollama models
+                - "ollama" or model names containing "ollama", "nomic" or "qwen"
             output_dim: Target dimensionality for the embedding vector (default: 768)
 
         Returns:
@@ -51,7 +51,11 @@ class EmbeddingGenerator:
                 model_name=model_name,
                 output_dim=output_dim,
             )
-        elif ("ollama" in model_name) or ("nomic" in model_name):
+        elif (
+            ("ollama" in model_name)
+            or ("nomic" in model_name)
+            or ("qwen" in model_name)
+        ):
             return EmbeddingGeneratorOllama.generate_embedding(
                 text=text,
                 model_name=model_name,
@@ -61,7 +65,7 @@ class EmbeddingGenerator:
             raise ValueError(
                 f"Model '{model_name}' not supported. "
                 "Supported models: Gemini models (containing 'gemini'), "
-                "Ollama models (containing 'ollama' or 'nomic')"
+                "Ollama models (containing 'ollama', 'nomic' or 'qwen')"
             )
 
 
@@ -139,7 +143,8 @@ class EmbeddingGeneratorOllama:
 
         Args:
             text: Text to embed
-            model_name: Ollama model (e.g., "nomic-embed-text:latest", "mxbai-embed-large:latest")
+            model_name: Ollama model (e.g., "nomic-embed-text:latest",
+                "qwen3-embedding:8b")
             output_dim: Not used (Ollama models have fixed dimensions)
 
         Returns:
@@ -165,7 +170,16 @@ class EmbeddingGeneratorOllama:
         }
 
         logger.info(f"Requesting Ollama embedding: model={model_name}")
-        response = requests.post(url, headers=headers, json=data, timeout=60)
+        response = requests.post(url, headers=headers, json=data, timeout=120)
+        import ipdb; ipdb.set_trace()
+        if (
+            response.status_code == 500
+            and "length exceeds" in str(response.content)
+        ):
+            raise ValueError(
+                "Input length exceeds the context length "
+                "({} words approx.)".format(len(text.split(" ")))
+            )
         response.raise_for_status()
 
         result = response.json()
