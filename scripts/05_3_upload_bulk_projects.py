@@ -1,15 +1,15 @@
 """
-This process uploads projects texts from a json file to the database.
-The json file should be the ouput of the script 04_02_extract_intro_from_project_files.py
+Uploads bulk project texts from a JSON file to the database.
+
+The JSON file should be the output of script 04_02_extract_intro_from_project_files.py
 
 Inputs:
-    - A json file with project texts. The json keys are expected to be "<cuit>_<codigo_tramite>_<filename>"
-    - The API url to upload the data to.
-    - Username and password for API authentication.
-    - Overwrite flag to indicate whether to overwrite existing entries in the database. (based on cuit and codigo_tramite)
+    - JSON file with project texts (keys: "<cuit>_<codigo_tramite>_<filename>")
+    - API URL, username, and password for authentication
+    - Overwrite flag to replace existing entries (based on cuit and codigo_tramite)
 
 Example usage:
-python scripts/04_03_upload_projects_to_db.py \
+python scripts/05_3_upload_bulk_projects.py \
     --input-file path/to/project_texts.json \
     --api-url http://example.com \
     --username admin \
