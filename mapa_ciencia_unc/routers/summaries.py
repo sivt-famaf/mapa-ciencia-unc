@@ -245,3 +245,60 @@ async def upload_multiple_summaries(payload: MultipleSummariesCreate):
         "skipped_summaries": skipped_summaries,
         "failed_summaries": failed_summaries,
     }
+
+
+@router.delete("/tag/{tag}")
+async def delete_summaries_by_tag(tag: str):
+    """
+    Delete all summaries with the specified tag across all researchers.
+
+    Finds all researchers with summaries matching the given tag and removes them.
+    Useful for cleanup or regenerating summaries with different parameters.
+
+    Args:
+        tag: Tag identifier for summaries to delete (e.g., "user_academic_v1", "test-summaries")
+
+    Returns:
+        - deleted_count: Number of summaries deleted
+        - researchers_affected: Number of researchers that had summaries removed
+
+    Example:
+    ```
+    DELETE /api/summaries/tag/user_academic_v1
+    ```
+
+    Returns:
+    ```json
+    {
+        "deleted_count": 150,
+        "researchers_affected": 150
+    }
+    ```
+    """
+    researchers = await Researcher.find_all().to_list()
+
+    deleted_count = 0
+    researchers_affected = 0
+
+    for researcher in researchers:
+        # Count summaries with this tag
+        summaries_before = len(researcher.summaries)
+
+        # Remove summaries with the specified tag
+        researcher.summaries = [
+            s for s in researcher.summaries if s.tag != tag
+        ]
+
+        summaries_after = len(researcher.summaries)
+        summaries_removed = summaries_before - summaries_after
+
+        # Save if summaries were removed
+        if summaries_removed > 0:
+            await researcher.save()
+            deleted_count += summaries_removed
+            researchers_affected += 1
+
+    return {
+        "deleted_count": deleted_count,
+        "researchers_affected": researchers_affected,
+    }
