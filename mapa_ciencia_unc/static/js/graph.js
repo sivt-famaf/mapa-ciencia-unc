@@ -57,16 +57,166 @@ if (!Graphology || !SigmaRenderer) {
   throw new Error("Missing graph libraries");
 }
 
+let renderer;
+const filterControlsEl = document.getElementById("filter-controls");
+let activeFilterDropdowns = [];
+let filterCloserBound = false;
+const filterState = { selections: {} };
+
+const formatFilterLabel = (raw) => {
+  if (!raw) return "";
+  const cleaned = String(raw).replace(/[_-]+/g, " ").trim();
+  if (!cleaned) return "";
+  return cleaned.replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
+const hasActiveFilters = () =>
+  Object.values(filterState.selections).some(
+    (selected) => selected && selected.size > 0
+  );
+
+const nodeMatchesFilters = (node) => {
+  if (!hasActiveFilters()) return true;
+  const metadata = graph.getNodeAttribute(node, "metadata") || {};
+
+  return Object.entries(filterState.selections).every(([key, selected]) => {
+    if (!selected || selected.size === 0) return true;
+    const nodeValue = metadata?.[key];
+    if (Array.isArray(nodeValue)) {
+      return nodeValue.some((entry) => selected.has(String(entry)));
+    }
+    if (nodeValue === null || nodeValue === undefined) return false;
+    return selected.has(String(nodeValue));
+  });
+};
+
+const renderFilterDropdowns = (filterFields) => {
+  if (!filterControlsEl) return;
+
+  activeFilterDropdowns = [];
+  filterControlsEl.innerHTML = "";
+  filterState.selections = {};
+
+  const closeAll = () => {
+    activeFilterDropdowns.forEach((dropdown) =>
+      dropdown.classList.remove("open")
+    );
+  };
+
+  if (!filterCloserBound) {
+    document.addEventListener("click", (event) => {
+      if (!filterControlsEl.contains(event.target)) {
+        closeAll();
+      }
+    });
+    filterCloserBound = true;
+  }
+
+  if (!Array.isArray(filterFields) || filterFields.length === 0) {
+    const placeholder = document.createElement("span");
+    placeholder.className = "filters-empty";
+    placeholder.textContent = "No filters available";
+    filterControlsEl.appendChild(placeholder);
+    return;
+  }
+
+  filterFields.forEach((field, fieldIndex) => {
+    const filterKey = field?.key ?? `filter_${fieldIndex}`;
+    const dropdown = document.createElement("div");
+    dropdown.className = "filter-dropdown";
+
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "filter-toggle";
+    const baseLabel = formatFilterLabel(filterKey) || `Filter ${fieldIndex + 1}`;
+    toggle.textContent = baseLabel;
+
+    const options = document.createElement("div");
+    options.className = "filter-options";
+
+    const values = Array.isArray(field?.values) ? field.values : [];
+    const updateSelection = () => {
+      const checked = options.querySelectorAll('input[type="checkbox"]:checked');
+      const valuesSet = new Set(
+        Array.from(checked).map((input) => String(input.value))
+      );
+      if (valuesSet.size === 0) {
+        delete filterState.selections[filterKey];
+      } else {
+        filterState.selections[filterKey] = valuesSet;
+      }
+
+      const checkedCount = valuesSet.size;
+      toggle.textContent =
+        checkedCount > 0
+          ? `${baseLabel} (${checkedCount} selected)`
+          : baseLabel;
+
+      if (typeof renderer !== "undefined" && renderer?.refresh) {
+        renderer.refresh();
+      }
+    };
+
+    if (values.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "filter-option filters-empty";
+      empty.textContent = "No values";
+      options.appendChild(empty);
+    } else {
+      values.forEach((value, valueIndex) => {
+        const option = document.createElement("label");
+        option.className = "filter-option";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.name = `filter-${filterKey}`;
+        checkbox.value = value ?? "";
+        checkbox.id = `filter-${filterKey}-${valueIndex}`;
+
+        const text = document.createElement("span");
+        text.textContent = value ?? "N/A";
+
+        option.appendChild(checkbox);
+        option.appendChild(text);
+        options.appendChild(option);
+
+        checkbox.addEventListener("change", updateSelection);
+      });
+    }
+
+    // initialize label and selection with current state (all unchecked by default)
+    updateSelection();
+
+    toggle.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isOpening = !dropdown.classList.contains("open");
+      closeAll();
+      if (isOpening) {
+        dropdown.classList.add("open");
+      }
+    });
+
+    dropdown.appendChild(toggle);
+    dropdown.appendChild(options);
+    filterControlsEl.appendChild(dropdown);
+    activeFilterDropdowns.push(dropdown);
+  });
+};
+
+renderFilterDropdowns(rawData?.filter_fields);
+
 const graph = new Graphology.Graph();
 
 rawData.nodes?.forEach((node) => {
   graph.addNode(node.id, {
     label: node.label,
-    size: 10,
+    size: 5 * (node.metadata?.size_multiplier || 1),
     color: node.color || "#000000",
     x: node.x,
     y: node.y,
     description: node.description || "",
+    cluster: node.cluster,
+    metadata: node.metadata || {},
   });
 });
 
@@ -84,7 +234,125 @@ if (!container) {
   throw new Error("Missing graph container");
 }
 
-const renderer = new SigmaRenderer(graph, container);
+renderer = new SigmaRenderer(graph, container);
+
+// Build cluster info from node attribute "type"
+const clusters = {};
+graph.forEachNode((_node, attrs) => {
+  // if attrs.cluster is null, skip this node
+  if (!attrs.cluster) return;
+  const clusterKey = attrs.cluster;
+  if (!clusters[clusterKey]) {
+    clusters[clusterKey] = {
+      label: clusterKey,
+      color: attrs.color || "#666",
+      positions: [],
+    };
+  }
+
+  if (typeof attrs.x === "number" && typeof attrs.y === "number") {
+    clusters[clusterKey].positions.push({ x: attrs.x, y: attrs.y });
+  }
+
+  if (!clusters[clusterKey].color && attrs.color) {
+    clusters[clusterKey].color = attrs.color;
+  }
+});
+
+// Calculate barycenter per cluster for label positioning
+Object.keys(clusters).forEach((key) => {
+  const cluster = clusters[key];
+  if (!cluster.positions.length) return;
+
+  const total = cluster.positions.reduce(
+    (acc, pos) => {
+      acc.x += pos.x;
+      acc.y += pos.y;
+      return acc;
+    },
+    { x: 0, y: 0 }
+  );
+
+  cluster.x = total.x / cluster.positions.length;
+  cluster.y = total.y / cluster.positions.length;
+});
+
+// Create cluster labels layer
+const clustersLayer = document.createElement("div");
+clustersLayer.id = "clusters-layer";
+clustersLayer.style.position = "absolute";
+clustersLayer.style.top = "0";
+clustersLayer.style.left = "0";
+clustersLayer.style.width = "100%";
+clustersLayer.style.height = "100%";
+clustersLayer.style.pointerEvents = "none";
+
+// Inject cluster label styles if not already present
+const existingClusterStyle = document.getElementById("cluster-label-style");
+if (!existingClusterStyle) {
+  const styleTag = document.createElement("style");
+  styleTag.id = "cluster-label-style";
+  styleTag.textContent = `
+    .clusterLabel {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      font-family: sans-serif;
+      font-variant: small-caps;
+      font-weight: 400;
+      font-size: 1.8rem;
+      text-align: center;
+      max-width: 240px;
+      line-height: 1.1;
+      word-break: break-word;
+      text-shadow:
+        2px 2px 1px white,
+        -2px -2px 1px white,
+        -2px 2px 1px white,
+        2px -2px 1px white;
+      pointer-events: none;
+      white-space: normal;
+    }
+  `;
+  document.head.appendChild(styleTag);
+}
+
+// Ensure container can host absolutely positioned children
+const containerStyle = window.getComputedStyle(container);
+if (containerStyle.position === "static") {
+  container.style.position = "relative";
+}
+
+let clusterLabelsMarkup = "";
+Object.keys(clusters).forEach((key) => {
+  const cluster = clusters[key];
+  if (typeof cluster.x !== "number" || typeof cluster.y !== "number") return;
+
+  const { x, y } = renderer.graphToViewport({ x: cluster.x, y: cluster.y });
+  clusterLabelsMarkup += `<div data-cluster-id="${key}" class="clusterLabel" style="top:${y}px;left:${x}px;color:${cluster.color};">${cluster.label}</div>`;
+});
+
+clustersLayer.innerHTML = clusterLabelsMarkup;
+const hoversLayer = container.querySelector(".sigma-hovers");
+if (hoversLayer) {
+  container.insertBefore(clustersLayer, hoversLayer);
+} else {
+  container.appendChild(clustersLayer);
+}
+
+// Keep cluster labels in sync with camera movements
+renderer.on("afterRender", () => {
+  Object.keys(clusters).forEach((key) => {
+    const cluster = clusters[key];
+    if (typeof cluster.x !== "number" || typeof cluster.y !== "number") return;
+
+    const clusterLabel = clustersLayer.querySelector(`[data-cluster-id="${key}"]`);
+    if (!clusterLabel) return;
+
+    const { x, y } = renderer.graphToViewport({ x: cluster.x, y: cluster.y });
+    clusterLabel.style.top = `${y}px`;
+    clusterLabel.style.left = `${x}px`;
+  });
+});
 
 const getStoredToken = () => {
   const localToken = localStorage.getItem("jwtToken");
@@ -164,6 +432,14 @@ renderer.on("clickStage", () => {
 
 renderer.setSetting("nodeReducer", (node, data) => {
   const res = { ...data };
+
+  const passesFilters = nodeMatchesFilters(node);
+  if (!passesFilters) {
+    res.color = "#eee";
+    res.forceLabel = false;
+    res.labelSize = 0;
+    return res;
+  }
 
   if (!state.hoveredNode) {
     return res;
