@@ -5,7 +5,12 @@ from typing import List
 from google import genai
 from google.genai import types
 
-from mapa_ciencia_unc.config import GEMINI_API_KEY, OLLAMA_HOST, OLLAMA_API_KEY
+from mapa_ciencia_unc.config import (
+    GEMINI_API_KEY,
+    OLLAMA_HOST,
+    OLLAMA_API_KEY,
+    LOCAL_EMBEDDING_HOST,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +41,7 @@ class EmbeddingGenerator:
             model_name: Name of the embedding model to use
                 - "gemini-embedding-001" or similar for Gemini models
                 - "ollama" or model names containing "ollama", "nomic" or "qwen"
+                - "local" or model names containing "local"
             output_dim: Target dimensionality for the embedding vector (default: 768)
 
         Returns:
@@ -61,11 +67,18 @@ class EmbeddingGenerator:
                 model_name=model_name,
                 output_dim=output_dim,
             )
+        elif "local" in model_name:
+            return EmbeddingGeneratorLocal.generate_embedding(
+                text=text,
+                model_name=model_name,
+                output_dim=output_dim,
+            )
         else:
             raise ValueError(
                 f"Model '{model_name}' not supported. "
                 "Supported models: Gemini models (containing 'gemini'), "
-                "Ollama models (containing 'ollama', 'nomic' or 'qwen')"
+                "Ollama models (containing 'ollama', 'nomic' or 'qwen'), "
+                "Local models (containing 'local')"
             )
 
 
@@ -187,5 +200,59 @@ class EmbeddingGeneratorOllama:
         # Format: {"data": [{"embedding": [....]} ]}
         try:
             return result["data"][0]["embedding"]
+        except Exception:
+            raise ValueError(f"Unexpected response format: {result}")
+
+
+class EmbeddingGeneratorLocal:
+    """
+    Local embedding server generator using HTTP API.
+
+    Queries a local embedding server without authentication.
+    """
+
+    @classmethod
+    def generate_embedding(
+        cls,
+        text: str,
+        model_name: str = "local",
+        output_dim: int = 768,  # Unused
+    ) -> List[float]:
+        """
+        Generate embedding using local embedding server via HTTP API.
+
+        Args:
+            text: Text to embed
+            model_name: Model identifier (not used, for consistency)
+            output_dim:
+
+        Returns:
+            List of floats representing the embedding vector
+
+        Raises:
+            ValueError: If LOCAL_EMBEDDING_HOST not set
+            requests.HTTPError: If API request fails
+        """
+        if not LOCAL_EMBEDDING_HOST:
+            raise ValueError("LOCAL_EMBEDDING_HOST not set in .env file")
+
+        url = f"{LOCAL_EMBEDDING_HOST}/embeddings"
+        headers = {
+            "Content-Type": "application/json",
+        }
+        data = {
+            "text": text,
+            "output_dim": output_dim,
+        }
+
+        logger.info("Requesting local embedding server")
+        response = requests.post(url, headers=headers, json=data, timeout=120)
+        response.raise_for_status()
+
+        result = response.json()
+
+        # Extract embedding from response
+        try:
+            return result["embedding"]
         except Exception:
             raise ValueError(f"Unexpected response format: {result}")

@@ -62,6 +62,12 @@ def generate_summary(researcher_id, tag, prompt_name, api_url, headers):
         "model": "full-text",
         "tag": tag,
         "prompt_name": prompt_name,
+        "max_articles": 10,
+        "max_articles_length": 100,
+        "max_projects": 5,
+        "max_projects_length": 100,
+        "max_intros": 5,
+        "max_intros_length": 100,
     }
 
     response = requests.post(
