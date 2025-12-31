@@ -33,3 +33,21 @@ class SummaryRequest(BaseModel):
     prompt_name: str = Field(default="v1/prompt_1")
     tag: str
     model: str
+    max_articles: Optional[int] = Field(
+        default=None, description="Maximum number of articles to include"
+    )
+    max_articles_length: Optional[int] = Field(
+        default=None, description="Maximum number of words per article abstract"
+    )
+    max_projects: Optional[int] = Field(
+        default=None, description="Maximum number of projects to include"
+    )
+    max_projects_length: Optional[int] = Field(
+        default=None, description="Maximum number of words per project summary"
+    )
+    max_intros: Optional[int] = Field(
+        default=None, description="Maximum number of project intros to include"
+    )
+    max_intros_length: Optional[int] = Field(
+        default=None, description="Maximum number of words per project intro"
+    )

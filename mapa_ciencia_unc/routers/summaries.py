@@ -38,11 +38,12 @@ async def generate_summaries(req: SummaryRequest):
     **Process:**
     1. Validates system instruction and prompt template files exist
     2. Fetches researcher by ID
-    3. Retrieves all articles and projects for the researcher (matched by CUIT)
-    4. Processes articles and projects into context format (sorted by year, newest first)
-    5. Generates summary using specified model
-    6. Removes any existing summary with the same tag
-    7. Stores the new summary with the researcher
+    3. Retrieves all articles, projects, and project intros for the researcher (matched by CUIT)
+    4. Processes articles, projects, and intros into context format (sorted by date, newest first)
+    5. Applies optional limits on number of items and word counts
+    6. Generates summary using specified model
+    7. Removes any existing summary with the same tag
+    8. Stores the new summary with the researcher
 
     **Supported Models:**
     - **Gemini models**: "gemini-2.5-flash", "gemini-2.5-pro", etc.
@@ -57,6 +58,12 @@ async def generate_summaries(req: SummaryRequest):
     - `tag`: Tag to assign to the summary (e.g., "user_academic_v1")
     - `prompt_name`: Name of the prompt template (e.g., "v2/user_academic")
     - `system_name`: Name of the system instruction template (optional for Ollama/full-text)
+    - `max_articles`: Maximum number of articles to include (optional)
+    - `max_articles_length`: Maximum number of words per article abstract (optional)
+    - `max_projects`: Maximum number of projects to include (optional)
+    - `max_projects_length`: Maximum number of words per project summary (optional)
+    - `max_intros`: Maximum number of project intros to include (optional)
+    - `max_intros_length`: Maximum number of words per project intro (optional)
 
     **Returns:**
     - `researcher_id`: ID of the researcher
@@ -101,9 +108,21 @@ async def generate_summaries(req: SummaryRequest):
             "research_area": researcher.research_area,
             "last_project_title": researcher.last_project_title,
         },
-        "publications": process_articles(articles),
-        "projects": process_projects(projects),
-        "projects_intro": process_project_intros(projects_intro),
+        "publications": process_articles(
+            articles,
+            max_length=req.max_articles_length,
+            max_articles=req.max_articles
+        ),
+        "projects": process_projects(
+            projects,
+            max_length=req.max_projects_length,
+            max_projects=req.max_projects
+        ),
+        "projects_intro": process_project_intros(
+            projects_intro,
+            max_length=req.max_intros_length,
+            max_intros=req.max_intros
+        ),
     }
 
     content = SummaryGenerator.generate_researcher_summary(
