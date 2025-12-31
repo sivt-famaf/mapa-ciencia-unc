@@ -4,10 +4,11 @@ from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 
-from mapa_ciencia_unc.controllers.graph import get_researcher_graph
 from mapa_ciencia_unc.controllers.researchers import get_similar_researchers
 from mapa_ciencia_unc.models.researcher import Researcher, ResearcherPublicView
 from mapa_ciencia_unc.models.project import ProjectExtractedIntro
+from mapa_ciencia_unc.models.article import Article
+from mapa_ciencia_unc.models.graph import ResearcherGraph, ResearcherGraphListItem
 from beanie import PydanticObjectId
 from mapa_ciencia_unc.auth import verify_jwt_token
 
@@ -55,12 +56,25 @@ async def home(request: Request):
 
 
 @router.get("/graph", response_class=HTMLResponse)
-async def graph_view(request: Request, graph_key: str | None = None):
+async def graph_view(request: Request, graph_id: str | None = None):
     if not _token_is_valid(request):
         return REDIRECT_TO_LOGIN
-    graph = get_researcher_graph(graph_key=graph_key)
+    if graph_id:
+        graph = await ResearcherGraph.find_one({"_id": PydanticObjectId(graph_id)})
+        if not graph:
+            raise HTTPException(status_code=404, detail="Graph not found")
+    else:
+        graph = await ResearcherGraph.find_one({})
+
+    graph_json = graph.model_dump()
+    graph_json["id"] = str(graph_json.get("id", None))
+
     return templates.TemplateResponse(
-        "graph.html", {"request": request, "graph": graph.model_dump()}
+        "graph.html",
+        {
+            "request": request,
+            "graph": graph_json,
+        },
     )
 
 
@@ -75,7 +89,7 @@ async def other(request: Request):
 async def researcher_view(
     request: Request,
     researcher_id: str,
-    graph_key: str | None = None,
+    graph_id: str | None = None,
 ):
     if not _token_is_valid(request):
         return REDIRECT_TO_LOGIN
@@ -84,16 +98,41 @@ async def researcher_view(
     if not researcher_doc:
         return HTMLResponse(content="Researcher not found", status_code=404)
 
-    model = graph_key.split("_")[-1] if graph_key else None
-    tag = "_".join(graph_key.split("_")[:-1]) if graph_key else None
+    graph = (
+        await ResearcherGraph.find_one(
+            {"_id": PydanticObjectId(graph_id)},
+            projection_model=ResearcherGraphListItem,
+        )
+        if graph_id
+        else None
+    )
+
+    if not graph:
+        return HTMLResponse(content="Graph id not found", status_code=404)
 
     researcher_public_view = ResearcherPublicView.from_researcher(
-        researcher_doc, tag=tag, model=model
+        researcher_doc, summary_tag=graph.summary.tag, summary_model=graph.summary.model
     )
 
     project_files = await ProjectExtractedIntro.find(
         {"cuit": researcher_doc.cuit}
     ).to_list()
+
+    articles = await Article.find(
+        {"cuit": researcher_doc.cuit},
+    ).to_list()
+
+    articles_list = [
+        {
+            "titulo": article.titulo,
+            "resumen": article.resumen,
+            "issn": article.issn,
+            "eissn": article.eissn,
+            "year": article.year,
+            "editorial": article.editorial,
+        }
+        for article in articles
+    ]
 
     projects = [
         {
@@ -105,7 +144,10 @@ async def researcher_view(
     ]
 
     similar_researchers = await get_similar_researchers(
-        cuit=researcher_doc.cuit, tag=tag, model=model, n=3
+        cuit=researcher_doc.cuit,
+        tag=graph.embedding.tag,
+        model=graph.embedding.model,
+        n=3,
     )
 
     return templates.TemplateResponse(
@@ -114,8 +156,9 @@ async def researcher_view(
             "request": request,
             "researcher": researcher_public_view.model_dump(),
             "projects": projects,
+            "articles": articles_list,
             "similar_researchers": similar_researchers,
-            "graph_key": graph_key,
+            "graph_id": graph_id,
         },
     )
 

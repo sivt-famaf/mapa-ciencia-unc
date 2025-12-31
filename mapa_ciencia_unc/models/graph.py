@@ -1,34 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import Optional
-
-
-class ComputeGraphRequest(BaseModel):
-    """
-    Request model for computing a researcher graph visualization.
-
-    The graph is computed by retrieving researcher embeddings with the specified
-    tag and model, then projecting them to 2D space using the chosen strategy.
-    """
-
-    tag: str = Field(
-        ...,
-        description="Tag identifier for the embeddings (e.g., 'v1_embeddings')",
-        examples=["v1_embeddings", "embeddings_v1_avg"],
-    )
-    model: str = Field(
-        ...,
-        description="Model identifier used to generate embeddings (e.g., 'gemini-embedding-001')",
-        examples=["gemini-embedding-001", "text-embedding-004"],
-    )
-    strategy: str = Field(
-        default="pca",
-        description="Dimensionality reduction strategy. Options: 'pca' (direct to 2D), 'umap' (PCA to 50D, then UMAP to 2D), or 'tsne' (PCA to 50D, then t-SNE to 2D)",
-        examples=["pca", "umap", "tsne"],
-    )
-    overwrite: bool = Field(
-        default=False,
-        description="Whether to overwrite existing graph with the same tag/model combination",
-    )
+from typing import Optional, Literal
+from beanie import Document, PydanticObjectId
 
 
 class Node(BaseModel):
@@ -49,7 +21,53 @@ class ResearcherNode(Node):
     color: str = "#000000"
 
 
-class ResearcherGraph(BaseModel):
+class ModelTagPair(BaseModel):
+    model: str
+    tag: str
+
+
+class ResearcherGraphBase(BaseModel):
+    summary: ModelTagPair = Field(
+        ...,
+        description="Model and tag used to generate the embeddings for this graph",
+        examples=[ModelTagPair(model="gemini", tag="summary_v1")],
+    )
+    embedding: ModelTagPair = Field(
+        ...,
+        description="Model and tag used for the embeddings in this graph",
+        examples=[ModelTagPair(model="gemini-embedding-001", tag="embeddings_v1_avg")],
+    )
+    strategy: Literal["pca", "umap", "tsne"] = Field(
+        ...,
+        description="Dimensionality reduction strategy used to compute the graph",
+        examples=["pca", "umap", "tsne"],
+    )
+
+
+class ResearcherGraphCreate(ResearcherGraphBase):
+    """
+    Request model for computing a researcher graph visualization.
+
+    The graph is computed by retrieving researcher embeddings with the specified
+    tag and model, then projecting them to 2D space using the chosen strategy.
+    """
+
+    overwrite: bool = Field(
+        default=False,
+        description="Whether to overwrite existing graph with the same tags/models combination",
+    )
+
+
+class ResearcherGraphListItem(ResearcherGraphBase):
+    id: PydanticObjectId = Field(alias="_id")
+    title: str
+
+    class Config:
+        # This allows the model to accept either 'id' or '_id'
+        populate_by_name = True
+
+
+class ResearcherGraph(ResearcherGraphBase, Document):
     title: str
     nodes: list[ResearcherNode]
     edges: list[Edge]

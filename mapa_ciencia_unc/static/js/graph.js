@@ -114,7 +114,8 @@ syncCookieFromStorage();
 ensureToken();
 
 const urlParams = new URLSearchParams(window.location.search);
-const currentGraphKey = urlParams.get("graph_key");
+const initialGraphId = rawData?._id ?? rawData?.id ?? null;
+const currentGraphId = urlParams.get("graph_id") || initialGraphId;
 
 const state = {
   hoveredNode: null,
@@ -138,8 +139,8 @@ renderer.on("leaveNode", () => {
 
 renderer.on("clickNode", ({ node }) => {
   const baseUrl = `/researcher/${encodeURIComponent(node)}`;
-  const url = currentGraphKey
-    ? `${baseUrl}?graph_key=${encodeURIComponent(currentGraphKey)}`
+  const url = currentGraphId
+    ? `${baseUrl}?graph_id=${encodeURIComponent(currentGraphId)}`
     : baseUrl;
   window.open(url, "_blank", "noopener");
 

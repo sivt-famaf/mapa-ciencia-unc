@@ -1,32 +1,43 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List
 
 from mapa_ciencia_unc.auth import require_auth
-from mapa_ciencia_unc.models.graph import ComputeGraphRequest
+from mapa_ciencia_unc.models.graph import (
+    ResearcherGraphCreate,
+    ResearcherGraph,
+    ResearcherGraphListItem,
+)
 from mapa_ciencia_unc.controllers.graph import (
-    get_researcher_graph,
     compute_graph,
-    get_available_graphs,
-    generate_graph_key,
 )
 
 
-router = APIRouter(prefix="/api", tags=["api"], dependencies=[Depends(require_auth)])
+router = APIRouter(
+    prefix="/api/graphs", tags=["graphs"], dependencies=[Depends(require_auth)]
+)
 
 
-@router.get("/graph")
-async def get_graph_data():
-    graph = get_researcher_graph()
-    return graph.model_dump()
+@router.get("", response_model=List[ResearcherGraphListItem])
+async def get_available_graphs():
+    graphs = await ResearcherGraph.find_all(
+        projection_model=ResearcherGraphListItem
+    ).to_list()
+    return graphs
 
 
-@router.get("/available_graph_tags")
-async def get_available_graph_tags():
-    graphs = get_available_graphs()
-    return {"available_graph_tags": graphs}
+@router.get("/{graph_id}", response_model=ResearcherGraph)
+async def get_graph(graph_id: str):
+    graph = await ResearcherGraph.find_one({"_id": graph_id})
+    if not graph:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Graph with id '{graph_id}' not found.",
+        )
+    return graph
 
 
-@router.post("/compute_graph", response_model=dict)
-async def compute_graph_data(request: ComputeGraphRequest):
+@router.post("", response_model=dict, status_code=status.HTTP_201_CREATED)
+async def compute_graph_data(request: ResearcherGraphCreate):
     """
     Compute and save a 2D graph visualization of researchers based on embeddings.
 
@@ -40,7 +51,7 @@ async def compute_graph_data(request: ComputeGraphRequest):
     3. Retrieves all researchers with matching embeddings (uses most recent per researcher)
     4. Projects high-dimensional embeddings to 2D using the specified strategy
     5. Creates nodes with positions, colors by academic unit, and metadata
-    6. Saves the graph to `GRAPHS_DIR/{tag}_{model}.json`
+    6. Saves the graph to database`
 
     **Dimensionality Reduction Strategies:**
     1. **PCA (Principal Component Analysis)**
@@ -61,8 +72,12 @@ async def compute_graph_data(request: ComputeGraphRequest):
        - Time complexity: O(n²) worst case, optimized in practice
 
     **Request Body:**
-    - `tag`: Tag identifier for the embeddings (e.g., "v1_embeddings", "embeddings_v1_avg")
-    - `model`: Model used to generate embeddings (e.g., "gemini-embedding-001")
+    - `embedding`: dictionary with:
+        - `tag`: Tag identifier for the embeddings (e.g., "v1_embeddings", "embeddings_v1_avg")
+        - `model`: Model used to generate embeddings (e.g., "gemini-embedding-001")
+    - `summary`: dictionary with:
+        - `tag`: Tag identifier for the summaries used to generate embeddings
+        - `model`: Model used to generate summaries
     - `strategy`: Dimensionality reduction strategy (default: "pca")
       - "pca": Fast linear projection, preserves global variance
       - "umap": Non-linear projection, preserves local clusters (balanced)
@@ -70,38 +85,61 @@ async def compute_graph_data(request: ComputeGraphRequest):
     - `overwrite`: Whether to overwrite existing graph (default: false)
 
     **Returns:**
-    - `graph`: Graph title with metadata
+    - `title`: Graph title with metadata
+    - `summary`: Summary model/tag used
+    - `embedding`: Embedding model/tag used
+    - `strategy`: Dimensionality reduction strategy used
     - `nodes`: Number of researcher nodes created
     - `edges`: Number of edges (currently always 0, reserved for future use)
-    - `graph_key`: Unique identifier for the graph file (format: "{tag}_{model}")
+    - `_id`: Unique identifier for the graph
 
     **Example Requests:**
 
     PCA projection (fast):
     ```json
     {
-        "tag": "embeddings_v1_avg",
+    "summary": {
+        "model": "gemini-2.5",
+        "tag": "summaries_v1"
+    },
+    "embedding": {
         "model": "gemini-embedding-001",
-        "strategy": "pca"
+        "tag": "embeddings_v1_avg"
+    },
+    "strategy": "pca",
+    "overwrite": false
     }
     ```
 
     UMAP projection (balanced clustering):
     ```json
     {
-        "tag": "embeddings_v1_avg",
+    "summary": {
+        "model": "gemini-2.5",
+        "tag": "summaries_v1"
+    },
+    "embedding": {
         "model": "gemini-embedding-001",
-        "strategy": "umap",
-        "overwrite": false
+        "tag": "embeddings_v1_avg"
+    },
+    "strategy": "umap",
+    "overwrite": false
     }
     ```
 
     t-SNE projection (tight clusters):
     ```json
     {
-        "tag": "embeddings_v1_avg",
+    "summary": {
+        "model": "gemini-2.5",
+        "tag": "summaries_v1"
+    },
+    "embedding": {
         "model": "gemini-embedding-001",
-        "strategy": "tsne"
+        "tag": "embeddings_v1_avg"
+    },
+    "strategy": "tsne",
+    "overwrite": false
     }
     ```
 
@@ -112,27 +150,49 @@ async def compute_graph_data(request: ComputeGraphRequest):
     - `500 Internal Server Error`: If computation fails unexpectedly
 
     **Additional Notes:**
-    - The graph file can be retrieved later using GET /api/graph?graph_key={key}
+    - The graph file can be retrieved later using GET /api/graph?graph_id={_id}
     - Only the most recent embedding per researcher is used
     """
-    graph_key = generate_graph_key(request.tag, request.model)
-    exists = graph_key in get_available_graphs()
+    existing_graphs = await ResearcherGraph.find(
+        {
+            "summary.tag": request.summary.tag,
+            "summary.model": request.summary.model,
+            "embedding.tag": request.embedding.tag,
+            "embedding.model": request.embedding.model,
+            "strategy": request.strategy,
+        }
+    ).to_list()
 
-    if exists and not request.overwrite:
+    if existing_graphs and not request.overwrite:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Graph '{graph_key}' already exists. Use overwrite=true to overwrite it.",
+            detail=(
+                f"Graph with summary ({request.summary.tag}, {request.summary.model}) "
+                f"and embedding ({request.embedding.tag}, {request.embedding.model}) "
+                f"using strategy '{request.strategy}' already exists. "
+                "Use overwrite=true to overwrite it."
+            ),
         )
+    else:
+        for graph in existing_graphs:
+            await graph.delete()
 
     try:
         graph = await compute_graph(
-            request.tag, request.model, strategy=request.strategy
+            embedding_tag=request.embedding.tag,
+            embedding_model=request.embedding.model,
+            summary_tag=request.summary.tag,
+            summary_model=request.summary.model,
+            strategy=request.strategy,
         )
         return {
+            "_id": str(graph.id),
             "graph": graph.title,
+            "summary": graph.summary,
+            "embedding": graph.embedding,
+            "strategy": graph.strategy,
             "nodes": len(graph.nodes),
             "edges": len(graph.edges),
-            "graph_key": graph_key,
         }
     except NotImplementedError as e:
         raise HTTPException(

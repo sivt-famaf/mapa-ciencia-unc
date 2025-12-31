@@ -15,6 +15,7 @@ class ArticleBase(BaseModel):
     year: int | None = None
     editorial: str | None = None
 
+
 class ArticleCreate(ArticleBase):
     pass
 
