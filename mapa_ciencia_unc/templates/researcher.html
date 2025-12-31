@@ -513,7 +513,7 @@
         <ul class="similar-list">
           {% for sim in similar_researchers %}
           <li class="similar-item">
-            <a href="/researcher/{{ sim.researcher_id }}{% if graph_key %}?graph_key={{ graph_key }}{% elif researcher.tag and researcher.model %}?graph_key={{ researcher.tag }}_{{ researcher.model }}{% endif %}">
+            <a href="/researcher/{{ sim.researcher_id }}{% if graph_id %}?graph_id={{ graph_id }}{% endif %}">
               {{ sim.last_name }}, {{ sim.name }} ({{ sim.research_center }})
             </a>
           </li>
