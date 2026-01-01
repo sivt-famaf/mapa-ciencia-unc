@@ -304,8 +304,9 @@ async def compute_graph(
             y=y,
             description=description,
             properties={
-                "primary_academic_unit": academic_unit,
-                "ods": (researcher.ods[0] if researcher.ods else ""),
+                "academic_units": researcher.academic_units,
+                "ods": researcher.ods,
+                "maturity_level": researcher.maturity_level,
             }
         )
 
