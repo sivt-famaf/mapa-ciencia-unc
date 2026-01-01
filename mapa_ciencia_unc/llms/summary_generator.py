@@ -3,6 +3,7 @@ import logging
 import requests
 
 from pathlib import Path
+from jinja2 import Environment, FileSystemLoader
 from google import genai
 from google.genai import types
 
@@ -36,7 +37,11 @@ class SummaryGenerator:
         Returns:
             Dictionary containing the generated summary and keywords.
         """
-        if "gemini" in model_name:
+        if model_name == "full-text":
+            return SummaryGeneratorFullText.generate_researcher_summary(
+                context, prompt_path
+            )
+        elif "gemini" in model_name:
             return SummaryGeneratorGemini.generate_researcher_summary(
                 context, system_instruction_path, prompt_path, model_name
             )
@@ -170,3 +175,33 @@ class SummaryGeneratorOllama:
             }
 
         return parsed_response
+
+
+class SummaryGeneratorFullText:
+    """
+    Full-text description generator using Jinja templates.
+
+    Concatenates all researcher information without LLM processing.
+    """
+
+    @classmethod
+    def generate_researcher_summary(
+        cls,
+        context: dict,
+        prompt_path: Path,
+    ) -> str:
+        """
+        Generate full-text description using Jinja template.
+
+        Args:
+            context: Dictionary with 'researcher', 'articles', and 'projects' keys
+            prompt_path: Path to the Jinja template file
+
+        Returns:
+            Formatted text with all researcher information concatenated
+        """
+        _, full_prompt = render_prompt(
+            system_path=None, prompt_path=prompt_path, context=context
+        )
+
+        return full_prompt

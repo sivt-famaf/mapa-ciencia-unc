@@ -18,3 +18,6 @@ INTERNAL_SWAGGER_KEY = os.getenv("INTERNAL_SWAGGER_KEY")
 # Ollama Configuration
 OLLAMA_HOST = os.getenv("OLLAMA_HOST")
 OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY")
+
+# Local Embedding Server Configuration
+LOCAL_EMBEDDING_HOST = os.getenv("LOCAL_EMBEDDING_HOST")

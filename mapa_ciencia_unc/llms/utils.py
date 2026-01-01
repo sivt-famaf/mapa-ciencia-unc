@@ -6,7 +6,7 @@ from jinja2 import Environment, FileSystemLoader
 from typing import List, Mapping, Any, Optional
 
 from mapa_ciencia_unc.models.article import Article
-from mapa_ciencia_unc.models.project import Project
+from mapa_ciencia_unc.models.project import Project, ProjectExtractedIntro
 
 
 logger = logging.getLogger(__name__)
@@ -170,34 +170,60 @@ def render_prompt(
     return system_instruction, prompt
 
 
-def build_researcher_llm_inputs(
+def process_articles(
     articles: List[Article],
-    projects: List[Project],
-) -> dict[str, str]:
+    max_length: Optional[int] = None,
+    max_articles: Optional[int] = None,
+) -> str:
     """
-    Build separated textual inputs for projects and publications
-    to be injected into a Jinja template.
+    Process articles into formatted text for LLM input.
 
     Args:
         articles: List of articles (publications) associated with a researcher.
-            Only the title and abstract are used.
-        projects: List of projects associated with a researcher.
-            Only the project title and summary are used.
+        max_length: Optional maximum number of words for each abstract.
+        max_articles: Optional maximum number of articles to include.
 
     Returns:
-        Dictionary with two keys:
-            - "projects": concatenated text of project titles and summaries.
-            - "publications": concatenated text of article titles and abstracts.
+        Concatenated text of article titles and abstracts, sorted by year (newest first).
     """
-
     publications_parts: list[str] = []
-    projects_parts: list[str] = []
 
-    for article in sorted(articles, key=lambda x: x.year, reverse=True):
+    # Sort and limit number of articles
+    sorted_articles = sorted(articles, key=lambda x: x.year, reverse=True)
+    if max_articles:
+        sorted_articles = sorted_articles[:max_articles]
+
+    for article in sorted_articles:
         publications_parts.append("Título: " + article.titulo + f" ({article.year}) ")
 
         if article.resumen:
-            publications_parts.append("Abstract: " + article.resumen)
+            abstract = article.resumen
+            if max_length:
+                words = abstract.split()
+                if len(words) > max_length:
+                    abstract = " ".join(words[:max_length])
+            publications_parts.append("Abstract: " + abstract)
+
+    return "\n\n".join(publications_parts)
+
+
+def process_projects(
+    projects: List[Project],
+    max_length: Optional[int] = None,
+    max_projects: Optional[int] = None,
+) -> str:
+    """
+    Process projects into formatted text for LLM input.
+
+    Args:
+        projects: List of projects associated with a researcher.
+        max_length: Optional maximum number of words for each project summary.
+        max_projects: Optional maximum number of projects to include.
+
+    Returns:
+        Concatenated text of project titles and summaries, sorted by year (newest first).
+    """
+    projects_parts: list[str] = []
 
     def project_year(project):
         if project.fecha_alta and hasattr(project.fecha_alta, "year"):
@@ -205,15 +231,58 @@ def build_researcher_llm_inputs(
         else:
             return None
 
-    for project in sorted(projects, key=project_year, reverse=True):
+    # Sort and limit number of projects
+    sorted_projects = sorted(projects, key=project_year, reverse=True)
+    if max_projects:
+        sorted_projects = sorted_projects[:max_projects]
+
+    for project in sorted_projects:
         projects_parts.append(
             "Título: " + project.titulo_proyecto + f" ({project_year(project)})"
         )
 
         if project.resumen_proyecto:
-            projects_parts.append(project.resumen_proyecto)
+            resumen = project.resumen_proyecto
+            if max_length:
+                words = resumen.split()
+                if len(words) > max_length:
+                    resumen = " ".join(words[:max_length])
+            projects_parts.append(resumen)
 
-    return {
-        "projects": "\n\n".join(projects_parts),
-        "publications": "\n\n".join(publications_parts),
-    }
+    return "\n\n".join(projects_parts)
+
+
+def process_project_intros(
+    project_intros: List[ProjectExtractedIntro],
+    max_length: Optional[int] = None,
+    max_intros: Optional[int] = None,
+) -> str:
+    """
+    Process project extracted intros into formatted text for LLM input.
+
+    Args:
+        project_intros: List of project extracted intros associated with a researcher.
+        max_length: Optional maximum number of words for each extracted intro.
+        max_intros: Optional maximum number of project intros to include.
+
+    Returns:
+        Concatenated text of project intros, sorted by creation date (newest first).
+    """
+    intros_parts: list[str] = []
+
+    # Sort by created_at date (newest first) and limit number
+    sorted_intros = sorted(project_intros, key=lambda x: x.created_at, reverse=True)
+    if max_intros:
+        sorted_intros = sorted_intros[:max_intros]
+
+    for intro in sorted_intros:
+        if intro.extracted_intro:
+            intro_text = intro.extracted_intro
+            if max_length:
+                words = intro_text.split()
+                if len(words) > max_length:
+                    intro_text = " ".join(words[:max_length])
+            intros_parts.append(intro_text)
+
+    return "\n\n".join(intros_parts)
+

@@ -4,11 +4,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from beanie import PydanticObjectId
 
 from mapa_ciencia_unc.auth import require_auth
-from mapa_ciencia_unc.llms.utils import build_researcher_llm_inputs
+from mapa_ciencia_unc.llms.utils import (
+    process_articles,
+    process_project_intros,
+    process_projects,
+)
 from mapa_ciencia_unc.models.summary import MultipleSummariesCreate, Summary
 from mapa_ciencia_unc.models.researcher import Researcher
 from mapa_ciencia_unc.models.article import Article
-from mapa_ciencia_unc.models.project import Project
+from mapa_ciencia_unc.models.project import Project, ProjectExtractedIntro
 
 from mapa_ciencia_unc.models.summary import SummaryRequest
 from mapa_ciencia_unc.llms.summary_generator import (
@@ -25,10 +29,52 @@ router = APIRouter(
 @router.post("/generate")
 async def generate_summaries(req: SummaryRequest):
     """
-    Generate a summary for a single researcher using data stored in MongoDB.
+    Generate and persist a summary for a researcher using LLM or template-based generation.
 
-    For Ollama models, system_name can be None or omitted since the combined prompt
-    template includes both system instruction and user prompt.
+    Retrieves a researcher's profile, articles, and projects from the database,
+    processes the data through the specified model, and stores the generated summary.
+    The summary replaces any existing summary with the same tag.
+
+    **Process:**
+    1. Validates system instruction and prompt template files exist
+    2. Fetches researcher by ID
+    3. Retrieves all articles, projects, and project intros for the researcher (matched by CUIT)
+    4. Processes articles, projects, and intros into context format (sorted by date, newest first)
+    5. Applies optional limits on number of items and word counts
+    6. Generates summary using specified model
+    7. Removes any existing summary with the same tag
+    8. Stores the new summary with the researcher
+
+    **Supported Models:**
+    - **Gemini models**: "gemini-2.5-flash", "gemini-2.5-pro", etc.
+      - Requires both system_name and prompt_name
+    - **Ollama models**: "gemma3:4b", "llama3.1", etc.
+    - **Full-text**: "full-text": No LLM processing, renders Jinja template with
+      researcher's raw data
+
+    **Request Body:**
+    - `researcher_id`: MongoDB ObjectId of the researcher (required)
+    - `model`: Model identifier (e.g., "gemini-2.5-flash", "gemma3:4b", "full-text")
+    - `tag`: Tag to assign to the summary (e.g., "user_academic_v1")
+    - `prompt_name`: Name of the prompt template (e.g., "v2/user_academic")
+    - `system_name`: Name of the system instruction template (optional for Ollama/full-text)
+    - `max_articles`: Maximum number of articles to include (optional)
+    - `max_articles_length`: Maximum number of words per article abstract (optional)
+    - `max_projects`: Maximum number of projects to include (optional)
+    - `max_projects_length`: Maximum number of words per project summary (optional)
+    - `max_intros`: Maximum number of project intros to include (optional)
+    - `max_intros_length`: Maximum number of words per project intro (optional)
+
+    **Returns:**
+    - `researcher_id`: ID of the researcher
+    - `tag`: Tag assigned to the summary
+    - `model`: Model used for generation
+    - `summary`: Generated summary content (JSON string or text)
+
+    **Raises:**
+    - `404 Not Found`: Researcher not found
+    - `FileNotFoundError`: Template file missing
+    ```
     """
     # Optional system_name
     if req.system_name:
@@ -54,10 +100,30 @@ async def generate_summaries(req: SummaryRequest):
 
     articles = await Article.find(Article.cuit == researcher.cuit).to_list()
     projects = await Project.find(Project.cuit == researcher.cuit).to_list()
-    context = build_researcher_llm_inputs(
-        articles=articles,
-        projects=projects,
-    )
+    projects_intro = await ProjectExtractedIntro.find(
+        ProjectExtractedIntro.cuit == researcher.cuit
+    ).to_list()
+    context = {
+        "researcher": {
+            "research_area": researcher.research_area,
+            "last_project_title": researcher.last_project_title,
+        },
+        "publications": process_articles(
+            articles,
+            max_length=req.max_articles_length,
+            max_articles=req.max_articles
+        ),
+        "projects": process_projects(
+            projects,
+            max_length=req.max_projects_length,
+            max_projects=req.max_projects
+        ),
+        "projects_intro": process_project_intros(
+            projects_intro,
+            max_length=req.max_intros_length,
+            max_intros=req.max_intros
+        ),
+    }
 
     content = SummaryGenerator.generate_researcher_summary(
         context, system_path, prompt_path, model_name=req.model
@@ -84,18 +150,19 @@ async def generate_summaries(req: SummaryRequest):
     }
 
 
-@router.post("/bulk", response_model=dict)
-async def create_multiple_summaries(payload: MultipleSummariesCreate):
+@router.post("/upload/bulk", response_model=dict)
+async def upload_multiple_summaries(payload: MultipleSummariesCreate):
     """
     Upload multiple summaries to researchers in bulk.
 
     This endpoint accepts a mapping of researcher identifiers to summary content
     and creates or updates summaries for multiple researchers in a single request.
 
-    **Researcher Identification:**
     - Tries to find researcher by `researcher_id` (MongoDB ObjectId) first
     - If not found or invalid ObjectId, tries to find by `cuit` (CUIT identifier)
     - This allows flexibility in how researchers are identified
+    - With `overwrite=True`: Replaces existing summaries with the same tag
+    - With `overwrite=False`: Skips researchers who already have a summary with the same tag
 
     **Request Body:**
     - `content_mapping`: Dictionary mapping researcher identifier (ID or CUIT) to summary JSON string
@@ -103,32 +170,10 @@ async def create_multiple_summaries(payload: MultipleSummariesCreate):
     - `model`: Model name used to generate summaries (e.g., "gemini-2.5-flash")
     - `overwrite`: Whether to replace existing summaries with the same tag (default: False)
 
-    **Behavior:**
-    - With `overwrite=True`: Replaces existing summaries with the same tag
-    - With `overwrite=False`: Skips researchers who already have a summary with the same tag
-
     **Returns:**
     - `created_summaries`: Count of successfully created summaries
     - `skipped_summaries`: Dictionary of researcher_id -> reason for skipping
     - `failed_summaries`: List of researcher identifiers that failed
-
-    **Example Request:**
-    ```json
-    {
-        "content_mapping": {
-            "507f1f77bcf86cd799439011": "{\"brief\": \"...\", \"profile\": \"...\", \"areas\": [...]}",
-            "27273268885": "{\"brief\": \"...\", \"profile\": \"...\", \"areas\": [...]}"
-        },
-        "tag": "user_academic_v1",
-        "model": "gemini-2.5-flash",
-        "overwrite": false
-    }
-    ```
-
-    **Notes:**
-    - The first key uses researcher_id (MongoDB ObjectId)
-    - The second key uses CUIT (will be looked up automatically)
-    - Summary content should be a JSON string (will be stored as-is)
     """
     created_summaries = 0
     skipped_summaries = {}
@@ -199,4 +244,61 @@ async def create_multiple_summaries(payload: MultipleSummariesCreate):
         "created_summaries": created_summaries,
         "skipped_summaries": skipped_summaries,
         "failed_summaries": failed_summaries,
+    }
+
+
+@router.delete("/tag/{tag}")
+async def delete_summaries_by_tag(tag: str):
+    """
+    Delete all summaries with the specified tag across all researchers.
+
+    Finds all researchers with summaries matching the given tag and removes them.
+    Useful for cleanup or regenerating summaries with different parameters.
+
+    Args:
+        tag: Tag identifier for summaries to delete (e.g., "user_academic_v1", "test-summaries")
+
+    Returns:
+        - deleted_count: Number of summaries deleted
+        - researchers_affected: Number of researchers that had summaries removed
+
+    Example:
+    ```
+    DELETE /api/summaries/tag/user_academic_v1
+    ```
+
+    Returns:
+    ```json
+    {
+        "deleted_count": 150,
+        "researchers_affected": 150
+    }
+    ```
+    """
+    researchers = await Researcher.find_all().to_list()
+
+    deleted_count = 0
+    researchers_affected = 0
+
+    for researcher in researchers:
+        # Count summaries with this tag
+        summaries_before = len(researcher.summaries)
+
+        # Remove summaries with the specified tag
+        researcher.summaries = [
+            s for s in researcher.summaries if s.tag != tag
+        ]
+
+        summaries_after = len(researcher.summaries)
+        summaries_removed = summaries_before - summaries_after
+
+        # Save if summaries were removed
+        if summaries_removed > 0:
+            await researcher.save()
+            deleted_count += summaries_removed
+            researchers_affected += 1
+
+    return {
+        "deleted_count": deleted_count,
+        "researchers_affected": researchers_affected,
     }
