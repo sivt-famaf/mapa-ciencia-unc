@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional, Literal, Dict, Any
 from beanie import Document, PydanticObjectId
 
 
@@ -18,7 +18,14 @@ class Edge(BaseModel):
 class ResearcherNode(Node):
     type: str = "researcher"
     description: Optional[str] = None
-    color: str = "#000000"
+    color: Optional[str] = Field(
+        default="#000000",
+        description="Node color (optional for backward compatibility)"
+    )
+    properties: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional properties for coloring and filtering (e.g., academic_unit, research_area)"
+    )
 
 
 class ModelTagPair(BaseModel):

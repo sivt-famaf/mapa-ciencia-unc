@@ -295,17 +295,18 @@ async def compute_graph(
         academic_unit = (
             researcher.academic_units[0] if researcher.academic_units else "Otros"
         )
-        color = ACADEMIC_UNIT_COLORS.get(academic_unit, ACADEMIC_UNIT_COLORS["Otros"])
 
-        label = f"{researcher.name} ({academic_unit})"
-
+        label = f"{researcher.name} {researcher.last_name} ({academic_unit})"
         node = ResearcherNode(
             id=str(researcher.id),
             label=label,
             x=x,
             y=y,
             description=description,
-            color=color,
+            properties={
+                "primary_academic_unit": academic_unit,
+                "ods": (researcher.ods[0] if researcher.ods else ""),
+            }
         )
 
         nodes.append(node)
