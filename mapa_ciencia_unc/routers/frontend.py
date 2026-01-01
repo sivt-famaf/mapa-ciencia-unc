@@ -65,6 +65,11 @@ async def graph_view(request: Request, graph_id: str | None = None):
             raise HTTPException(status_code=404, detail="Graph not found")
     else:
         graph = await ResearcherGraph.find_one({})
+        if not graph:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No graph found in database. Create a graph first.",
+            )
 
     graph_json = graph.model_dump()
     graph_json["id"] = str(graph_json.get("id", None))
