@@ -330,6 +330,7 @@ async def compute_graph(
 
         metadata = await generate_researcher_metadata(researcher)
 
+        # Calculate all possible values
         academic_units = academic_units.union(set(metadata["academic_units"]))
         ods = ods.union(set(metadata["ods"]))
         languages = languages.union(set(metadata["languages"]))
@@ -353,22 +354,6 @@ async def compute_graph(
         FilterField(key="ods", values=list(ods)),
         FilterField(key="languages", values=list(languages)),
     ]
-
-    for node in nodes:
-        if node.x >= 0 and node.y >= 0:
-            node.cluster = "top right quadrant"
-            node.color = "#FF0000"
-        elif node.x < 0 and node.y > 0:
-            node.cluster = "top left quadrant"
-            node.color = "#00FF00"
-
-        elif node.x > 0 and node.y < 0:
-            node.cluster = "bottom right quadrant"
-            node.color = "#0000FF"
-        elif node.x < 0 and node.y < 0:
-            # orange color = "#FFA500"
-            node.cluster = "bottom left quadrant"
-            node.color = "#FFA500"
 
     graph = ResearcherGraph(
         title=f"Researcher Graph - Summary: {summary_tag}/{summary_model}, Embedding: {embedding_tag}/{embedding_model} ({strategy})",
