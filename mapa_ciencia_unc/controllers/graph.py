@@ -1,5 +1,6 @@
 import logging
 
+from mapa_ciencia_unc.models.constants import ACADEMIC_UNITS, LANGUAGES, ODS
 from mapa_ciencia_unc.models.graph import ResearcherGraph, ResearcherNode, FilterField
 from mapa_ciencia_unc.models.researcher import Researcher
 from mapa_ciencia_unc.models.project import ProjectExtractedIntro
@@ -312,9 +313,6 @@ async def compute_graph(
 
     # Create nodes from researchers and their 2D positions
     nodes = []
-    academic_units = set()
-    ods = set()
-    languages = set()
     for researcher, (x, y) in zip(researchers, positions_2d):
         if researcher.research_area:
             description = f"{researcher.research_area} at {researcher.research_center}"
@@ -329,11 +327,6 @@ async def compute_graph(
         label = f"{researcher.name} ({academic_unit})"
 
         metadata = await generate_researcher_metadata(researcher)
-
-        # Calculate all possible values
-        academic_units = academic_units.union(set(metadata["academic_units"]))
-        ods = ods.union(set(metadata["ods"]))
-        languages = languages.union(set(metadata["languages"]))
 
         node = ResearcherNode(
             id=str(researcher.id),
@@ -350,9 +343,9 @@ async def compute_graph(
     # Create graph with no edges (edges can be added in the future)
     edges = []
     filter_fields = [
-        FilterField(key="academic_units", values=list(academic_units)),
-        FilterField(key="ods", values=list(ods)),
-        FilterField(key="languages", values=list(languages)),
+        FilterField(key="academic_units", values=list(ACADEMIC_UNITS)),
+        FilterField(key="ods", values=ODS),
+        FilterField(key="languages", values=LANGUAGES),
     ]
 
     graph = ResearcherGraph(
