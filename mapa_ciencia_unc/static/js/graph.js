@@ -341,6 +341,26 @@ rawData.edges?.forEach((edge) => {
   });
 });
 
+/**
+ * Check if the graph has metadata (new graphs) or hardcoded colors (old graphs)
+ * @returns {boolean} True if graph has metadata and supports color schemes
+ */
+function graphSupportsColorSchemes() {
+  let nodesWithMetadata = 0;
+  let totalNodes = 0;
+
+  graph.forEachNode((nodeId) => {
+    totalNodes++;
+    const metadata = graph.getNodeAttribute(nodeId, 'metadata');
+    if (hasMetadata(metadata)) {
+      nodesWithMetadata++;
+    }
+  });
+
+  // If at least 50% of nodes have metadata, we support color schemes
+  return totalNodes > 0 && (nodesWithMetadata / totalNodes) >= 0.5;
+}
+
 const container = document.getElementById("container");
 
 if (!container) {
@@ -531,12 +551,45 @@ function getSavedColorScheme() {
 }
 
 /**
+ * Get the saved legend collapsed state from localStorage
+ * @returns {boolean} True if legend should be collapsed
+ */
+function getLegendCollapsedState() {
+  try {
+    const collapsed = localStorage.getItem('legendCollapsed');
+    return collapsed === 'true';
+  } catch (error) {
+    console.warn('Unable to retrieve legend collapsed state', error);
+    return true; // Default to collapsed
+  }
+}
+
+/**
+ * Save the legend collapsed state to localStorage
+ * @param {boolean} collapsed - Whether the legend is collapsed
+ */
+function saveLegendCollapsedState(collapsed) {
+  try {
+    localStorage.setItem('legendCollapsed', collapsed.toString());
+  } catch (error) {
+    console.warn('Unable to save legend collapsed state', error);
+  }
+}
+
+/**
  * Render the color legend based on the current color scheme
  * @param {string} schemeName - The color scheme to show in the legend
  */
 function renderLegend(schemeName) {
   const legendEl = document.getElementById('color-legend');
   if (!legendEl) return;
+
+  // Check if this is the first render (legend is empty)
+  const isFirstRender = legendEl.innerHTML === '';
+
+  // Check if legend was previously collapsed
+  const wasCollapsed = legendEl.classList.contains('collapsed');
+  const savedCollapsed = getLegendCollapsedState();
 
   // Clear existing legend
   legendEl.innerHTML = '';
@@ -568,11 +621,26 @@ function renderLegend(schemeName) {
       return;
   }
 
-  // Create title element
+  // Create header with title and toggle button
+  const headerEl = document.createElement('div');
+  headerEl.className = 'color-legend-header';
+
   const titleEl = document.createElement('div');
   titleEl.className = 'color-legend-title';
   titleEl.textContent = title;
-  legendEl.appendChild(titleEl);
+
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = 'color-legend-toggle';
+  toggleBtn.innerHTML = '▼';
+  toggleBtn.setAttribute('aria-label', 'Toggle legend');
+
+  headerEl.appendChild(titleEl);
+  headerEl.appendChild(toggleBtn);
+  legendEl.appendChild(headerEl);
+
+  // Create content wrapper
+  const contentEl = document.createElement('div');
+  contentEl.className = 'color-legend-content';
 
   // Create legend items
   Object.entries(colorMap).forEach(([label, color]) => {
@@ -592,15 +660,47 @@ function renderLegend(schemeName) {
 
     itemEl.appendChild(swatchEl);
     itemEl.appendChild(labelEl);
-    legendEl.appendChild(itemEl);
+    contentEl.appendChild(itemEl);
+  });
+
+  legendEl.appendChild(contentEl);
+
+  // Apply collapsed state
+  // On first render, use saved state (defaults to true/collapsed)
+  // On re-render (color scheme change), maintain current collapsed state
+  const shouldBeCollapsed = isFirstRender ? savedCollapsed : wasCollapsed;
+  if (shouldBeCollapsed) {
+    legendEl.classList.add('collapsed');
+  }
+
+  // Add toggle functionality
+  headerEl.addEventListener('click', () => {
+    const isCollapsed = legendEl.classList.toggle('collapsed');
+    saveLegendCollapsedState(isCollapsed);
   });
 }
 
-// Initialize the color scheme selector
+// Check if graph supports color schemes (has metadata)
+const supportsColorSchemes = graphSupportsColorSchemes();
+
+// Hide color scheme controls and legend if graph doesn't support color schemes
+const colorSchemeControlsEl = document.getElementById('color-scheme-controls');
+const colorLegendEl = document.getElementById('color-legend');
+
+if (!supportsColorSchemes) {
+  if (colorSchemeControlsEl) {
+    colorSchemeControlsEl.style.display = 'none';
+  }
+  if (colorLegendEl) {
+    colorLegendEl.style.display = 'none';
+  }
+}
+
+// Initialize the color scheme selector (only if supported)
 const colorSchemeDropdown = document.getElementById('color-scheme-select');
 const colorSchemeStatus = document.getElementById('color-scheme-status');
 
-if (colorSchemeDropdown) {
+if (colorSchemeDropdown && supportsColorSchemes) {
   const toggleEl = colorSchemeDropdown.querySelector('.custom-dropdown-toggle');
   const optionsEl = colorSchemeDropdown.querySelector('.custom-dropdown-options');
 

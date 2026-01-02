@@ -148,20 +148,64 @@
         right: max(calc((100% - min(900px, 100%)) / 2 + 12px), 12px);
         background: rgba(255, 255, 255, 0.95);
         border-radius: 6px;
-        padding: 12px 14px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         max-width: 280px;
-        max-height: 500px;
-        overflow-y: auto;
         z-index: 10;
+        transition: all 0.3s ease;
+      }
+      .color-legend-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .color-legend-header:hover {
+        background: rgba(0, 0, 0, 0.03);
+        border-radius: 6px 6px 0 0;
+      }
+      .color-legend.collapsed .color-legend-header:hover {
+        border-radius: 6px;
       }
       .color-legend-title {
         font-size: 0.85rem;
         font-weight: 600;
         color: #333;
-        margin-bottom: 10px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+        margin: 0;
+      }
+      .color-legend-toggle {
+        background: none;
+        border: none;
+        color: #666;
+        font-size: 1.1rem;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        transition: transform 0.3s ease;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 8px;
+      }
+      .color-legend.collapsed .color-legend-toggle {
+        transform: rotate(-90deg);
+      }
+      .color-legend-content {
+        max-height: 500px;
+        overflow-y: auto;
+        padding: 0 14px 12px 14px;
+        transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+      }
+      .color-legend.collapsed .color-legend-content {
+        max-height: 0;
+        padding: 0 14px;
+        opacity: 0;
+        overflow: hidden;
       }
       .color-legend-item {
         display: flex;
@@ -313,7 +357,7 @@
           <span class="filters-empty">No filters available</span>
         </div>
       </div>
-      <div class="controls">
+      <div class="controls" id="color-scheme-controls">
         <label for="color-scheme-select">Color scheme</label>
         <div id="color-scheme-select" class="custom-dropdown">
           <button type="button" class="custom-dropdown-toggle">
