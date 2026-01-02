@@ -76,6 +76,7 @@ async def create_research_topics_bulk(payload: BulkResearchTopicsUpload):
                 existing.description = topic_data.description
                 existing.embedding = embedding
                 existing.keywords = topic_data.keywords
+                existing.researcher_cuits = topic_data.researchers
                 existing.tag = payload.tag
                 existing.summary_tag = payload.summary_tag
                 existing.summary_model = payload.summary_model
@@ -90,6 +91,7 @@ async def create_research_topics_bulk(payload: BulkResearchTopicsUpload):
                     description=topic_data.description,
                     embedding=embedding,
                     keywords=topic_data.keywords,
+                    researcher_cuits=topic_data.researchers,
                     tag=payload.tag,
                     summary_tag=payload.summary_tag,
                     summary_model=payload.summary_model,

@@ -12,6 +12,10 @@ class ResearchTopicBase(BaseModel):
     description: str | None = None
     embedding: Embedding
     keywords: List[str] = Field(default_factory=list)
+    researcher_cuits: List[str] = Field(
+        default_factory=list,
+        description="List of researcher CUITs that belong to this research topic"
+    )
     tag: str | None = None
     summary_tag: str | None = None
     summary_model: str | None = None
@@ -32,7 +36,10 @@ class BulkTopicItem(BaseModel):
 
     topic_id: int | None = None  # unused
     keywords: List[str] = Field(default_factory=list)
-    researchers: List[str] = Field(default_factory=list)  # CUITs to ignore for now
+    researchers: List[str] = Field(
+        default_factory=list,
+        description="List of researcher CUITs that belong to this topic"
+    )
     size: int | None = None
     name: str
     description: str | None = None
