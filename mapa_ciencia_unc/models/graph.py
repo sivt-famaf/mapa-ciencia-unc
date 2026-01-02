@@ -19,6 +19,8 @@ class ResearcherNode(Node):
     type: str = "researcher"
     description: Optional[str] = None
     color: str = "#000000"
+    cluster: Optional[str] = None
+    metadata: dict = Field(default_factory=dict)
 
 
 class ModelTagPair(BaseModel):
@@ -67,10 +69,16 @@ class ResearcherGraphListItem(ResearcherGraphBase):
         populate_by_name = True
 
 
+class FilterField(BaseModel):
+    key: str
+    values: list[str]
+
+
 class ResearcherGraph(ResearcherGraphBase, Document):
     title: str
     nodes: list[ResearcherNode]
     edges: list[Edge]
+    filter_fields: list[FilterField] = Field(default_factory=list)
 
     def dump_to_json(self, file_path: str):
         with open(file_path, "w", encoding="utf-8") as f:

@@ -17,9 +17,9 @@
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-        background: linear-gradient(135deg, #111927, #1f2937, #111927);
-        color: #f9fafb;
+        font-family: sans-serif;
+        background: #000;
+        color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -27,21 +27,22 @@
       }
       main {
         width: min(1100px, 100%);
-        background: rgba(17, 25, 40, 0.85);
-        border-radius: 24px;
+        background: #1a1a1a;
+        border-radius: 4px;
         padding: 2.5rem;
-        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
-        backdrop-filter: blur(16px);
+        box-shadow: 0 12px 32px rgba(255, 255, 255, 0.08);
+        border: 2px solid #fff;
       }
       h1 {
         margin-top: 0;
-        font-size: 2.5rem;
-        letter-spacing: 0.05em;
+        font-size: 2.3rem;
+        letter-spacing: 0.02em;
+        color: #fff;
       }
       p {
         margin-bottom: 2rem;
-        font-size: 1.1rem;
-        color: #d1d5db;
+        font-size: 1.05rem;
+        color: #ccc;
       }
       .controls {
         margin-bottom: 1.5rem;
@@ -53,25 +54,27 @@
         font-size: 0.9rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: #9ca3af;
+        color: #ccc;
       }
       .controls select {
         width: 25%;
-        padding: 0.75rem 1rem;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background: rgba(15, 23, 42, 0.6);
-        color: #f9fafb;
+        min-width: 220px;
+        padding: 0.7rem 0.9rem;
+        border-radius: 4px;
+        border: 1px solid #fff;
+        background: #0f0f0f;
+        color: #fff;
         font-size: 1rem;
         appearance: none;
         outline: none;
-        transition: border-color 0.2s ease;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
       }
       .controls select:focus {
-        border-color: #3b82f6;
+        border-color: #fff;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
       }
       .controls small {
-        color: #6b7280;
+        color: #9ca3af;
         font-size: 0.85rem;
       }
       #graph-wrapper {
@@ -81,10 +84,86 @@
       #container {
         width: min(900px, 100%);
         height: 600px;
-        background: #fff;
-        border-radius: 18px;
+        background: #e9f2ff;
+        border-radius: 4px;
         overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 10px 28px rgba(255, 255, 255, 0.08);
+        border: 2px solid #fff;
+      }
+      .filters {
+        margin-top: 0.75rem;
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      .filters-title {
+        margin: 0.5rem 0 0.25rem;
+        font-size: 0.95rem;
+        color: #ccc;
+      }
+      .filter-dropdown {
+        position: relative;
+        min-width: 200px;
+        background: #0f0f0f;
+        border: 1px solid #fff;
+        border-radius: 4px;
+        padding: 0.5rem;
+        overflow: visible;
+      }
+      .filter-toggle {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.65rem 0.8rem;
+        border: none;
+        background: transparent;
+        color: #fff;
+        font-size: 0.95rem;
+        cursor: pointer;
+      }
+      .filter-toggle::after {
+        content: "▾";
+        font-size: 0.9rem;
+        color: #9ca3af;
+      }
+      .filter-options {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        z-index: 20;
+        background: #1a1a1a;
+        border: 1px solid #fff;
+        border-radius: 4px;
+        padding: 0.35rem 0.4rem;
+        max-height: 220px;
+        overflow-y: auto;
+        box-shadow: 0 12px 28px rgba(255, 255, 255, 0.08);
+      }
+      .filter-dropdown.open .filter-options {
+        display: block;
+      }
+      .filter-option {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0.45rem;
+        border-radius: 4px;
+        color: #fff;
+      }
+      .filter-option:hover {
+        background: #262626;
+      }
+      .filter-option input {
+        accent-color: #fff;
+      }
+      .filters-empty {
+        color: #9ca3af;
+        font-size: 0.9rem;
       }
       .modal {
         display: none;
@@ -128,6 +207,10 @@
         <label for="graph-tag-select">Graph dataset (optional)</label>
         <select id="graph-tag-select"></select>
         <small id="graph-tag-status">Loading available graphs…</small>
+        <p class="filters-title">Filters</p>
+        <div id="filter-controls" class="filters">
+          <span class="filters-empty">No filters available</span>
+        </div>
       </div>
       <div id="graph-wrapper">
         <div id="container"></div>

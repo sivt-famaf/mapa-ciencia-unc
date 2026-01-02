@@ -1,12 +1,14 @@
-import json
 import logging
 
-from mapa_ciencia_unc.models.graph import ResearcherGraph, ResearcherNode
+from mapa_ciencia_unc.models.constants import ACADEMIC_UNITS, LANGUAGES, ODS
+from mapa_ciencia_unc.models.graph import ResearcherGraph, ResearcherNode, FilterField
 from mapa_ciencia_unc.models.researcher import Researcher
-
+from mapa_ciencia_unc.models.project import ProjectExtractedIntro
+from mapa_ciencia_unc.models.article import Article
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import umap
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -222,6 +224,31 @@ def _project_with_tsne(vectors: list[list[float]]) -> list[tuple[float, float]]:
     return [(float(pos[0]), float(pos[1])) for pos in emb_2d]
 
 
+async def generate_researcher_metadata(researcher: Researcher) -> dict:
+    """
+    Generate metadata for a researcher.
+    Used for graph displaying and filtering purposes
+    """
+    metadata = {}
+    metadata["ods"] = researcher.ods
+    metadata["languages"] = researcher.languages
+    metadata["academic_units"] = researcher.academic_units
+
+    project_files = await ProjectExtractedIntro.find({"cuit": researcher.cuit}).count()
+
+    articles = await Article.find({"cuit": researcher.cuit}).count()
+
+    amount = project_files + articles
+    thresholds = [5, 20]
+    multipliers = [1, 1.5, 2]
+
+    # np.digitize returns the index of the bin the amount falls into
+    idx = np.digitize(amount, thresholds)
+    metadata["size_multiplier"] = multipliers[idx]
+
+    return metadata
+
+
 async def compute_graph(
     embedding_tag: str,
     embedding_model: str,
@@ -299,6 +326,8 @@ async def compute_graph(
 
         label = f"{researcher.name} ({academic_unit})"
 
+        metadata = await generate_researcher_metadata(researcher)
+
         node = ResearcherNode(
             id=str(researcher.id),
             label=label,
@@ -306,12 +335,19 @@ async def compute_graph(
             y=y,
             description=description,
             color=color,
+            metadata=metadata,
         )
 
         nodes.append(node)
 
     # Create graph with no edges (edges can be added in the future)
     edges = []
+    filter_fields = [
+        FilterField(key="academic_units", values=list(ACADEMIC_UNITS)),
+        FilterField(key="ods", values=ODS),
+        FilterField(key="languages", values=LANGUAGES),
+    ]
+
     graph = ResearcherGraph(
         title=f"Researcher Graph - Summary: {summary_tag}/{summary_model}, Embedding: {embedding_tag}/{embedding_model} ({strategy})",
         nodes=nodes,
@@ -319,6 +355,7 @@ async def compute_graph(
         embedding={"tag": embedding_tag, "model": embedding_model},
         summary={"tag": summary_tag, "model": summary_model},
         strategy=strategy_lower,
+        filter_fields=filter_fields,
     )
     await graph.insert()
 
