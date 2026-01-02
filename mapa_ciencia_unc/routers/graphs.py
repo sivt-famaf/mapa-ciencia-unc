@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
+from beanie import PydanticObjectId
 
 from mapa_ciencia_unc.auth import require_auth
 from mapa_ciencia_unc.models.graph import (
@@ -27,7 +28,16 @@ async def get_available_graphs():
 
 @router.get("/{graph_id}", response_model=ResearcherGraph)
 async def get_graph(graph_id: str):
-    graph = await ResearcherGraph.find_one({"_id": graph_id})
+    try:
+        # Convert string ID to PydanticObjectId
+        object_id = PydanticObjectId(graph_id)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid graph ID format: '{graph_id}'",
+        )
+
+    graph = await ResearcherGraph.get(object_id)
     if not graph:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
