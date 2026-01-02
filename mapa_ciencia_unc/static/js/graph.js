@@ -530,34 +530,173 @@ function getSavedColorScheme() {
   }
 }
 
+/**
+ * Render the color legend based on the current color scheme
+ * @param {string} schemeName - The color scheme to show in the legend
+ */
+function renderLegend(schemeName) {
+  const legendEl = document.getElementById('color-legend');
+  if (!legendEl) return;
+
+  // Clear existing legend
+  legendEl.innerHTML = '';
+
+  let colorMap = {};
+  let title = '';
+
+  // Build the color map and title based on the scheme
+  switch (schemeName) {
+    case 'academic_unit':
+      colorMap = ACADEMIC_UNIT_COLORS;
+      title = 'Academic Unit';
+      break;
+    case 'maturity_level':
+      colorMap = MATURITY_LEVEL_COLORS;
+      title = 'Maturity Level';
+      break;
+    case 'ods':
+      colorMap = ODS_COLORS;
+      title = 'ODS';
+      break;
+    case 'single':
+      // For single color, show just one item
+      colorMap = { 'All Nodes': SINGLE_COLOR };
+      title = 'Color Scheme';
+      break;
+    default:
+      // If unknown scheme, don't show legend
+      return;
+  }
+
+  // Create title element
+  const titleEl = document.createElement('div');
+  titleEl.className = 'color-legend-title';
+  titleEl.textContent = title;
+  legendEl.appendChild(titleEl);
+
+  // Create legend items
+  Object.entries(colorMap).forEach(([label, color]) => {
+    // Skip 'default' entries
+    if (label === 'default') return;
+
+    const itemEl = document.createElement('div');
+    itemEl.className = 'color-legend-item';
+
+    const swatchEl = document.createElement('div');
+    swatchEl.className = 'color-legend-swatch';
+    swatchEl.style.backgroundColor = color;
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'color-legend-label';
+    labelEl.textContent = label;
+
+    itemEl.appendChild(swatchEl);
+    itemEl.appendChild(labelEl);
+    legendEl.appendChild(itemEl);
+  });
+}
+
 // Initialize the color scheme selector
-const colorSchemeSelect = document.getElementById('color-scheme-select');
+const colorSchemeDropdown = document.getElementById('color-scheme-select');
 const colorSchemeStatus = document.getElementById('color-scheme-status');
 
-if (colorSchemeSelect) {
-  // Set the initial value from localStorage or default
-  const savedScheme = getSavedColorScheme();
-  colorSchemeSelect.value = savedScheme;
+if (colorSchemeDropdown) {
+  const toggleEl = colorSchemeDropdown.querySelector('.custom-dropdown-toggle');
+  const optionsEl = colorSchemeDropdown.querySelector('.custom-dropdown-options');
 
-  // Apply the saved color scheme on page load
-  applyColorScheme(savedScheme);
+  if (toggleEl && optionsEl) {
+    // Color scheme options mapping
+    const schemeOptions = {
+      'academic_unit': 'Academic Unit',
+      'maturity_level': 'Maturity Level',
+      'ods': 'ODS (Sustainable Development Goals)',
+      'single': 'Single Color'
+    };
 
-  // Add event listener for color scheme changes
-  colorSchemeSelect.addEventListener('change', (event) => {
-    const selectedScheme = event.target.value;
+    // Set the initial value from localStorage or default
+    const savedScheme = getSavedColorScheme();
 
-    if (colorSchemeStatus) {
-      colorSchemeStatus.textContent = 'Applying color scheme...';
+    // Update the toggle button text to show current selection
+    const textEl = toggleEl.querySelector('.custom-dropdown-toggle-text');
+    if (textEl) {
+      textEl.textContent = schemeOptions[savedScheme] || schemeOptions['academic_unit'];
     }
 
-    // Apply the new color scheme
-    applyColorScheme(selectedScheme);
+    // Apply the saved color scheme on page load
+    applyColorScheme(savedScheme);
+    renderLegend(savedScheme);
 
-    if (colorSchemeStatus) {
-      const schemeLabel = event.target.options[event.target.selectedIndex].text;
-      colorSchemeStatus.textContent = `Color scheme "${schemeLabel}" applied.`;
+    // Mark the current selection
+    const currentOption = optionsEl.querySelector(`[data-value="${savedScheme}"]`);
+    if (currentOption) {
+      currentOption.classList.add('selected');
     }
-  });
+
+    // Close all custom dropdowns helper
+    const closeAllCustomDropdowns = () => {
+      document.querySelectorAll('.custom-dropdown.open').forEach(dropdown => {
+        if (dropdown !== colorSchemeDropdown) {
+          dropdown.classList.remove('open');
+        }
+      });
+    };
+
+    // Toggle dropdown open/close
+    toggleEl.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const wasOpen = colorSchemeDropdown.classList.contains('open');
+      closeAllCustomDropdowns();
+      if (!wasOpen) {
+        colorSchemeDropdown.classList.add('open');
+      } else {
+        colorSchemeDropdown.classList.remove('open');
+      }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (event) => {
+      if (!colorSchemeDropdown.contains(event.target)) {
+        colorSchemeDropdown.classList.remove('open');
+      }
+    });
+
+    // Add event listener for each option
+    const options = optionsEl.querySelectorAll('.custom-dropdown-option');
+    options.forEach(option => {
+      option.addEventListener('click', () => {
+        const selectedScheme = option.dataset.value;
+
+        if (colorSchemeStatus) {
+          colorSchemeStatus.textContent = 'Applying color scheme...';
+        }
+
+        // Remove 'selected' class from all options
+        options.forEach(opt => opt.classList.remove('selected'));
+        // Add 'selected' class to clicked option
+        option.classList.add('selected');
+
+        // Update toggle button text
+        const textEl = toggleEl.querySelector('.custom-dropdown-toggle-text');
+        if (textEl) {
+          textEl.textContent = option.textContent;
+        }
+
+        // Apply the new color scheme
+        applyColorScheme(selectedScheme);
+        renderLegend(selectedScheme);
+
+        // Close dropdown
+        colorSchemeDropdown.classList.remove('open');
+
+        if (colorSchemeStatus) {
+          colorSchemeStatus.textContent = `Color scheme "${option.textContent}" applied.`;
+        }
+      });
+    });
+  } else {
+    console.warn('Color scheme dropdown elements not found');
+  }
 } else {
   console.warn('Color scheme selector not found');
 }
