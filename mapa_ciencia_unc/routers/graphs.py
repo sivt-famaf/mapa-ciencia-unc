@@ -92,6 +92,9 @@ async def compute_graph_data(request: ResearcherGraphCreate):
       - "pca": Fast linear projection, preserves global variance
       - "umap": Non-linear projection, preserves local clusters (balanced)
       - "tsne": Non-linear projection, emphasizes tight local clusters
+    - `research_topic_tag`: Optional tag for research topics (e.g., "bertopic-sample15")
+      - When provided, includes research topic nodes in the graph and enables topic-based filtering
+      - Topics are projected alongside researchers to show spatial relationships
     - `overwrite`: Whether to overwrite existing graph (default: false)
 
     **Returns:**
@@ -194,6 +197,7 @@ async def compute_graph_data(request: ResearcherGraphCreate):
             summary_tag=request.summary.tag,
             summary_model=request.summary.model,
             strategy=request.strategy,
+            research_topic_tag=request.research_topic_tag,
         )
         return {
             "_id": str(graph.id),

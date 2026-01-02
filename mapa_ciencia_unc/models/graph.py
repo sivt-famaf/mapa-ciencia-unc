@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Literal, Dict, Any
+from typing import Optional, Literal, List
 from beanie import Document, PydanticObjectId
 
 
@@ -18,10 +18,35 @@ class Edge(BaseModel):
 class ResearcherNode(Node):
     type: str = "researcher"
     description: Optional[str] = None
-    metadata: dict = Field(default_factory=dict)
+    metadata: dict = Field(
+        default_factory=dict,
+        description=(
+            "Researcher metadata for filtering and coloring. "
+            "Expected fields: ods (List[str]), languages (List[str]), "
+            "academic_units (List[str]), maturity_level (str), "
+            "size_multiplier (float), research_topic (str, optional)"
+        )
+    )
     color: Optional[str] = Field(
         default="#000000",
         description="Node color (optional for backward compatibility)"
+    )
+
+
+class ResearchTopicNode(Node):
+    type: str = "research_topic"
+    name: str = Field(description="The research topic name")
+    description: Optional[str] = Field(
+        default=None,
+        description="Description of the research topic"
+    )
+    keywords: List[str] = Field(
+        default_factory=list,
+        description="Keywords associated with this research topic (for hover display)"
+    )
+    researcher_count: int = Field(
+        default=0,
+        description="Number of researchers in this topic"
     )
 
 
@@ -60,6 +85,11 @@ class ResearcherGraphCreate(ResearcherGraphBase):
         default=False,
         description="Whether to overwrite existing graph with the same tags/models combination",
     )
+    research_topic_tag: Optional[str] = Field(
+        default=None,
+        description="Optional tag for research topics to assign researchers to topics",
+        examples=["bertopic-sample15"],
+    )
 
 
 class ResearcherGraphListItem(ResearcherGraphBase):
@@ -78,7 +108,7 @@ class FilterField(BaseModel):
 
 class ResearcherGraph(ResearcherGraphBase, Document):
     title: str
-    nodes: list[ResearcherNode]
+    nodes: list[ResearcherNode | ResearchTopicNode]
     edges: list[Edge]
     filter_fields: list[FilterField] = Field(default_factory=list)
 
