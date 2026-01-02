@@ -106,20 +106,20 @@ const SINGLE_COLOR = "#3b82f6";
 const DEFAULT_COLOR = "#9e9e9e";
 
 /**
- * Maps node properties to a color based on the selected color scheme
+ * Maps node metadata to a color based on the selected color scheme
  * @param {string} scheme - The color scheme to use ('academic_unit', 'maturity_level', 'ods', 'single')
- * @param {Object} properties - The node properties object
+ * @param {Object} metadata - The node metadata object
  * @returns {string} The hex color code
  */
-function getNodeColor(scheme, properties) {
-  if (!properties) {
+function getNodeColor(scheme, metadata) {
+  if (!metadata) {
     return DEFAULT_COLOR;
   }
 
   switch (scheme) {
     case 'academic_unit': {
       // Academic units is an array, so we'll use the first academic unit for coloring
-      const academicUnitsArray = properties.academic_units;
+      const academicUnitsArray = metadata.academic_units;
       if (!academicUnitsArray || !Array.isArray(academicUnitsArray) || academicUnitsArray.length === 0) {
         return ACADEMIC_UNIT_COLORS['Otros'];
       }
@@ -128,14 +128,14 @@ function getNodeColor(scheme, properties) {
     }
 
     case 'maturity_level': {
-      const maturityLevel = properties.maturity_level;
+      const maturityLevel = metadata.maturity_level;
       if (!maturityLevel) return MATURITY_LEVEL_COLORS['default'];
       return MATURITY_LEVEL_COLORS[maturityLevel] || MATURITY_LEVEL_COLORS['default'];
     }
 
     case 'ods': {
       // ODS is an array, so we'll use the first ODS value for coloring
-      const odsArray = properties.ods;
+      const odsArray = metadata.ods;
       if (!odsArray || !Array.isArray(odsArray) || odsArray.length === 0) {
         return ODS_COLORS['default'];
       }
@@ -477,32 +477,32 @@ renderer.setSetting("edgeReducer", (edge, data) => {
 });
 
 /**
- * Check if a properties object has any data
- * @param {Object} properties - The properties object to check
- * @returns {boolean} True if properties has data, false otherwise
+ * Check if a metadata object has any data
+ * @param {Object} metadata - The metadata object to check
+ * @returns {boolean} True if metadata has data, false otherwise
  */
-function hasProperties(properties) {
-  return properties && typeof properties === 'object' && Object.keys(properties).length > 0;
+function hasMetadata(metadata) {
+  return metadata && typeof metadata === 'object' && Object.keys(metadata).length > 0;
 }
 
 /**
  * Apply a color scheme to all nodes in the graph
- * Backwards compatible: If a node has no properties, keeps its existing color
+ * Backwards compatible: If a node has no metadata, keeps its existing color
  * @param {string} schemeName - The color scheme to apply
  */
 function applyColorScheme(schemeName) {
   // Iterate through all nodes and update their color based on the scheme
   graph.forEachNode((nodeId) => {
-    const properties = graph.getNodeAttribute(nodeId, 'properties');
+    const metadata = graph.getNodeAttribute(nodeId, 'metadata');
 
-    // Backwards compatibility: If node has no properties, keep its existing color
-    if (!hasProperties(properties)) {
+    // Backwards compatibility: If node has no metadata, keep its existing color
+    if (!hasMetadata(metadata)) {
       // Don't change the color - keep the hardcoded color from old graphs
       return;
     }
 
-    // Calculate and apply new color based on properties
-    const newColor = getNodeColor(schemeName, properties);
+    // Calculate and apply new color based on metadata
+    const newColor = getNodeColor(schemeName, metadata);
     graph.setNodeAttribute(nodeId, 'color', newColor);
   });
 
