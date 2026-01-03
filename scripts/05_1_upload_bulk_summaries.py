@@ -69,7 +69,7 @@ Notes:
     - If --tag is not provided, the script will use the tag from each JSON object
     - All summaries in the file should have the same tag if --tag is not specified
     - The summary field will be converted to a JSON string before uploading
-    - The API endpoint is: /api/summaries/bulk
+    - The API endpoint is: /api/summaries/upload/bulk
 """
 
 import json
@@ -80,7 +80,7 @@ from typing import Dict, Tuple, Optional
 
 
 LOGIN_ENDPOINT = "/login"
-BULK_SUMMARIES_ENDPOINT = "/api/summaries/bulk"
+BULK_SUMMARIES_ENDPOINT = "/api/summaries/upload/bulk"
 
 
 def get_token(username: str, password: str, url: str) -> str:

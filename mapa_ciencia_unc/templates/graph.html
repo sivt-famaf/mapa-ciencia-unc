@@ -10,6 +10,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/graphology/0.25.4/graphology.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/2.4.0/sigma.min.js"></script>
 
+    <!-- Chroma.js for color palette generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+
     <style>
       * {
         box-sizing: border-box;
@@ -361,9 +364,10 @@
         <label for="color-scheme-select">Color scheme</label>
         <div id="color-scheme-select" class="custom-dropdown">
           <button type="button" class="custom-dropdown-toggle">
-            <span class="custom-dropdown-toggle-text">Academic Unit</span>
+            <span class="custom-dropdown-toggle-text">Research Topic</span>
           </button>
           <div class="custom-dropdown-options">
+            <div class="custom-dropdown-option" data-value="research_topic">Research Topic</div>
             <div class="custom-dropdown-option" data-value="academic_unit">Academic Unit</div>
             <div class="custom-dropdown-option" data-value="maturity_level">Maturity Level</div>
             <div class="custom-dropdown-option" data-value="ods">ODS (Sustainable Development Goals)</div>

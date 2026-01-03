@@ -106,8 +106,59 @@ const SINGLE_COLOR = "#3b82f6";
 const DEFAULT_COLOR = "#9e9e9e";
 
 /**
+ * Generate a color palette for research topics using chroma.js
+ * @param {number} count - Number of colors to generate
+ * @returns {Array<string>} Array of hex color codes
+ */
+function generateResearchTopicPalette(count) {
+  if (count === 0) return [];
+  if (count === 1) return ['#6366f1']; // Single color
+
+  // Use chroma.scale to generate visually distinct colors
+  // Using a cubehelix scale for better perceptual uniformity
+  return chroma.scale(['#fafa6e', '#2A4858'])
+    .mode('lch')
+    .colors(count);
+}
+
+/**
+ * Calculate research topic to color mapping from graph data
+ * Called once on script load
+ */
+function calculateResearchTopicColors() {
+  const topicSet = new Set();
+
+  // Extract all unique research topics from researcher metadata
+  rawData.nodes?.forEach((node) => {
+    if (node.type === "researcher" && node.metadata?.research_topic) {
+      topicSet.add(node.metadata.research_topic);
+    }
+  });
+
+  // Convert to sorted array for consistent color assignment
+  const topics = Array.from(topicSet).sort();
+
+  // Generate colors using chroma.js
+  const colors = generateResearchTopicPalette(topics.length);
+
+  // Create mapping object
+  const mapping = {};
+  topics.forEach((topic, index) => {
+    mapping[topic] = colors[index];
+  });
+
+  return mapping;
+}
+
+/**
+ * Research topic color mapping
+ * Calculated once when the script loads
+ */
+const RESEARCH_TOPIC_COLORS = calculateResearchTopicColors();
+
+/**
  * Maps node metadata to a color based on the selected color scheme
- * @param {string} scheme - The color scheme to use ('academic_unit', 'maturity_level', 'ods', 'single')
+ * @param {string} scheme - The color scheme to use ('research_topic', 'academic_unit', 'maturity_level', 'ods', 'single')
  * @param {Object} metadata - The node metadata object
  * @returns {string} The hex color code
  */
@@ -117,6 +168,12 @@ function getNodeColor(scheme, metadata) {
   }
 
   switch (scheme) {
+    case 'research_topic': {
+      const researchTopic = metadata.research_topic;
+      if (!researchTopic) return DEFAULT_COLOR;
+      return RESEARCH_TOPIC_COLORS[researchTopic] || DEFAULT_COLOR;
+    }
+
     case 'academic_unit': {
       // Academic units is an array, so we'll use the first academic unit for coloring
       const academicUnitsArray = metadata.academic_units;
@@ -155,14 +212,6 @@ function getNodeColor(scheme, metadata) {
  * Get all available color schemes
  * @returns {Array} Array of scheme objects with id and label
  */
-function getAvailableColorSchemes() {
-  return [
-    { id: 'academic_unit', label: 'Unidad Académica Principal' },
-    { id: 'maturity_level', label: 'Nivel de Madurez' },
-    { id: 'ods', label: 'ODS (Objetivos de Desarrollo Sostenible)' },
-    { id: 'single', label: 'Single Color' },
-  ];
-}
 
 const Graphology = window.graphology;
 const SigmaRenderer = window.Sigma;
@@ -323,15 +372,26 @@ renderFilterDropdowns(rawData?.filter_fields);
 const graph = new Graphology.Graph();
 
 rawData.nodes?.forEach((node) => {
-  graph.addNode(node.id, {
+  const isResearchTopic = node.type === "research_topic";
+
+  const nodeAttributes = {
     label: node.label,
-    size: 5 * (node.metadata?.size_multiplier || 1),
+    size: isResearchTopic ? 0 : 5 * (node.metadata?.size_multiplier || 1), // No dot for topics
     color: node.color || "#000000",
     x: node.x,
     y: node.y,
     description: node.description || "",
     metadata: node.metadata || {},
-  });
+    forceLabel: isResearchTopic, // Always show labels for research topics
+    nodeType: node.type || "researcher", // Store node type for later use (renamed to avoid Sigma.js conflict)
+  };
+
+  // Add custom label size for research topic nodes
+  if (isResearchTopic) {
+    nodeAttributes.labelSize = 14; // Slightly larger label
+  }
+
+  graph.addNode(node.id, nodeAttributes);
 });
 
 rawData.edges?.forEach((edge) => {
@@ -368,7 +428,60 @@ if (!container) {
   throw new Error("Missing graph container");
 }
 
-renderer = new SigmaRenderer(graph, container);
+renderer = new SigmaRenderer(graph, container, {
+  labelRenderer: (context, data, settings) => {
+    const { label, x, y, size, nodeType } = data;
+    if (!label) return;
+
+    const fontSize = data.labelSize || settings.labelSize;
+
+    // For research topic nodes, center label at node position with bold text and white stroke
+    if (nodeType === "research_topic") {
+      context.font = `bold ${fontSize}px ${settings.labelFont}`; // Bold font
+      context.fillStyle = "#9333EA"; // Purple for topics
+      context.textAlign = "center";
+      context.textBaseline = "middle"; // Center vertically
+
+      // White stroke for better visibility
+      context.strokeStyle = "#FFFFFF";
+      context.lineWidth = 3;
+
+      // Split label into words and wrap if more than 3 words
+      const words = label.split(' ');
+      const maxWordsPerLine = 3;
+
+      if (words.length > maxWordsPerLine) {
+        // Break into lines of 3 words each
+        const lines = [];
+        for (let i = 0; i < words.length; i += maxWordsPerLine) {
+          lines.push(words.slice(i, i + maxWordsPerLine).join(' '));
+        }
+
+        // Render each line, stacked vertically, centered at node position
+        const lineHeight = fontSize + 2;
+        const totalHeight = lines.length * lineHeight;
+        const startY = y - totalHeight / 2 + lineHeight / 2;
+
+        lines.forEach((line, index) => {
+          const lineY = startY + index * lineHeight;
+          context.strokeText(line, x, lineY); // White stroke
+          context.fillText(line, x, lineY); // Purple fill
+        });
+      } else {
+        // Single line - centered at node position
+        context.strokeText(label, x, y); // White stroke
+        context.fillText(label, x, y); // Purple fill
+      }
+    } else {
+      // Default label rendering for researcher nodes with black color
+      context.font = `${fontSize}px ${settings.labelFont}`;
+      context.fillStyle = "#000000"; // Black for researchers
+      context.textAlign = "left";
+      context.textBaseline = "middle";
+      context.fillText(label, x + size + 2, y);
+    }
+  }
+});
 
 
 const getStoredToken = () => {
@@ -423,11 +536,16 @@ renderer.on("leaveNode", () => {
 });
 
 renderer.on("clickNode", ({ node }) => {
-  const baseUrl = `/researcher/${encodeURIComponent(node)}`;
-  const url = currentGraphId
-    ? `${baseUrl}?graph_id=${encodeURIComponent(currentGraphId)}`
-    : baseUrl;
-  window.open(url, "_blank", "noopener");
+  const nodeType = graph.getNodeAttribute(node, "nodeType");
+
+  // Only open researcher page for researcher nodes
+  if (nodeType === "researcher") {
+    const baseUrl = `/researcher/${encodeURIComponent(node)}`;
+    const url = currentGraphId
+      ? `${baseUrl}?graph_id=${encodeURIComponent(currentGraphId)}`
+      : baseUrl;
+    window.open(url, "_blank", "noopener");
+  }
 
   if (state.selectedNode === node) {
     state.selectedNode = null;
@@ -513,7 +631,13 @@ function hasMetadata(metadata) {
 function applyColorScheme(schemeName) {
   // Iterate through all nodes and update their color based on the scheme
   graph.forEachNode((nodeId) => {
+    const nodeType = graph.getNodeAttribute(nodeId, 'nodeType');
     const metadata = graph.getNodeAttribute(nodeId, 'metadata');
+
+    // Skip research topic nodes - they maintain their own color
+    if (nodeType === 'research_topic') {
+      return;
+    }
 
     // Backwards compatibility: If node has no metadata, keep its existing color
     if (!hasMetadata(metadata)) {
@@ -539,14 +663,14 @@ function applyColorScheme(schemeName) {
 
 /**
  * Get the saved color scheme from localStorage or return default
- * @returns {string} The saved color scheme or 'academic_unit'
+ * @returns {string} The saved color scheme or 'research_topic'
  */
 function getSavedColorScheme() {
   try {
-    return localStorage.getItem('selectedColorScheme') || 'academic_unit';
+    return localStorage.getItem('selectedColorScheme') || 'research_topic';
   } catch (error) {
     console.warn('Unable to retrieve color scheme preference', error);
-    return 'academic_unit';
+    return 'research_topic';
   }
 }
 
@@ -599,6 +723,10 @@ function renderLegend(schemeName) {
 
   // Build the color map and title based on the scheme
   switch (schemeName) {
+    case 'research_topic':
+      colorMap = RESEARCH_TOPIC_COLORS;
+      title = 'Research Topic';
+      break;
     case 'academic_unit':
       colorMap = ACADEMIC_UNIT_COLORS;
       title = 'Academic Unit';
@@ -707,6 +835,7 @@ if (colorSchemeDropdown && supportsColorSchemes) {
   if (toggleEl && optionsEl) {
     // Color scheme options mapping
     const schemeOptions = {
+      'research_topic': 'Research Topic',
       'academic_unit': 'Academic Unit',
       'maturity_level': 'Maturity Level',
       'ods': 'ODS (Sustainable Development Goals)',
