@@ -10,6 +10,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/graphology/0.25.4/graphology.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/2.4.0/sigma.min.js"></script>
 
+    <!-- Chroma.js for color palette generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+
     <style>
       * {
         box-sizing: border-box;
@@ -326,6 +329,57 @@
         font-size: 20px;
         cursor: pointer;
       }
+      .topic-labels-toggle-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .topic-labels-toggle {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 24px;
+        cursor: pointer;
+      }
+      .topic-labels-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .topic-labels-toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #4a4a4a;
+        transition: 0.3s;
+        border-radius: 24px;
+        border: 1px solid #fff;
+      }
+      .topic-labels-toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+      }
+      .topic-labels-toggle input:checked + .topic-labels-toggle-slider {
+        background-color: #3b82f6;
+      }
+      .topic-labels-toggle input:checked + .topic-labels-toggle-slider:before {
+        transform: translateX(24px);
+      }
+      .topic-labels-toggle-label {
+        font-size: 0.9rem;
+        color: #ccc;
+        user-select: none;
+      }
     </style>
   </head>
 
@@ -359,15 +413,25 @@
       </div>
       <div class="controls" id="color-scheme-controls">
         <label for="color-scheme-select">Color scheme</label>
-        <div id="color-scheme-select" class="custom-dropdown">
-          <button type="button" class="custom-dropdown-toggle">
-            <span class="custom-dropdown-toggle-text">Academic Unit</span>
-          </button>
-          <div class="custom-dropdown-options">
-            <div class="custom-dropdown-option" data-value="academic_unit">Academic Unit</div>
-            <div class="custom-dropdown-option" data-value="maturity_level">Maturity Level</div>
-            <div class="custom-dropdown-option" data-value="ods">ODS (Sustainable Development Goals)</div>
-            <div class="custom-dropdown-option" data-value="single">Single Color</div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div id="color-scheme-select" class="custom-dropdown">
+            <button type="button" class="custom-dropdown-toggle">
+              <span class="custom-dropdown-toggle-text">Research Topic</span>
+            </button>
+            <div class="custom-dropdown-options">
+              <div class="custom-dropdown-option" data-value="research_topic">Research Topic</div>
+              <div class="custom-dropdown-option" data-value="academic_unit">Academic Unit</div>
+              <div class="custom-dropdown-option" data-value="maturity_level">Maturity Level</div>
+              <div class="custom-dropdown-option" data-value="ods">ODS (Sustainable Development Goals)</div>
+              <div class="custom-dropdown-option" data-value="single">Single Color</div>
+            </div>
+          </div>
+          <div class="topic-labels-toggle-wrapper">
+            <label class="topic-labels-toggle">
+              <input type="checkbox" id="topic-labels-toggle" checked>
+              <span class="topic-labels-toggle-slider"></span>
+            </label>
+            <span class="topic-labels-toggle-label">Topic Labels</span>
           </div>
         </div>
         <small id="color-scheme-status">Select a color scheme to apply to the graph.</small>

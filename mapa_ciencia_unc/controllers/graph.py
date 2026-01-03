@@ -1,8 +1,14 @@
 import logging
 
 from mapa_ciencia_unc.models.constants import ACADEMIC_UNITS, LANGUAGES, ODS
-from mapa_ciencia_unc.models.graph import ResearcherGraph, ResearcherNode, FilterField
+from mapa_ciencia_unc.models.graph import (
+    ResearcherGraph,
+    ResearcherNode,
+    ResearchTopicNode,
+    FilterField,
+)
 from mapa_ciencia_unc.models.researcher import Researcher
+from mapa_ciencia_unc.models.research_topic import ResearchTopic
 from mapa_ciencia_unc.models.project import ProjectExtractedIntro
 from mapa_ciencia_unc.models.article import Article
 from sklearn.decomposition import PCA
@@ -91,6 +97,46 @@ async def get_researcher_embedding(
         vectors.append(latest_embedding.vector)
 
     return researchers, vectors
+
+
+async def get_research_topics_and_mapping(
+    tag: str,
+) -> tuple[list[ResearchTopic], dict[str, str]]:
+    """
+    Retrieve research topics and create mapping of researchers to topics.
+
+    Queries ResearchTopic collection for topics matching the specified tag,
+    then creates a dictionary mapping each researcher CUIT to their topic name.
+
+    Args:
+        tag: Tag identifier for the research topics (e.g., "bertopic-sample15")
+
+    Returns:
+        Tuple containing:
+        - List of ResearchTopic objects (with embeddings)
+        - Dictionary mapping researcher CUIT (str) to topic name (str)
+
+    Example:
+        topics, mapping = await get_research_topics_and_mapping("bertopic-sample15")
+        # topics: [ResearchTopic(...), ResearchTopic(...), ...]
+        # mapping: {"20123456789": "507f1f77bcf86cd799439011", ...}
+    """
+    # Query research topics matching the tag
+    topics = await ResearchTopic.find(ResearchTopic.tag == tag).to_list()
+
+    # Build mapping from CUIT to topic name
+    cuit_to_topic_name = {}
+    for topic in topics:
+        topic_name = str(topic.name)
+        for cuit in topic.researcher_cuits:
+            cuit_to_topic_name[cuit] = topic_name
+
+    logger.info(
+        f"Found {len(topics)} research topics with {len(cuit_to_topic_name)} researcher assignments "
+        f"for tag={tag}"
+    )
+
+    return topics, cuit_to_topic_name
 
 
 def _project_with_pca(vectors: list[list[float]]) -> list[tuple[float, float]]:
@@ -224,16 +270,28 @@ def _project_with_tsne(vectors: list[list[float]]) -> list[tuple[float, float]]:
     return [(float(pos[0]), float(pos[1])) for pos in emb_2d]
 
 
-async def generate_researcher_metadata(researcher: Researcher) -> dict:
+async def generate_researcher_metadata(
+    researcher: Researcher, cuit_to_topic_name: dict[str, str]
+) -> dict:
     """
     Generate metadata for a researcher.
     Used for graph displaying and filtering purposes
+
+    Args:
+        researcher: The Researcher object
+        cuit_to_topic_name: Mapping from researcher CUIT to research topic name
+
+    Returns:
+        Dictionary containing metadata fields for filtering and coloring
     """
     metadata = {}
     metadata["ods"] = researcher.ods
     metadata["languages"] = researcher.languages
     metadata["academic_units"] = researcher.academic_units
     metadata["maturity_level"] = researcher.maturity_level
+
+    # Add research topic assignment if available
+    metadata["research_topic"] = cuit_to_topic_name.get(researcher.cuit, "No Topic")
 
     project_files = await ProjectExtractedIntro.find({"cuit": researcher.cuit}).count()
 
@@ -256,6 +314,7 @@ async def compute_graph(
     summary_tag: str,
     summary_model: str,
     strategy: str,
+    research_topic_tag: str | None = None,
 ) -> ResearcherGraph:
     """
     Compute a 2D graph visualization of researchers based on their embeddings.
@@ -274,6 +333,8 @@ async def compute_graph(
                   - "pca": Principal Component Analysis (direct to 2D)
                   - "umap": Two-step process (PCA to 50D, then UMAP to 2D)
                   - "tsne": Two-step process (PCA to 50D, then t-SNE to 2D)
+        research_topic_tag: Optional tag identifier for research topics (e.g., "bertopic-sample15")
+                           If provided, researchers will be assigned to topics
 
     Returns:
         ResearcherGraph object with nodes positioned in 2D space
@@ -294,28 +355,53 @@ async def compute_graph(
         )
 
     # Get researchers and their embedding vectors
-    researchers, vectors = await get_researcher_embedding(
+    researchers, researcher_vectors = await get_researcher_embedding(
         embedding_tag, embedding_model
     )
 
-    # Project vectors to 2D based on strategy
+    # Get research topic assignments if topic tag is provided
+    cuit_to_topic_name = {}
+    topics = []
+    topic_vectors = []
+
+    if research_topic_tag:
+        topics, cuit_to_topic_name = await get_research_topics_and_mapping(
+            research_topic_tag
+        )
+        # Extract topic embedding vectors
+        topic_vectors = [topic.embedding.vector for topic in topics]
+        logger.info(
+            f"Loaded {len(topics)} research topics with embeddings for tag: {research_topic_tag}"
+        )
+
+    # Combine researcher and topic vectors for joint projection
+    all_vectors = researcher_vectors + topic_vectors
+    num_researchers = len(researcher_vectors)
+    num_topics = len(topic_vectors)
+
+    # Project all vectors to 2D based on strategy
     logger.info(
         f"Computing graph for embedding_tag: {embedding_tag}, "
-        f"embedding_model: {embedding_model}, strategy: {strategy}"
+        f"embedding_model: {embedding_model}, strategy: {strategy}, "
+        f"researchers: {num_researchers}, topics: {num_topics}"
     )
 
     if strategy_lower == "pca":
-        positions_2d = _project_with_pca(vectors)
+        all_positions_2d = _project_with_pca(all_vectors)
     elif strategy_lower == "umap":
-        positions_2d = _project_with_umap(vectors)
+        all_positions_2d = _project_with_umap(all_vectors)
     elif strategy_lower == "tsne":
-        positions_2d = _project_with_tsne(vectors)
+        all_positions_2d = _project_with_tsne(all_vectors)
     else:
         raise NotImplementedError(f"Unsupported strategy: {strategy}")
 
-    # Create nodes from researchers and their 2D positions
+    # Split projected positions back into researcher and topic positions
+    researcher_positions = all_positions_2d[:num_researchers]
+    topic_positions = all_positions_2d[num_researchers:]
+
+    # Create researcher nodes from researchers and their 2D positions
     nodes = []
-    for researcher, (x, y) in zip(researchers, positions_2d):
+    for researcher, (x, y) in zip(researchers, researcher_positions):
         if researcher.research_area:
             description = f"{researcher.research_area} at {researcher.research_center}"
         else:
@@ -324,9 +410,9 @@ async def compute_graph(
         academic_unit = (
             researcher.academic_units[0] if researcher.academic_units else "Otros"
         )
-        metadata = await generate_researcher_metadata(researcher)
+        metadata = await generate_researcher_metadata(researcher, cuit_to_topic_name)
 
-        label = f"{researcher.name} {researcher.last_name} ({academic_unit})"
+        label = f"{researcher.name} {researcher.last_name}"
         node = ResearcherNode(
             id=str(researcher.id),
             label=label,
@@ -338,6 +424,32 @@ async def compute_graph(
 
         nodes.append(node)
 
+    # Create research topic nodes from topics and their 2D positions
+    for topic, (x, y) in zip(topics, topic_positions):
+        # Count researchers in this topic
+        researcher_count = len(topic.researcher_cuits)
+
+        # Create label with topic name in uppercase
+        label = topic.name.upper()
+
+        topic_node = ResearchTopicNode(
+            id=str(topic.id),
+            label=label,
+            x=x,
+            y=y,
+            name=topic.name,
+            description=topic.description,
+            keywords=topic.keywords,
+            researcher_count=researcher_count,
+        )
+
+        nodes.append(topic_node)
+
+    logger.info(
+        f"Created {len(researcher_positions)} researcher nodes and "
+        f"{len(topic_positions)} topic nodes"
+    )
+
     # Create graph with no edges (edges can be added in the future)
     edges = []
     filter_fields = [
@@ -346,8 +458,20 @@ async def compute_graph(
         FilterField(key="languages", values=LANGUAGES),
     ]
 
+    # Add research topic filter if topics are available
+    if research_topic_tag and cuit_to_topic_name:
+        # Get unique topic names from the mapping
+        unique_topics = sorted(set(cuit_to_topic_name.values()))
+        # Add "No Topic" if not all researchers are assigned
+        if len(cuit_to_topic_name) < len(researchers):
+            unique_topics.append("No Topic")
+        filter_fields.append(FilterField(key="research_topic", values=unique_topics))
+
     graph = ResearcherGraph(
-        title=f"Researcher Graph - Summary: {summary_tag}/{summary_model}, Embedding: {embedding_tag}/{embedding_model} ({strategy})",
+        title=(
+            f"Researcher Graph - Summary: {summary_tag}/{summary_model}, "
+            f"Embedding: {embedding_tag}/{embedding_model} ({strategy})"
+        ),
         nodes=nodes,
         edges=edges,
         embedding={"tag": embedding_tag, "model": embedding_model},

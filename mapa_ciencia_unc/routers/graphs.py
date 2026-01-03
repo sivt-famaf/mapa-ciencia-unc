@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
+from beanie import PydanticObjectId
 
 from mapa_ciencia_unc.auth import require_auth
 from mapa_ciencia_unc.models.graph import (
@@ -27,7 +28,16 @@ async def get_available_graphs():
 
 @router.get("/{graph_id}", response_model=ResearcherGraph)
 async def get_graph(graph_id: str):
-    graph = await ResearcherGraph.find_one({"_id": graph_id})
+    try:
+        # Convert string ID to PydanticObjectId
+        object_id = PydanticObjectId(graph_id)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid graph ID format: '{graph_id}'",
+        )
+
+    graph = await ResearcherGraph.get(object_id)
     if not graph:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -82,6 +92,9 @@ async def compute_graph_data(request: ResearcherGraphCreate):
       - "pca": Fast linear projection, preserves global variance
       - "umap": Non-linear projection, preserves local clusters (balanced)
       - "tsne": Non-linear projection, emphasizes tight local clusters
+    - `research_topic_tag`: Optional tag for research topics (e.g., "bertopic-sample15")
+      - When provided, includes research topic nodes in the graph and enables topic-based filtering
+      - Topics are projected alongside researchers to show spatial relationships
     - `overwrite`: Whether to overwrite existing graph (default: false)
 
     **Returns:**
@@ -184,6 +197,7 @@ async def compute_graph_data(request: ResearcherGraphCreate):
             summary_tag=request.summary.tag,
             summary_model=request.summary.model,
             strategy=request.strategy,
+            research_topic_tag=request.research_topic_tag,
         )
         return {
             "_id": str(graph.id),
