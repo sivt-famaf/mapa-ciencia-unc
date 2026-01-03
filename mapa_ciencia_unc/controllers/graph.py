@@ -233,6 +233,7 @@ async def generate_researcher_metadata(researcher: Researcher) -> dict:
     metadata["ods"] = researcher.ods
     metadata["languages"] = researcher.languages
     metadata["academic_units"] = researcher.academic_units
+    metadata["maturity_level"] = researcher.maturity_level
 
     project_files = await ProjectExtractedIntro.find({"cuit": researcher.cuit}).count()
 
@@ -299,7 +300,8 @@ async def compute_graph(
 
     # Project vectors to 2D based on strategy
     logger.info(
-        f"Computing graph for embedding_tag: {embedding_tag}, embedding_model: {embedding_model}, strategy: {strategy}"
+        f"Computing graph for embedding_tag: {embedding_tag}, "
+        f"embedding_model: {embedding_model}, strategy: {strategy}"
     )
 
     if strategy_lower == "pca":
@@ -322,19 +324,15 @@ async def compute_graph(
         academic_unit = (
             researcher.academic_units[0] if researcher.academic_units else "Otros"
         )
-        color = ACADEMIC_UNIT_COLORS.get(academic_unit, ACADEMIC_UNIT_COLORS["Otros"])
-
-        label = f"{researcher.name} ({academic_unit})"
-
         metadata = await generate_researcher_metadata(researcher)
 
+        label = f"{researcher.name} {researcher.last_name} ({academic_unit})"
         node = ResearcherNode(
             id=str(researcher.id),
             label=label,
             x=x,
             y=y,
             description=description,
-            color=color,
             metadata=metadata,
         )
 

@@ -56,22 +56,73 @@
         letter-spacing: 0.08em;
         color: #ccc;
       }
-      .controls select {
+      .custom-dropdown {
+        position: relative;
         width: 25%;
         min-width: 220px;
-        padding: 0.7rem 0.9rem;
-        border-radius: 4px;
-        border: 1px solid #fff;
         background: #0f0f0f;
+        border: 1px solid #fff;
+        border-radius: 4px;
+        overflow: visible;
+      }
+      .custom-dropdown-toggle {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.7rem 0.9rem;
+        border: none;
+        background: transparent;
         color: #fff;
         font-size: 1rem;
-        appearance: none;
-        outline: none;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        cursor: pointer;
+        text-align: left;
       }
-      .controls select:focus {
-        border-color: #fff;
-        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
+      .custom-dropdown-toggle-text {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        flex: 1;
+        min-width: 0;
+      }
+      .custom-dropdown-toggle::after {
+        content: "▾";
+        font-size: 0.9rem;
+        color: #9ca3af;
+        flex-shrink: 0;
+      }
+      .custom-dropdown-options {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        z-index: 20;
+        background: #1a1a1a;
+        border: 1px solid #fff;
+        border-radius: 4px;
+        padding: 0.35rem 0.4rem;
+        max-height: 220px;
+        overflow-y: auto;
+        box-shadow: 0 12px 28px rgba(255, 255, 255, 0.08);
+      }
+      .custom-dropdown.open .custom-dropdown-options {
+        display: block;
+      }
+      .custom-dropdown-option {
+        padding: 0.6rem 0.7rem;
+        border-radius: 4px;
+        color: #fff;
+        cursor: pointer;
+        font-size: 0.95rem;
+      }
+      .custom-dropdown-option:hover {
+        background: #262626;
+      }
+      .custom-dropdown-option.selected {
+        background: #262626;
+        font-weight: 500;
       }
       .controls small {
         color: #9ca3af;
@@ -80,6 +131,7 @@
       #graph-wrapper {
         display: flex;
         justify-content: center;
+        position: relative;
       }
       #container {
         width: min(900px, 100%);
@@ -90,17 +142,101 @@
         box-shadow: 0 10px 28px rgba(255, 255, 255, 0.08);
         border: 2px solid #fff;
       }
+      .color-legend {
+        position: absolute;
+        top: 12px;
+        right: max(calc((100% - min(900px, 100%)) / 2 + 12px), 12px);
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        max-width: 280px;
+        z-index: 10;
+        transition: all 0.3s ease;
+      }
+      .color-legend-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .color-legend-header:hover {
+        background: rgba(0, 0, 0, 0.03);
+        border-radius: 6px 6px 0 0;
+      }
+      .color-legend.collapsed .color-legend-header:hover {
+        border-radius: 6px;
+      }
+      .color-legend-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #333;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0;
+      }
+      .color-legend-toggle {
+        background: none;
+        border: none;
+        color: #666;
+        font-size: 1.1rem;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        transition: transform 0.3s ease;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 8px;
+      }
+      .color-legend.collapsed .color-legend-toggle {
+        transform: rotate(-90deg);
+      }
+      .color-legend-content {
+        max-height: 500px;
+        overflow-y: auto;
+        padding: 0 14px 12px 14px;
+        transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+      }
+      .color-legend.collapsed .color-legend-content {
+        max-height: 0;
+        padding: 0 14px;
+        opacity: 0;
+        overflow: hidden;
+      }
+      .color-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        font-size: 0.85rem;
+        color: #444;
+      }
+      .color-legend-item:last-child {
+        margin-bottom: 0;
+      }
+      .color-legend-swatch {
+        width: 18px;
+        height: 18px;
+        border-radius: 3px;
+        flex-shrink: 0;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+      .color-legend-label {
+        flex: 1;
+        line-height: 1.3;
+      }
+      .color-legend:empty {
+        display: none;
+      }
       .filters {
-        margin-top: 0.75rem;
         display: flex;
         gap: 0.75rem;
         flex-wrap: wrap;
         align-items: flex-start;
-      }
-      .filters-title {
-        margin: 0.5rem 0 0.25rem;
-        font-size: 0.95rem;
-        color: #ccc;
       }
       .filter-dropdown {
         position: relative;
@@ -108,7 +244,6 @@
         background: #0f0f0f;
         border: 1px solid #fff;
         border-radius: 4px;
-        padding: 0.5rem;
         overflow: visible;
       }
       .filter-toggle {
@@ -117,12 +252,13 @@
         align-items: center;
         justify-content: space-between;
         gap: 0.5rem;
-        padding: 0.65rem 0.8rem;
+        padding: 0.7rem 0.9rem;
         border: none;
         background: transparent;
         color: #fff;
-        font-size: 0.95rem;
+        font-size: 1rem;
         cursor: pointer;
+        text-align: left;
       }
       .filter-toggle::after {
         content: "▾";
@@ -205,15 +341,40 @@
       </p>
       <div class="controls">
         <label for="graph-tag-select">Graph dataset (optional)</label>
-        <select id="graph-tag-select"></select>
+        <div id="graph-tag-select" class="custom-dropdown">
+          <button type="button" class="custom-dropdown-toggle">
+            <span class="custom-dropdown-toggle-text">Selecciona un grafo</span>
+          </button>
+          <div class="custom-dropdown-options">
+            <span class="filters-empty">Loading available graphs…</span>
+          </div>
+        </div>
         <small id="graph-tag-status">Loading available graphs…</small>
-        <p class="filters-title">Filters</p>
+      </div>
+      <div class="controls">
+        <label for="filter-controls">Filters</label>
         <div id="filter-controls" class="filters">
           <span class="filters-empty">No filters available</span>
         </div>
       </div>
+      <div class="controls" id="color-scheme-controls">
+        <label for="color-scheme-select">Color scheme</label>
+        <div id="color-scheme-select" class="custom-dropdown">
+          <button type="button" class="custom-dropdown-toggle">
+            <span class="custom-dropdown-toggle-text">Academic Unit</span>
+          </button>
+          <div class="custom-dropdown-options">
+            <div class="custom-dropdown-option" data-value="academic_unit">Academic Unit</div>
+            <div class="custom-dropdown-option" data-value="maturity_level">Maturity Level</div>
+            <div class="custom-dropdown-option" data-value="ods">ODS (Sustainable Development Goals)</div>
+            <div class="custom-dropdown-option" data-value="single">Single Color</div>
+          </div>
+        </div>
+        <small id="color-scheme-status">Select a color scheme to apply to the graph.</small>
+      </div>
       <div id="graph-wrapper">
         <div id="container"></div>
+        <div id="color-legend" class="color-legend"></div>
       </div>
     </main>
     <div id="nodeModal" class="modal">
@@ -256,9 +417,13 @@
       };
 
       (function initGraphTagSelector() {
-        const selectEl = document.getElementById("graph-tag-select");
+        const dropdownEl = document.getElementById("graph-tag-select");
         const statusEl = document.getElementById("graph-tag-status");
-        if (!selectEl || !statusEl) return;
+        if (!dropdownEl || !statusEl) return;
+
+        const toggleEl = dropdownEl.querySelector(".custom-dropdown-toggle");
+        const optionsEl = dropdownEl.querySelector(".custom-dropdown-options");
+        if (!toggleEl || !optionsEl) return;
 
         const { search, pathname } = window.location;
         const params = new URLSearchParams(search);
@@ -270,39 +435,55 @@
           statusEl.style.color = isError ? "#f87171" : "#6b7280";
         };
 
-        const applySelectionState = () => {
+        const closeDropdown = () => {
+          dropdownEl.classList.remove("open");
+        };
+
+        const applySelectionState = (graphs) => {
+          const textEl = toggleEl.querySelector('.custom-dropdown-toggle-text');
+          if (!textEl) return;
+
           const desiredId = currentGraphId || initialGraphId;
           if (desiredId) {
-            const existingOption = [...selectEl.options].find(
-              (option) => option.value === desiredId
-            );
-            if (existingOption) {
-              selectEl.value = desiredId;
+            const selectedGraph = graphs.find(g => g?._id === desiredId);
+            if (selectedGraph) {
+              textEl.textContent = selectedGraph?.title ?? selectedGraph?._id ?? "Sin título";
               return;
             }
           }
-          selectEl.selectedIndex = -1;
+          textEl.textContent = "Selecciona un grafo";
         };
 
         const renderOptions = (graphs) => {
-          selectEl.innerHTML = "";
+          optionsEl.innerHTML = "";
 
-          const placeholder = document.createElement("option");
-          placeholder.value = "";
-          placeholder.textContent = "Select a graph";
-          placeholder.disabled = true;
-          placeholder.selected = !currentGraphId;
-          placeholder.hidden = true;
-          selectEl.appendChild(placeholder);
+          if (!graphs || graphs.length === 0) {
+            const empty = document.createElement("span");
+            empty.className = "filters-empty";
+            empty.textContent = "No graphs available";
+            optionsEl.appendChild(empty);
+            return;
+          }
 
           graphs.forEach((graph) => {
-            const option = document.createElement("option");
-            option.value = graph?._id ?? "";
-            option.textContent = graph?.title ?? graph?._id ?? "Untitled graph";
-            selectEl.appendChild(option);
+            const option = document.createElement("div");
+            option.className = "custom-dropdown-option";
+            option.dataset.value = graph?._id ?? "";
+            option.textContent = graph?.title ?? graph?._id ?? "Sin título";
+
+            const desiredId = currentGraphId || initialGraphId;
+            if (graph?._id === desiredId) {
+              option.classList.add("selected");
+            }
+
+            option.addEventListener("click", () => {
+              redirectToGraph(graph?._id);
+            });
+
+            optionsEl.appendChild(option);
           });
 
-          applySelectionState();
+          applySelectionState(graphs);
         };
 
         const redirectToGraph = (graphId) => {
@@ -317,8 +498,30 @@
           window.location.href = `${baseUrl}?${nextParams.toString()}`;
         };
 
-        selectEl.addEventListener("change", (event) => {
-          redirectToGraph(event.target.value);
+        const closeAllCustomDropdowns = () => {
+          document.querySelectorAll('.custom-dropdown.open').forEach(dropdown => {
+            if (dropdown !== dropdownEl) {
+              dropdown.classList.remove('open');
+            }
+          });
+        };
+
+        toggleEl.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const wasOpen = dropdownEl.classList.contains("open");
+          closeAllCustomDropdowns();
+          if (!wasOpen) {
+            dropdownEl.classList.add("open");
+          } else {
+            dropdownEl.classList.remove("open");
+          }
+        });
+
+        document.addEventListener("click", (event) => {
+          if (!dropdownEl.contains(event.target)) {
+            closeDropdown();
+          }
         });
 
         const fetchAvailableGraphs = async () => {
