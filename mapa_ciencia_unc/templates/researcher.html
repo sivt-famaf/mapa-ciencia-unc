@@ -1,661 +1,641 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Researcher | {{ researcher.last_name }}, {{ researcher.name }}</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cstyle%3Ecircle%7Bfill:%23fff%7Dline%7Bstroke:%23fff;stroke-width:2%7D%3C/style%3E%3Cline x1='20' y1='30' x2='50' y2='50'/%3E%3Cline x1='50' y1='50' x2='80' y2='30'/%3E%3Cline x1='50' y1='50' x2='70' y2='75'/%3E%3Cline x1='50' y1='50' x2='30' y2='75'/%3E%3Ccircle cx='20' cy='30' r='8'/%3E%3Ccircle cx='50' cy='50' r='8'/%3E%3Ccircle cx='80' cy='30' r='8'/%3E%3Ccircle cx='70' cy='75' r='8'/%3E%3Ccircle cx='30' cy='75' r='8'/%3E%3C/svg%3E" />
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        font-family: sans-serif;
-        background: #000;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 3rem 1.5rem;
-      }
-      main {
-        width: min(900px, 100%);
-        background: #1a1a1a;
-        border-radius: 4px;
-        padding: 2.75rem;
-        box-shadow: 0 12px 32px rgba(255, 255, 255, 0.08);
-        border: 2px solid #fff;
-      }
-      header {
-        display: flex;
-        justify-content: space-between;
-        gap: 1.5rem;
-        flex-wrap: wrap;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-        padding-bottom: 1.5rem;
-        margin-bottom: 2rem;
-      }
-      .title {
-        flex: 1 1 320px;
-      }
-      h1 {
-        margin: 0;
-        font-size: 2.5rem;
-        letter-spacing: 0.02em;
-        color: #fff;
-      }
-      .breadcrumb {
-        margin-top: 0.4rem;
-        color: #ccc;
-        font-size: 0.95rem;
-      }
-      .tag-pill {
-        align-self: flex-start;
-        padding: 0.4rem 0.9rem;
-        border-radius: 4px;
-        font-size: 0.85rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        background: #fff;
-        border: 1px solid #fff;
-        color: #000;
-      }
-      .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2.5rem;
-      }
-      .info-card {
-        padding: 1.25rem;
-        border-radius: 4px;
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      .info-card:hover {
-        background: #161616;
-        border-color: #3a3a3a;
-      }
-      .info-card h3 {
-        margin: 0 0 0.4rem;
-        font-size: 0.9rem;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: #b3b3b3;
-      }
-      .info-card p {
-        margin: 0;
-        font-size: 1.1rem;
-        color: #fff;
-      }
-      .truncated {
-        display: inline;
-      }
-      .full-text {
-        display: none;
-      }
-      section.summary {
-        padding: 1.75rem;
-        border-radius: 4px;
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-      }
-      section.summary h2 {
-        margin-top: 0;
-        font-size: 1.4rem;
-        letter-spacing: 0.04em;
-        color: #fff;
-      }
-      section.summary .summary-content {
-        margin-bottom: 0;
-        line-height: 1.6;
-        color: #e6e6e6;
-      }
-      section.summary .summary-content ul,
-      section.summary .summary-content ol {
-        padding-left: 1.25rem;
-        margin: 0.5rem 0;
-      }
-      section.downloads {
-        margin-top: 2rem;
-        padding: 1.5rem;
-        border-radius: 4px;
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-      }
-      section.downloads h2 {
-        margin: 0 0 0.75rem;
-        font-size: 1.25rem;
-        letter-spacing: 0.04em;
-        color: #fff;
-      }
-      section.similar {
-        margin-top: 2rem;
-        padding: 1.5rem;
-        border-radius: 4px;
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-      }
-      section.similar h2 {
-        margin: 0 0 0.75rem;
-        font-size: 1.25rem;
-        letter-spacing: 0.04em;
-        color: #fff;
-      }
-      .similar-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: grid;
-        gap: 0.6rem;
-      }
-      .similar-item a {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1rem;
-        border-radius: 4px;
-        background: #111;
-        border: 1px solid #fff;
-        color: #fff;
-        text-decoration: none;
-        transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
-      }
-      .similar-item a:hover {
-        transform: translateY(-1px);
-        background: #1c1c1c;
-        border-color: #fff;
-      }
-      .download-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: grid;
-        gap: 0.75rem;
-        max-height: 480px; /* approx. 4-5 cards */
-        overflow-y: auto;
-        padding-right: 0.25rem;
-      }
-      .download-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 1rem;
-        padding: 0.75rem 1rem;
-        border-radius: 4px;
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-        min-height: 90px;
-      }
-      .project-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        flex: 1;
-        min-width: 0;
-      }
-      .project-intro {
-        margin: 0;
-        font-size: 1rem;
-        color: #fff;
-        line-height: 1.5;
-      }
-      .project-meta {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.85rem;
-        color: #b3b3b3;
-      }
-      .project-actions {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-        margin-left: auto;
-      }
-      .download-btn,
-      .preview-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 42px;
-        height: 42px;
-        border-radius: 4px;
-        text-decoration: none;
-        border: 2px solid #fff;
-        background: #fff;
-        color: #000;
-        transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-        cursor: pointer;
-      }
-      .download-btn:hover,
-      .preview-btn:hover {
-        transform: translateY(-1px);
-        background: #e0e0e0;
-        border-color: #fff;
-        color: #000;
-      }
-      section.articles {
-        margin-top: 2rem;
-        padding: 1.5rem;
-        border-radius: 4px;
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-      }
-      section.articles h2 {
-        margin: 0 0 0.75rem;
-        font-size: 1.25rem;
-        letter-spacing: 0.04em;
-        color: #fff;
-      }
-      .article-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: grid;
-        gap: 0.75rem;
-        max-height: 480px;
-        overflow-y: auto;
-        padding-right: 0.25rem;
-      }
-      .article-card {
-        display: flex;
-        align-items: flex-start;
-        gap: 1rem;
-        padding: 0.75rem 1rem;
-        border-radius: 4px;
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-      }
-      .article-header {
-        display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
-        flex: 1;
-        min-width: 0;
-      }
-      .article-title {
-        margin: 0;
-        font-size: 1.05rem;
-        color: #fff;
-      }
-      .article-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        font-size: 0.9rem;
-        color: #b3b3b3;
-      }
-      .article-actions {
-        display: flex;
-        gap: 0.75rem;
-        margin-left: auto;
-        flex-wrap: wrap;
-      }
-      .summary-empty {
-        padding: 1rem 1.25rem;
-        border-radius: 4px;
-        border: 1px dashed rgba(255, 255, 255, 0.4);
-        color: #e5e7eb;
-        background: #111;
-      }
-      .actions {
-        margin-top: 2.5rem;
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-      }
-      .actions a {
-        text-decoration: none;
-        padding: 0.85rem 1.5rem;
-        border-radius: 999px;
-        font-weight: 600;
-        letter-spacing: 0.06em;
-        color: #0f172a;
-        background: #a5f3fc;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
-      .actions a:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-      }
-      .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(4px);
-        z-index: 1000;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-      }
-      .modal.active {
-        display: flex;
-      }
-      .modal-content {
-        background: #0f0f0f;
-        border-radius: 4px;
-        padding: 2.25rem;
-        max-width: 600px;
-        width: 100%;
-        max-height: 80vh;
-        overflow-y: auto;
-        box-shadow: 0 24px 60px rgba(255, 255, 255, 0.1);
-        border: 2px solid #fff;
-        position: relative;
-      }
-      .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-      }
-      .modal-title {
-        font-size: 0.9rem;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: #ccc;
-        margin: 0;
-      }
-      .modal-close {
-        background: transparent;
-        border: 1px solid #fff;
-        color: #fff;
-        font-size: 1.4rem;
-        cursor: pointer;
-        padding: 0;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 4px;
-        transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-      }
-      .modal-close:hover {
-        background: #1c1c1c;
-        border-color: #fff;
-        color: #fff;
-      }
-      .modal-text {
-        font-size: 1.1rem;
-        line-height: 1.6;
-        color: #f8fafc;
-        margin: 0;
-      }
-    </style>
-  </head>
-  <body>
-    <main>
-      <header>
-        <div class="title">
-          <h1>{{ researcher.name }} {{ researcher.last_name }}</h1>
-          <p class="breadcrumb">Researcher profile overview</p>
-        </div>
-        {% if researcher.tag %}
-        <span class="tag-pill">tag: {{ researcher.tag }} model: {{ researcher.model }}</span>
-        {% endif %}
-      </header>
+{% extends "base.html" %}
 
-      <div class="info-grid">
-        <article class="info-card" onclick="openModal('Research Area', `{{ researcher.research_area }}`)">
-          <h3>Research Area</h3>
-          <p id="research-area-text">{{ researcher.research_area }}</p>
-        </article>
-        <article class="info-card" onclick="openModal('Center', `{{ researcher.research_center }}`)">
-          <h3>Center</h3>
-          <p id="center-text">{{ researcher.research_center }}</p>
-        </article>
-        <article class="info-card" onclick="openModal('Latest Project', `{{ researcher.last_project_title }}`)">
-          <h3>Latest Project</h3>
-          <p id="project-text">{{ researcher.last_project_title }}</p>
-        </article>
-      </div>
+{% block title %}Researcher | {{ researcher.last_name }}, {{ researcher.name }}{% endblock %}
 
-      {% if researcher.summary %}
-      <section class="summary">
-        <h2>Summary{% if researcher.tag %} · {{ researcher.tag }} {% endif %}{% if researcher.model %} · {{ researcher.model }}{% endif %}</h2>
-        <div class="summary-content" id="summaryContent">{{ researcher.summary }}</div>
-      </section>
-      {% elif researcher.tag %}
-      <div class="summary-empty">
-        No summary available for tag "<strong>{{ researcher.tag }} and model {{ researcher.model }}</strong>".
-      </div>
-      {% endif %}
+{% block extra_head %}
+<style>
+  header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .title {
+    flex: 1 1 320px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    letter-spacing: 0.02em;
+    color: #fff;
+  }
+  .breadcrumb {
+    margin-top: 0.4rem;
+    color: #ccc;
+    font-size: 0.95rem;
+  }
+  .tag-pill {
+    align-self: flex-start;
+    padding: 0.4rem 0.9rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: #fff;
+    border: 1px solid #fff;
+    color: #000;
+  }
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+  .info-card {
+    padding: 1.25rem;
+    border-radius: 4px;
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .info-card:hover {
+    background: #161616;
+    border-color: #3a3a3a;
+  }
+  .info-card h3 {
+    margin: 0 0 0.4rem;
+    font-size: 0.9rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #b3b3b3;
+  }
+  .info-card p {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #fff;
+  }
+  .truncated {
+    display: inline;
+  }
+  .full-text {
+    display: none;
+  }
+  section.summary {
+    padding: 1.75rem;
+    border-radius: 4px;
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+  }
+  section.summary h2 {
+    margin-top: 0;
+    font-size: 1.4rem;
+    letter-spacing: 0.04em;
+    color: #fff;
+  }
+  section.summary .summary-content {
+    margin-bottom: 0;
+    line-height: 1.6;
+    color: #e6e6e6;
+  }
+  section.summary .summary-content ul,
+  section.summary .summary-content ol {
+    padding-left: 1.25rem;
+    margin: 0.5rem 0;
+  }
+  section.downloads {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border-radius: 4px;
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+  }
+  section.downloads h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.25rem;
+    letter-spacing: 0.04em;
+    color: #fff;
+  }
+  section.similar {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border-radius: 4px;
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+  }
+  section.similar h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.25rem;
+    letter-spacing: 0.04em;
+    color: #fff;
+  }
+  .similar-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.6rem;
+  }
+  .similar-item a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    background: #111;
+    border: 1px solid #fff;
+    color: #fff;
+    text-decoration: none;
+    transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+  }
+  .similar-item a:hover {
+    transform: translateY(-1px);
+    background: #1c1c1c;
+    border-color: #fff;
+  }
+  .download-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.75rem;
+    max-height: 480px; /* approx. 4-5 cards */
+    overflow-y: auto;
+    padding-right: 0.25rem;
+  }
+  .download-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    min-height: 90px;
+  }
+  .project-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 0;
+  }
+  .project-intro {
+    margin: 0;
+    font-size: 1rem;
+    color: #fff;
+    line-height: 1.5;
+  }
+  .project-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #b3b3b3;
+  }
+  .project-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-left: auto;
+  }
+  .download-btn,
+  .preview-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 4px;
+    text-decoration: none;
+    border: 2px solid #fff;
+    background: #fff;
+    color: #000;
+    transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    cursor: pointer;
+  }
+  .download-btn:hover,
+  .preview-btn:hover {
+    transform: translateY(-1px);
+    background: #e0e0e0;
+    border-color: #fff;
+    color: #000;
+  }
+  section.articles {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border-radius: 4px;
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+  }
+  section.articles h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.25rem;
+    letter-spacing: 0.04em;
+    color: #fff;
+  }
+  .article-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.75rem;
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+  }
+  .article-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+  }
+  .article-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+    min-width: 0;
+  }
+  .article-title {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #fff;
+  }
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #b3b3b3;
+  }
+  .article-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+  .summary-empty {
+    padding: 1rem 1.25rem;
+    border-radius: 4px;
+    border: 1px dashed rgba(255, 255, 255, 0.4);
+    color: #e5e7eb;
+    background: #111;
+  }
+  .actions {
+    margin-top: 2.5rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .actions a {
+    text-decoration: none;
+    padding: 0.85rem 1.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: #0f172a;
+    background: #a5f3fc;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .actions a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  }
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .modal.active {
+    display: flex;
+  }
+  .modal-content {
+    background: #0f0f0f;
+    border-radius: 4px;
+    padding: 2.25rem;
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(255, 255, 255, 0.1);
+    border: 2px solid #fff;
+    position: relative;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  .modal-title {
+    font-size: 0.9rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #ccc;
+    margin: 0;
+  }
+  .modal-close {
+    background: transparent;
+    border: 1px solid #fff;
+    color: #fff;
+    font-size: 1.4rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+  .modal-close:hover {
+    background: #1c1c1c;
+    border-color: #fff;
+    color: #fff;
+  }
+  .modal-text {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #f8fafc;
+    margin: 0;
+  }
+</style>
+{% endblock %}
 
-      {% set project_list = projects|default([], true) %}
-      <section class="downloads">
-        <h2>Project files ({{ project_list|length }})</h2>
-        {% if project_list %}
-        <ul class="download-list">
-          {% for project in project_list %}
-          <li class="download-item">
-            <div class="project-info">
-              <p
-                class="project-intro"
-                data-intro="{{ project.intro }}"
-                data-code="{{ project.codigo_tramite }}"
-              >
-                {{ project.intro }}
-              </p>
-              <div class="project-meta">
-                <span>Project code: {{ project.codigo_tramite }}</span>
-              </div>
-            </div>
-            <div class="project-actions">
-              <button
-                class="preview-btn project-preview"
-                type="button"
-                data-intro="{{ project.intro }}"
-                data-code="{{ project.codigo_tramite }}"
-                aria-label="Preview intro"
-              >
-                🔍
-              </button>
-              <a
-                class="download-btn"
-                href="{{ project.download_url }}"
-                target="_blank"
-                rel="noopener"
-                title="Download {{ project.codigo_tramite }}"
-              >
-                &#8681;
-              </a>
-            </div>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <div class="summary-empty">No projects available.</div>
-        {% endif %}
-      </section>
-
-      {% set article_list = articles|default([], true) %}
-      <section class="articles">
-        <h2>Articles ({{ article_list|length }})</h2>
-        {% if article_list %}
-        <ul class="article-list">
-          {% for article in article_list %}
-          <li class="article-card">
-            <div class="article-header">
-              <h3 class="article-title">{{ article.titulo }}</h3>
-              <div class="article-meta">
-                <span>Year: {{ article.year|default('N/A', true) }}</span>
-                <span>ISSN: {{ article.issn|default('N/A', true) }}</span>
-                <span>eISSN: {{ article.eissn|default('N/A', true) }}</span>
-                <span>Editorial: {{ article.editorial|default('N/A', true) }}</span>
-              </div>
-            </div>
-            <div class="article-actions">
-              <button
-                class="preview-btn article-preview"
-                type="button"
-                data-summary="{{ article.resumen }}"
-                data-title="{{ article.titulo }}"
-                aria-label="Preview article summary"
-              >
-                🔍
-              </button>
-            </div>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <div class="summary-empty">No articles available.</div>
-        {% endif %}
-      </section>
-
-      {% if similar_researchers %}
-      <section class="similar">
-        <h2>Similar researchers</h2>
-        <ul class="similar-list">
-          {% for sim in similar_researchers %}
-          <li class="similar-item">
-            <a href="/researcher/{{ sim.researcher_id }}{% if graph_id %}?graph_id={{ graph_id }}{% endif %}">
-              {{ sim.last_name }}, {{ sim.name }} ({{ sim.research_center }})
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-      </section>
-      {% endif %}
-
-      <div class="actions">
-        <a href="/graph{% if graph_id %}?graph_id={{ graph_id }}{% elif graph_key %}?graph_id={{ graph_key }}{% elif researcher.tag and researcher.model %}?graph_id={{ researcher.tag }}_{{ researcher.model }}{% endif %}">
-          Back to Graph
-        </a>
-        <a href="/">Return Home</a>
-      </div>
-    </main>
-
-    <!-- Modal -->
-    <div class="modal" id="textModal" onclick="closeModal(event)">
-      <div class="modal-content" onclick="event.stopPropagation()">
-        <div class="modal-header">
-          <h3 class="modal-title" id="modalTitle"></h3>
-          <button class="modal-close" onclick="closeModal()">&times;</button>
-        </div>
-        <p class="modal-text" id="modalText"></p>
-      </div>
+{% block content %}
+<div class="content-wrapper">
+  <main>
+  <header>
+    <div class="title">
+      <h1>{{ researcher.name }} {{ researcher.last_name }}</h1>
+      <p class="breadcrumb">Researcher profile overview</p>
     </div>
+    {% if researcher.tag %}
+    <span class="tag-pill">tag: {{ researcher.tag }} model: {{ researcher.model }}</span>
+    {% endif %}
+  </header>
 
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
-    <script>
-      // Truncate text to 30 words
-      function truncateText(text, wordLimit) {
-        if (!text) return '';
-        const words = text.trim().split(/\s+/);
-        if (words.length <= wordLimit) {
-          return text;
-        }
-        return words.slice(0, wordLimit).join(' ') + '...';
-      }
+  <div class="info-grid">
+    <article class="info-card" onclick="openModal('Research Area', `{{ researcher.research_area }}`)">
+      <h3>Research Area</h3>
+      <p id="research-area-text">{{ researcher.research_area }}</p>
+    </article>
+    <article class="info-card" onclick="openModal('Center', `{{ researcher.research_center }}`)">
+      <h3>Center</h3>
+      <p id="center-text">{{ researcher.research_center }}</p>
+    </article>
+    <article class="info-card" onclick="openModal('Latest Project', `{{ researcher.last_project_title }}`)">
+      <h3>Latest Project</h3>
+      <p id="project-text">{{ researcher.last_project_title }}</p>
+    </article>
+  </div>
 
-      // Truncate by characters
-      function truncateChars(text, charLimit) {
-        if (!text) return '';
-        if (text.length <= charLimit) return text;
-        return text.slice(0, charLimit) + '...';
-      }
+  {% if researcher.summary %}
+  <section class="summary">
+    <h2>Summary{% if researcher.tag %} · {{ researcher.tag }} {% endif %}{% if researcher.model %} · {{ researcher.model }}{% endif %}</h2>
+    <div class="summary-content" id="summaryContent">{{ researcher.summary }}</div>
+  </section>
+  {% elif researcher.tag %}
+  <div class="summary-empty">
+    No summary available for tag "<strong>{{ researcher.tag }} and model {{ researcher.model }}</strong>".
+  </div>
+  {% endif %}
 
-      // Truncate all info-card paragraphs on page load
-      window.addEventListener('DOMContentLoaded', function() {
-        const researchAreaText = document.getElementById('research-area-text');
-        const centerText = document.getElementById('center-text');
-        const projectText = document.getElementById('project-text');
-        const projectIntros = document.querySelectorAll('.project-intro');
-        const summaryContent = document.getElementById('summaryContent');
+  {% set project_list = projects|default([], true) %}
+  <section class="downloads">
+    <h2>Project files ({{ project_list|length }})</h2>
+    {% if project_list %}
+    <ul class="download-list">
+      {% for project in project_list %}
+      <li class="download-item">
+        <div class="project-info">
+          <p
+            class="project-intro"
+            data-intro="{{ project.intro }}"
+            data-code="{{ project.codigo_tramite }}"
+          >
+            {{ project.intro }}
+          </p>
+          <div class="project-meta">
+            <span>Project code: {{ project.codigo_tramite }}</span>
+          </div>
+        </div>
+        <div class="project-actions">
+          <button
+            class="preview-btn project-preview"
+            type="button"
+            data-intro="{{ project.intro }}"
+            data-code="{{ project.codigo_tramite }}"
+            aria-label="Preview intro"
+          >
+            🔍
+          </button>
+          <a
+            class="download-btn"
+            href="{{ project.download_url }}"
+            target="_blank"
+            rel="noopener"
+            title="Download {{ project.codigo_tramite }}"
+          >
+            &#8681;
+          </a>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="summary-empty">No projects available.</div>
+    {% endif %}
+  </section>
 
-        if (summaryContent && window.marked && window.DOMPurify) {
-          const markdown = summaryContent.textContent || '';
-          const html = DOMPurify.sanitize(marked.parse(markdown));
-          summaryContent.innerHTML = html;
-        }
+  {% set article_list = articles|default([], true) %}
+  <section class="articles">
+    <h2>Articles ({{ article_list|length }})</h2>
+    {% if article_list %}
+    <ul class="article-list">
+      {% for article in article_list %}
+      <li class="article-card">
+        <div class="article-header">
+          <h3 class="article-title">{{ article.titulo }}</h3>
+          <div class="article-meta">
+            <span>Year: {{ article.year|default('N/A', true) }}</span>
+            <span>ISSN: {{ article.issn|default('N/A', true) }}</span>
+            <span>eISSN: {{ article.eissn|default('N/A', true) }}</span>
+            <span>Editorial: {{ article.editorial|default('N/A', true) }}</span>
+          </div>
+        </div>
+        <div class="article-actions">
+          <button
+            class="preview-btn article-preview"
+            type="button"
+            data-summary="{{ article.resumen }}"
+            data-title="{{ article.titulo }}"
+            aria-label="Preview article summary"
+          >
+            🔍
+          </button>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="summary-empty">No articles available.</div>
+    {% endif %}
+  </section>
 
-        if (researchAreaText) {
-          const fullText = researchAreaText.textContent;
-          researchAreaText.setAttribute('data-full-text', fullText);
-          researchAreaText.textContent = truncateText(fullText, 30);
-        }
+  {% if similar_researchers %}
+  <section class="similar">
+    <h2>Similar researchers</h2>
+    <ul class="similar-list">
+      {% for sim in similar_researchers %}
+      <li class="similar-item">
+        <a href="/researcher/{{ sim.researcher_id }}{% if graph_id %}?graph_id={{ graph_id }}{% endif %}">
+          {{ sim.last_name }}, {{ sim.name }} ({{ sim.research_center }})
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
 
-        if (centerText) {
-          const fullText = centerText.textContent;
-          centerText.setAttribute('data-full-text', fullText);
-          centerText.textContent = truncateText(fullText, 30);
-        }
+  <div class="actions">
+    <a href="/graph{% if graph_id %}?graph_id={{ graph_id }}{% elif graph_key %}?graph_id={{ graph_key }}{% elif researcher.tag and researcher.model %}?graph_id={{ researcher.tag }}_{{ researcher.model }}{% endif %}">
+      Back to Graph
+    </a>
+    <a href="/">Return Home</a>
+  </div>
+  </main>
+</div>
 
-        if (projectText) {
-          const fullText = projectText.textContent;
-          projectText.setAttribute('data-full-text', fullText);
-          projectText.textContent = truncateText(fullText, 30);
-        }
+<!-- Modal -->
+<div class="modal" id="textModal" onclick="closeModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalTitle"></h3>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <p class="modal-text" id="modalText"></p>
+  </div>
+</div>
+{% endblock %}
 
-        // Truncate project intro text to 50 characters for cards
-        projectIntros.forEach((introEl) => {
-          const fullIntro = introEl.dataset.intro || introEl.textContent || '';
-          introEl.setAttribute('data-full-intro', fullIntro);
-          introEl.textContent = truncateChars(fullIntro, 50);
-        });
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+<script>
+  // Truncate text to 30 words
+  function truncateText(text, wordLimit) {
+    if (!text) return '';
+    const words = text.trim().split(/\s+/);
+    if (words.length <= wordLimit) {
+      return text;
+    }
+    return words.slice(0, wordLimit).join(' ') + '...';
+  }
 
-        // Wire preview buttons to open modal with up to 500 words
-        document.querySelectorAll('.project-preview').forEach((btn) => {
-          btn.addEventListener('click', () => {
-            const intro = btn.dataset.intro || 'No introduction available.';
-            const code = btn.dataset.code || 'Project';
-            const preview = truncateText(intro, 500);
-            openModal(`Preview · ${code}`, preview);
-          });
-        });
+  // Truncate by characters
+  function truncateChars(text, charLimit) {
+    if (!text) return '';
+    if (text.length <= charLimit) return text;
+    return text.slice(0, charLimit) + '...';
+  }
 
-        // Wire article preview buttons
-        document.querySelectorAll('.article-preview').forEach((btn) => {
-          btn.addEventListener('click', () => {
-            const summary = btn.dataset.summary || 'No summary available.';
-            const title = btn.dataset.title || 'Article';
-            const preview = truncateText(summary, 500);
-            openModal(`Article · ${title}`, preview);
-          });
-        });
+  // Truncate all info-card paragraphs on page load
+  window.addEventListener('DOMContentLoaded', function() {
+    const researchAreaText = document.getElementById('research-area-text');
+    const centerText = document.getElementById('center-text');
+    const projectText = document.getElementById('project-text');
+    const projectIntros = document.querySelectorAll('.project-intro');
+    const summaryContent = document.getElementById('summaryContent');
+
+    if (summaryContent && window.marked && window.DOMPurify) {
+      const markdown = summaryContent.textContent || '';
+      const html = DOMPurify.sanitize(marked.parse(markdown));
+      summaryContent.innerHTML = html;
+    }
+
+    if (researchAreaText) {
+      const fullText = researchAreaText.textContent;
+      researchAreaText.setAttribute('data-full-text', fullText);
+      researchAreaText.textContent = truncateText(fullText, 30);
+    }
+
+    if (centerText) {
+      const fullText = centerText.textContent;
+      centerText.setAttribute('data-full-text', fullText);
+      centerText.textContent = truncateText(fullText, 30);
+    }
+
+    if (projectText) {
+      const fullText = projectText.textContent;
+      projectText.setAttribute('data-full-text', fullText);
+      projectText.textContent = truncateText(fullText, 30);
+    }
+
+    // Truncate project intro text to 50 characters for cards
+    projectIntros.forEach((introEl) => {
+      const fullIntro = introEl.dataset.intro || introEl.textContent || '';
+      introEl.setAttribute('data-full-intro', fullIntro);
+      introEl.textContent = truncateChars(fullIntro, 50);
+    });
+
+    // Wire preview buttons to open modal with up to 500 words
+    document.querySelectorAll('.project-preview').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const intro = btn.dataset.intro || 'No introduction available.';
+        const code = btn.dataset.code || 'Project';
+        const preview = truncateText(intro, 500);
+        openModal(`Preview · ${code}`, preview);
       });
+    });
 
-      function openModal(title, text) {
-        const modal = document.getElementById('textModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalText = document.getElementById('modalText');
-
-        modalTitle.textContent = title;
-        modalText.textContent = text;
-        modal.classList.add('active');
-
-        // Prevent body scrolling when modal is open
-        document.body.style.overflow = 'hidden';
-      }
-
-      function closeModal(event) {
-        // Only close if clicking the backdrop or close button
-        if (!event || event.target.id === 'textModal' || event.target.classList.contains('modal-close')) {
-          const modal = document.getElementById('textModal');
-          modal.classList.remove('active');
-          document.body.style.overflow = '';
-        }
-      }
-
-      // Close modal on Escape key
-      document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-          closeModal();
-        }
+    // Wire article preview buttons
+    document.querySelectorAll('.article-preview').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const summary = btn.dataset.summary || 'No summary available.';
+        const title = btn.dataset.title || 'Article';
+        const preview = truncateText(summary, 500);
+        openModal(`Article · ${title}`, preview);
       });
-    </script>
-  </body>
-</html>
+    });
+  });
+
+  function openModal(title, text) {
+    const modal = document.getElementById('textModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalText = document.getElementById('modalText');
+
+    modalTitle.textContent = title;
+    modalText.textContent = text;
+    modal.classList.add('active');
+
+    // Prevent body scrolling when modal is open
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal(event) {
+    // Only close if clicking the backdrop or close button
+    if (!event || event.target.id === 'textModal' || event.target.classList.contains('modal-close')) {
+      const modal = document.getElementById('textModal');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  }
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+      closeModal();
+    }
+  });
+</script>
+{% endblock %}
