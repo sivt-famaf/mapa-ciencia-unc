@@ -11,14 +11,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
 
 <style>
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem 1.5rem;
-  }
   main {
-    width: min(1100px, 100%);
+    width: min(1200px, 100%);
     background: #1a1a1a;
     border-radius: 4px;
     padding: 2.5rem;
@@ -373,7 +367,8 @@
 {% endblock %}
 
 {% block content %}
-<main>
+<div class="content-wrapper">
+  <main>
   <h1>Researcher Network</h1>
   <p>
     Explore the relationships between researchers, collaborators, and
@@ -429,7 +424,8 @@
     <div id="container"></div>
     <div id="color-legend" class="color-legend"></div>
   </div>
-</main>
+  </main>
+</div>
 <div id="nodeModal" class="modal">
   <div class="modal-content">
     <span id="closeModal" class="close">&times;</span>

@@ -4,15 +4,6 @@
 
 {% block extra_head %}
 <style>
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: "Inter", system-ui, -apple-system, sans-serif;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    color: #e2e8f0;
-    padding: 24px;
-  }
   .card {
     width: min(420px, 100%);
     background: rgba(15, 23, 42, 0.92);
@@ -90,9 +81,10 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
-  <h1>Acceso</h1>
-  <p>Ingresá tu usuario y contraseña para continuar.</p>
+<div class="content-wrapper">
+  <div class="card">
+    <h1>Acceso</h1>
+    <p>Ingresá tu usuario y contraseña para continuar.</p>
   <form id="login-form">
     <label for="username">Usuario</label>
     <input id="username" name="username" type="text" autocomplete="username" required />
@@ -109,8 +101,9 @@
     <button id="submit-btn" type="submit">Ingresar</button>
     <div id="error" class="error"></div>
   </form>
-  <div class="helper">
-    Guardamos el token de sesión en tu navegador para futuras peticiones protegidas.
+    <div class="helper">
+      Guardamos el token de sesión en tu navegador para futuras peticiones protegidas.
+    </div>
   </div>
 </div>
 {% endblock %}

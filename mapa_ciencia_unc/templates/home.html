@@ -2,18 +2,8 @@
 
 {% block extra_head %}
 <style>
-  body {
-    overflow-x: hidden;
-  }
-  .logo {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    height: 80px;
-    width: auto;
-  }
   .container {
-    min-height: 100vh;
+    min-height: calc(100vh - 94px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -91,16 +81,11 @@
     .card h2 {
       font-size: 1.8rem;
     }
-    .logo {
-      height: 60px;
-    }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<img src="/static/images/unc3_g.png" alt="UNC Logo" class="logo">
-
 <div class="container">
   <div class="section">
     <div class="text-content">

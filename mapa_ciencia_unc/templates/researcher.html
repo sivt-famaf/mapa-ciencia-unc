@@ -4,14 +4,8 @@
 
 {% block extra_head %}
 <style>
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem 1.5rem;
-  }
   main {
-    width: min(900px, 100%);
+    width: min(1200px, 100%);
     background: #1a1a1a;
     border-radius: 4px;
     padding: 2.75rem;
@@ -386,7 +380,8 @@
 {% endblock %}
 
 {% block content %}
-<main>
+<div class="content-wrapper">
+  <main>
   <header>
     <div class="title">
       <h1>{{ researcher.name }} {{ researcher.last_name }}</h1>
@@ -526,7 +521,8 @@
     </a>
     <a href="/">Return Home</a>
   </div>
-</main>
+  </main>
+</div>
 
 <!-- Modal -->
 <div class="modal" id="textModal" onclick="closeModal(event)">
