@@ -1,131 +1,121 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mapa Ciencia UNC</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cstyle%3Ecircle%7Bfill:%23fff%7Dline%7Bstroke:%23fff;stroke-width:2%7D%3C/style%3E%3Cline x1='20' y1='30' x2='50' y2='50'/%3E%3Cline x1='50' y1='50' x2='80' y2='30'/%3E%3Cline x1='50' y1='50' x2='70' y2='75'/%3E%3Cline x1='50' y1='50' x2='30' y2='75'/%3E%3Ccircle cx='20' cy='30' r='8'/%3E%3Ccircle cx='50' cy='50' r='8'/%3E%3Ccircle cx='80' cy='30' r='8'/%3E%3Ccircle cx='70' cy='75' r='8'/%3E%3Ccircle cx='30' cy='75' r='8'/%3E%3C/svg%3E" />
-    <style>
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        font-family: sans-serif;
-        background: #000;
-        color: #fff;
-        overflow-x: hidden;
-      }
-      .logo {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        height: 80px;
-        width: auto;
-      }
-      .container {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 40px 20px;
-      }
-      .section {
-        max-width: 1200px;
-        width: 100%;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 60px;
-        align-items: center;
-      }
-      .text-content {
-        padding-right: 20px;
-      }
-      .text-content h1 {
-        font-size: 3rem;
-        margin-bottom: 1.5rem;
-        line-height: 1.2;
-      }
-      .text-content p {
-        font-size: 1.2rem;
-        line-height: 1.6;
-        color: #ccc;
-      }
-      .card {
-        background: #1a1a1a;
-        border: 2px solid #fff;
-        padding: 60px 40px;
-        text-align: center;
-        box-shadow: 0 10px 40px rgba(255, 255, 255, 0.1);
-        transition: all 0.3s ease;
-      }
-      .card:hover {
-        box-shadow: 0 15px 50px rgba(255, 255, 255, 0.2);
-        transform: translateY(-5px);
-      }
-      .card h2 {
-        font-size: 2.5rem;
-        margin-bottom: 2rem;
-        color: #fff;
-      }
-      .cta-button {
-        display: inline-block;
-        padding: 18px 40px;
-        font-size: 1.3rem;
-        text-decoration: none;
-        color: #000;
-        background: #fff;
-        border: none;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-weight: bold;
-      }
-      .cta-button:hover {
-        background: #e0e0e0;
-        transform: scale(1.05);
-      }
-      @media (max-width: 768px) {
-        .section {
-          grid-template-columns: 1fr;
-          gap: 40px;
-        }
-        .text-content {
-          padding-right: 0;
-          text-align: center;
-        }
-        .text-content h1 {
-          font-size: 2rem;
-        }
-        .text-content p {
-          font-size: 1rem;
-        }
-        .card h2 {
-          font-size: 1.8rem;
-        }
-        .logo {
-          height: 60px;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <img src="/static/images/unc3_g.png" alt="UNC Logo" class="logo">
+{% extends "base.html" %}
 
-    <div class="container">
-      <div class="section">
-        <div class="text-content">
-          <h1>Mapa Ciencia UNC</h1>
-          <p>
-            Explorá la red de investigación de la Universidad Nacional de Córdoba.
-            Descubrí conexiones entre investigadores, publicaciones y áreas de conocimiento
-            para impulsar la colaboración científica.
-          </p>
-        </div>
+{% block extra_head %}
+<style>
+  body {
+    overflow-x: hidden;
+  }
+  .logo {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    height: 80px;
+    width: auto;
+  }
+  .container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .section {
+    max-width: 1200px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+  }
+  .text-content {
+    padding-right: 20px;
+  }
+  .text-content h1 {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+  }
+  .text-content p {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    color: #ccc;
+  }
+  .card {
+    background: #1a1a1a;
+    border: 2px solid #fff;
+    padding: 60px 40px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+  }
+  .card:hover {
+    box-shadow: 0 15px 50px rgba(255, 255, 255, 0.2);
+    transform: translateY(-5px);
+  }
+  .card h2 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    color: #fff;
+  }
+  .cta-button {
+    display: inline-block;
+    padding: 18px 40px;
+    font-size: 1.3rem;
+    text-decoration: none;
+    color: #000;
+    background: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+  }
+  .cta-button:hover {
+    background: #e0e0e0;
+    transform: scale(1.05);
+  }
+  @media (max-width: 768px) {
+    .section {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+    .text-content {
+      padding-right: 0;
+      text-align: center;
+    }
+    .text-content h1 {
+      font-size: 2rem;
+    }
+    .text-content p {
+      font-size: 1rem;
+    }
+    .card h2 {
+      font-size: 1.8rem;
+    }
+    .logo {
+      height: 60px;
+    }
+  }
+</style>
+{% endblock %}
 
-        <div class="card">
-          <h2>Producción Científica</h2>
-          <a href="/graph" class="cta-button">Ver Red de Investigadores</a>
-        </div>
-      </div>
+{% block content %}
+<img src="/static/images/unc3_g.png" alt="UNC Logo" class="logo">
+
+<div class="container">
+  <div class="section">
+    <div class="text-content">
+      <h1>Mapa Ciencia UNC</h1>
+      <p>
+        Explorá la red de investigación de la Universidad Nacional de Córdoba.
+        Descubrí conexiones entre investigadores, publicaciones y áreas de conocimiento
+        para impulsar la colaboración científica.
+      </p>
     </div>
-  </body>
-</html>
+
+    <div class="card">
+      <h2>Producción Científica</h2>
+      <a href="/graph" class="cta-button">Ver Red de Investigadores</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

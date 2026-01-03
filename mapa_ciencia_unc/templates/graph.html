@@ -1,631 +1,622 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Red de Investigadores</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cstyle%3Ecircle%7Bfill:%23fff%7Dline%7Bstroke:%23fff;stroke-width:2%7D%3C/style%3E%3Cline x1='20' y1='30' x2='50' y2='50'/%3E%3Cline x1='50' y1='50' x2='80' y2='30'/%3E%3Cline x1='50' y1='50' x2='70' y2='75'/%3E%3Cline x1='50' y1='50' x2='30' y2='75'/%3E%3Ccircle cx='20' cy='30' r='8'/%3E%3Ccircle cx='50' cy='50' r='8'/%3E%3Ccircle cx='80' cy='30' r='8'/%3E%3Ccircle cx='70' cy='75' r='8'/%3E%3Ccircle cx='30' cy='75' r='8'/%3E%3C/svg%3E" />
+{% extends "base.html" %}
 
-    <!-- Sigma & Graphology -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/graphology/0.25.4/graphology.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/2.4.0/sigma.min.js"></script>
+{% block title %}Red de Investigadores{% endblock %}
 
-    <!-- Chroma.js for color palette generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+{% block extra_head %}
+<!-- Sigma & Graphology -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/graphology/0.25.4/graphology.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/2.4.0/sigma.min.js"></script>
 
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        font-family: sans-serif;
-        background: #000;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 3rem 1.5rem;
-      }
-      main {
-        width: min(1100px, 100%);
-        background: #1a1a1a;
-        border-radius: 4px;
-        padding: 2.5rem;
-        box-shadow: 0 12px 32px rgba(255, 255, 255, 0.08);
-        border: 2px solid #fff;
-      }
-      h1 {
-        margin-top: 0;
-        font-size: 2.3rem;
-        letter-spacing: 0.02em;
-        color: #fff;
-      }
-      p {
-        margin-bottom: 2rem;
-        font-size: 1.05rem;
-        color: #ccc;
-      }
-      .controls {
-        margin-bottom: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-      .controls label {
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: #ccc;
-      }
-      .custom-dropdown {
-        position: relative;
-        width: 25%;
-        min-width: 220px;
-        background: #0f0f0f;
-        border: 1px solid #fff;
-        border-radius: 4px;
-        overflow: visible;
-      }
-      .custom-dropdown-toggle {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.5rem;
-        padding: 0.7rem 0.9rem;
-        border: none;
-        background: transparent;
-        color: #fff;
-        font-size: 1rem;
-        cursor: pointer;
-        text-align: left;
-      }
-      .custom-dropdown-toggle-text {
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        flex: 1;
-        min-width: 0;
-      }
-      .custom-dropdown-toggle::after {
-        content: "▾";
-        font-size: 0.9rem;
-        color: #9ca3af;
-        flex-shrink: 0;
-      }
-      .custom-dropdown-options {
-        display: none;
-        position: absolute;
-        top: calc(100% + 6px);
-        left: 0;
-        right: 0;
-        z-index: 20;
-        background: #1a1a1a;
-        border: 1px solid #fff;
-        border-radius: 4px;
-        padding: 0.35rem 0.4rem;
-        max-height: 220px;
-        overflow-y: auto;
-        box-shadow: 0 12px 28px rgba(255, 255, 255, 0.08);
-      }
-      .custom-dropdown.open .custom-dropdown-options {
-        display: block;
-      }
-      .custom-dropdown-option {
-        padding: 0.6rem 0.7rem;
-        border-radius: 4px;
-        color: #fff;
-        cursor: pointer;
-        font-size: 0.95rem;
-      }
-      .custom-dropdown-option:hover {
-        background: #262626;
-      }
-      .custom-dropdown-option.selected {
-        background: #262626;
-        font-weight: 500;
-      }
-      .controls small {
-        color: #9ca3af;
-        font-size: 0.85rem;
-      }
-      #graph-wrapper {
-        display: flex;
-        justify-content: center;
-        position: relative;
-      }
-      #container {
-        width: min(900px, 100%);
-        height: 600px;
-        background: #e9f2ff;
-        border-radius: 4px;
-        overflow: hidden;
-        box-shadow: 0 10px 28px rgba(255, 255, 255, 0.08);
-        border: 2px solid #fff;
-      }
-      .color-legend {
-        position: absolute;
-        top: 12px;
-        right: max(calc((100% - min(900px, 100%)) / 2 + 12px), 12px);
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 6px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        max-width: 280px;
-        z-index: 10;
-        transition: all 0.3s ease;
-      }
-      .color-legend-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 14px;
-        cursor: pointer;
-        user-select: none;
-      }
-      .color-legend-header:hover {
-        background: rgba(0, 0, 0, 0.03);
-        border-radius: 6px 6px 0 0;
-      }
-      .color-legend.collapsed .color-legend-header:hover {
-        border-radius: 6px;
-      }
-      .color-legend-title {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #333;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin: 0;
-      }
-      .color-legend-toggle {
-        background: none;
-        border: none;
-        color: #666;
-        font-size: 1.1rem;
-        cursor: pointer;
-        padding: 0;
-        line-height: 1;
-        transition: transform 0.3s ease;
-        width: 20px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: 8px;
-      }
-      .color-legend.collapsed .color-legend-toggle {
-        transform: rotate(-90deg);
-      }
-      .color-legend-content {
-        max-height: 500px;
-        overflow-y: auto;
-        padding: 0 14px 12px 14px;
-        transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
-      }
-      .color-legend.collapsed .color-legend-content {
-        max-height: 0;
-        padding: 0 14px;
-        opacity: 0;
-        overflow: hidden;
-      }
-      .color-legend-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 6px;
-        font-size: 0.85rem;
-        color: #444;
-      }
-      .color-legend-item:last-child {
-        margin-bottom: 0;
-      }
-      .color-legend-swatch {
-        width: 18px;
-        height: 18px;
-        border-radius: 3px;
-        flex-shrink: 0;
-        border: 1px solid rgba(0, 0, 0, 0.1);
-      }
-      .color-legend-label {
-        flex: 1;
-        line-height: 1.3;
-      }
-      .color-legend:empty {
-        display: none;
-      }
-      .filters {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-        align-items: flex-start;
-      }
-      .filter-dropdown {
-        position: relative;
-        min-width: 200px;
-        background: #0f0f0f;
-        border: 1px solid #fff;
-        border-radius: 4px;
-        overflow: visible;
-      }
-      .filter-toggle {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.5rem;
-        padding: 0.7rem 0.9rem;
-        border: none;
-        background: transparent;
-        color: #fff;
-        font-size: 1rem;
-        cursor: pointer;
-        text-align: left;
-      }
-      .filter-toggle::after {
-        content: "▾";
-        font-size: 0.9rem;
-        color: #9ca3af;
-      }
-      .filter-options {
-        display: none;
-        position: absolute;
-        top: calc(100% + 6px);
-        left: 0;
-        right: 0;
-        z-index: 20;
-        background: #1a1a1a;
-        border: 1px solid #fff;
-        border-radius: 4px;
-        padding: 0.35rem 0.4rem;
-        max-height: 220px;
-        overflow-y: auto;
-        box-shadow: 0 12px 28px rgba(255, 255, 255, 0.08);
-      }
-      .filter-dropdown.open .filter-options {
-        display: block;
-      }
-      .filter-option {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.35rem 0.45rem;
-        border-radius: 4px;
-        color: #fff;
-      }
-      .filter-option:hover {
-        background: #262626;
-      }
-      .filter-option input {
-        accent-color: #fff;
-      }
-      .filters-empty {
-        color: #9ca3af;
-        font-size: 0.9rem;
-      }
-      .modal {
-        display: none;
-        position: fixed;
-        z-index: 9999;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.4);
-      }
+<!-- Chroma.js for color palette generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
 
-      .modal-content {
-        background: white;
-        margin: 15% auto;
-        padding: 20px;
-        width: 300px;
-        border-radius: 8px;
-        font-family: sans-serif;
-      }
+<style>
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+  }
+  main {
+    width: min(1100px, 100%);
+    background: #1a1a1a;
+    border-radius: 4px;
+    padding: 2.5rem;
+    box-shadow: 0 12px 32px rgba(255, 255, 255, 0.08);
+    border: 2px solid #fff;
+  }
+  h1 {
+    margin-top: 0;
+    font-size: 2.3rem;
+    letter-spacing: 0.02em;
+    color: #fff;
+  }
+  p {
+    margin-bottom: 2rem;
+    font-size: 1.05rem;
+    color: #ccc;
+  }
+  .controls {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .controls label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #ccc;
+  }
+  .custom-dropdown {
+    position: relative;
+    width: 25%;
+    min-width: 220px;
+    background: #0f0f0f;
+    border: 1px solid #fff;
+    border-radius: 4px;
+    overflow: visible;
+  }
+  .custom-dropdown-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.7rem 0.9rem;
+    border: none;
+    background: transparent;
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: left;
+  }
+  .custom-dropdown-toggle-text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+  }
+  .custom-dropdown-toggle::after {
+    content: "▾";
+    font-size: 0.9rem;
+    color: #9ca3af;
+    flex-shrink: 0;
+  }
+  .custom-dropdown-options {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    background: #1a1a1a;
+    border: 1px solid #fff;
+    border-radius: 4px;
+    padding: 0.35rem 0.4rem;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 12px 28px rgba(255, 255, 255, 0.08);
+  }
+  .custom-dropdown.open .custom-dropdown-options {
+    display: block;
+  }
+  .custom-dropdown-option {
+    padding: 0.6rem 0.7rem;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+  .custom-dropdown-option:hover {
+    background: #262626;
+  }
+  .custom-dropdown-option.selected {
+    background: #262626;
+    font-weight: 500;
+  }
+  .controls small {
+    color: #9ca3af;
+    font-size: 0.85rem;
+  }
+  #graph-wrapper {
+    display: flex;
+    justify-content: center;
+    position: relative;
+  }
+  #container {
+    width: min(900px, 100%);
+    height: 600px;
+    background: #e9f2ff;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 10px 28px rgba(255, 255, 255, 0.08);
+    border: 2px solid #fff;
+  }
+  .color-legend {
+    position: absolute;
+    top: 12px;
+    right: max(calc((100% - min(900px, 100%)) / 2 + 12px), 12px);
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 280px;
+    z-index: 10;
+    transition: all 0.3s ease;
+  }
+  .color-legend-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .color-legend-header:hover {
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 6px 6px 0 0;
+  }
+  .color-legend.collapsed .color-legend-header:hover {
+    border-radius: 6px;
+  }
+  .color-legend-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+  }
+  .color-legend-toggle {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: transform 0.3s ease;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+  }
+  .color-legend.collapsed .color-legend-toggle {
+    transform: rotate(-90deg);
+  }
+  .color-legend-content {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 0 14px 12px 14px;
+    transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+  }
+  .color-legend.collapsed .color-legend-content {
+    max-height: 0;
+    padding: 0 14px;
+    opacity: 0;
+    overflow: hidden;
+  }
+  .color-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    color: #444;
+  }
+  .color-legend-item:last-child {
+    margin-bottom: 0;
+  }
+  .color-legend-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  .color-legend-label {
+    flex: 1;
+    line-height: 1.3;
+  }
+  .color-legend:empty {
+    display: none;
+  }
+  .filters {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .filter-dropdown {
+    position: relative;
+    min-width: 200px;
+    background: #0f0f0f;
+    border: 1px solid #fff;
+    border-radius: 4px;
+    overflow: visible;
+  }
+  .filter-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.7rem 0.9rem;
+    border: none;
+    background: transparent;
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: left;
+  }
+  .filter-toggle::after {
+    content: "▾";
+    font-size: 0.9rem;
+    color: #9ca3af;
+  }
+  .filter-options {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    background: #1a1a1a;
+    border: 1px solid #fff;
+    border-radius: 4px;
+    padding: 0.35rem 0.4rem;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 12px 28px rgba(255, 255, 255, 0.08);
+  }
+  .filter-dropdown.open .filter-options {
+    display: block;
+  }
+  .filter-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.45rem;
+    border-radius: 4px;
+    color: #fff;
+  }
+  .filter-option:hover {
+    background: #262626;
+  }
+  .filter-option input {
+    accent-color: #fff;
+  }
+  .filters-empty {
+    color: #9ca3af;
+    font-size: 0.9rem;
+  }
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+  }
 
-      .close {
-        float: right;
-        font-size: 20px;
-        cursor: pointer;
-      }
-      .topic-labels-toggle-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-      .topic-labels-toggle {
-        position: relative;
-        display: inline-block;
-        width: 48px;
-        height: 24px;
-        cursor: pointer;
-      }
-      .topic-labels-toggle input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-      }
-      .topic-labels-toggle-slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #4a4a4a;
-        transition: 0.3s;
-        border-radius: 24px;
-        border: 1px solid #fff;
-      }
-      .topic-labels-toggle-slider:before {
-        position: absolute;
-        content: "";
-        height: 16px;
-        width: 16px;
-        left: 3px;
-        bottom: 3px;
-        background-color: white;
-        transition: 0.3s;
-        border-radius: 50%;
-      }
-      .topic-labels-toggle input:checked + .topic-labels-toggle-slider {
-        background-color: #3b82f6;
-      }
-      .topic-labels-toggle input:checked + .topic-labels-toggle-slider:before {
-        transform: translateX(24px);
-      }
-      .topic-labels-toggle-label {
-        font-size: 0.9rem;
-        color: #ccc;
-        user-select: none;
-      }
-    </style>
-  </head>
+  .modal-content {
+    background: white;
+    margin: 15% auto;
+    padding: 20px;
+    width: 300px;
+    border-radius: 8px;
+    font-family: sans-serif;
+  }
 
-  <body>
-    <main>
-      <h1>Researcher Network</h1>
-      <p>
-        Explore the relationships between researchers, collaborators, and
-        thematic clusters. Click any node to jump into its detailed profile.
-      </p>
-      <p>
-        graph: {{ graph.title }}
-      </p>
-      <div class="controls">
-        <label for="graph-tag-select">Graph dataset (optional)</label>
-        <div id="graph-tag-select" class="custom-dropdown">
-          <button type="button" class="custom-dropdown-toggle">
-            <span class="custom-dropdown-toggle-text">Selecciona un grafo</span>
-          </button>
-          <div class="custom-dropdown-options">
-            <span class="filters-empty">Loading available graphs…</span>
-          </div>
-        </div>
-        <small id="graph-tag-status">Loading available graphs…</small>
-      </div>
-      <div class="controls">
-        <label for="filter-controls">Filters</label>
-        <div id="filter-controls" class="filters">
-          <span class="filters-empty">No filters available</span>
-        </div>
-      </div>
-      <div class="controls" id="color-scheme-controls">
-        <label for="color-scheme-select">Color scheme</label>
-        <div style="display: flex; align-items: center; gap: 1rem;">
-          <div id="color-scheme-select" class="custom-dropdown">
-            <button type="button" class="custom-dropdown-toggle">
-              <span class="custom-dropdown-toggle-text">Research Topic</span>
-            </button>
-            <div class="custom-dropdown-options">
-              <div class="custom-dropdown-option" data-value="research_topic">Research Topic</div>
-              <div class="custom-dropdown-option" data-value="academic_unit">Academic Unit</div>
-              <div class="custom-dropdown-option" data-value="maturity_level">Maturity Level</div>
-              <div class="custom-dropdown-option" data-value="ods">ODS (Sustainable Development Goals)</div>
-              <div class="custom-dropdown-option" data-value="single">Single Color</div>
-            </div>
-          </div>
-          <div class="topic-labels-toggle-wrapper">
-            <label class="topic-labels-toggle">
-              <input type="checkbox" id="topic-labels-toggle" checked>
-              <span class="topic-labels-toggle-slider"></span>
-            </label>
-            <span class="topic-labels-toggle-label">Topic Labels</span>
-          </div>
-        </div>
-        <small id="color-scheme-status">Select a color scheme to apply to the graph.</small>
-      </div>
-      <div id="graph-wrapper">
-        <div id="container"></div>
-        <div id="color-legend" class="color-legend"></div>
-      </div>
-    </main>
-    <div id="nodeModal" class="modal">
-      <div class="modal-content">
-        <span id="closeModal" class="close">&times;</span>
-        <p id="modalText"></p>
+  .close {
+    float: right;
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .topic-labels-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .topic-labels-toggle {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+    cursor: pointer;
+  }
+  .topic-labels-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .topic-labels-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #4a4a4a;
+    transition: 0.3s;
+    border-radius: 24px;
+    border: 1px solid #fff;
+  }
+  .topic-labels-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+  }
+  .topic-labels-toggle input:checked + .topic-labels-toggle-slider {
+    background-color: #3b82f6;
+  }
+  .topic-labels-toggle input:checked + .topic-labels-toggle-slider:before {
+    transform: translateX(24px);
+  }
+  .topic-labels-toggle-label {
+    font-size: 0.9rem;
+    color: #ccc;
+    user-select: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<main>
+  <h1>Researcher Network</h1>
+  <p>
+    Explore the relationships between researchers, collaborators, and
+    thematic clusters. Click any node to jump into its detailed profile.
+  </p>
+  <p>
+    graph: {{ graph.title }}
+  </p>
+  <div class="controls">
+    <label for="graph-tag-select">Graph dataset (optional)</label>
+    <div id="graph-tag-select" class="custom-dropdown">
+      <button type="button" class="custom-dropdown-toggle">
+        <span class="custom-dropdown-toggle-text">Selecciona un grafo</span>
+      </button>
+      <div class="custom-dropdown-options">
+        <span class="filters-empty">Loading available graphs…</span>
       </div>
     </div>
-    <script id="graph-data" type="application/json">
-      {{ graph | tojson }}
-    </script>
-    <script>
-      const getStoredToken = () => {
-        const localToken = localStorage.getItem("jwtToken");
-        if (localToken) return localToken;
+    <small id="graph-tag-status">Loading available graphs…</small>
+  </div>
+  <div class="controls">
+    <label for="filter-controls">Filters</label>
+    <div id="filter-controls" class="filters">
+      <span class="filters-empty">No filters available</span>
+    </div>
+  </div>
+  <div class="controls" id="color-scheme-controls">
+    <label for="color-scheme-select">Color scheme</label>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <div id="color-scheme-select" class="custom-dropdown">
+        <button type="button" class="custom-dropdown-toggle">
+          <span class="custom-dropdown-toggle-text">Research Topic</span>
+        </button>
+        <div class="custom-dropdown-options">
+          <div class="custom-dropdown-option" data-value="research_topic">Research Topic</div>
+          <div class="custom-dropdown-option" data-value="academic_unit">Academic Unit</div>
+          <div class="custom-dropdown-option" data-value="maturity_level">Maturity Level</div>
+          <div class="custom-dropdown-option" data-value="ods">ODS (Sustainable Development Goals)</div>
+          <div class="custom-dropdown-option" data-value="single">Single Color</div>
+        </div>
+      </div>
+      <div class="topic-labels-toggle-wrapper">
+        <label class="topic-labels-toggle">
+          <input type="checkbox" id="topic-labels-toggle" checked>
+          <span class="topic-labels-toggle-slider"></span>
+        </label>
+        <span class="topic-labels-toggle-label">Topic Labels</span>
+      </div>
+    </div>
+    <small id="color-scheme-status">Select a color scheme to apply to the graph.</small>
+  </div>
+  <div id="graph-wrapper">
+    <div id="container"></div>
+    <div id="color-legend" class="color-legend"></div>
+  </div>
+</main>
+<div id="nodeModal" class="modal">
+  <div class="modal-content">
+    <span id="closeModal" class="close">&times;</span>
+    <p id="modalText"></p>
+  </div>
+</div>
+{% endblock %}
 
-        const cookieMatch = document.cookie.match(/(?:^|; )token=([^;]+)/);
-        return cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-      };
+{% block extra_scripts %}
+<script id="graph-data" type="application/json">
+  {{ graph | tojson }}
+</script>
+<script>
+  const getStoredToken = () => {
+    const localToken = localStorage.getItem("jwtToken");
+    if (localToken) return localToken;
 
-      const requireToken = () => {
-        const token = getStoredToken();
-        if (!token) {
+    const cookieMatch = document.cookie.match(/(?:^|; )token=([^;]+)/);
+    return cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+  };
+
+  const requireToken = () => {
+    const token = getStoredToken();
+    if (!token) {
+      window.location.href = "/login";
+      throw new Error("Authentication required");
+    }
+    return token;
+  };
+
+  const getInitialGraphId = () => {
+    const graphDataEl = document.getElementById("graph-data");
+    if (!graphDataEl) return null;
+    try {
+      const parsed = JSON.parse(graphDataEl.textContent || "{}");
+      return parsed?._id ?? parsed?.id ?? null;
+    } catch (error) {
+      console.warn("Unable to parse initial graph data", error);
+      return null;
+    }
+  };
+
+  (function initGraphTagSelector() {
+    const dropdownEl = document.getElementById("graph-tag-select");
+    const statusEl = document.getElementById("graph-tag-status");
+    if (!dropdownEl || !statusEl) return;
+
+    const toggleEl = dropdownEl.querySelector(".custom-dropdown-toggle");
+    const optionsEl = dropdownEl.querySelector(".custom-dropdown-options");
+    if (!toggleEl || !optionsEl) return;
+
+    const { search, pathname } = window.location;
+    const params = new URLSearchParams(search);
+    const currentGraphId = params.get("graph_id");
+    const initialGraphId = getInitialGraphId();
+
+    const setStatus = (message, isError = false) => {
+      statusEl.textContent = message;
+      statusEl.style.color = isError ? "#f87171" : "#6b7280";
+    };
+
+    const closeDropdown = () => {
+      dropdownEl.classList.remove("open");
+    };
+
+    const applySelectionState = (graphs) => {
+      const textEl = toggleEl.querySelector('.custom-dropdown-toggle-text');
+      if (!textEl) return;
+
+      const desiredId = currentGraphId || initialGraphId;
+      if (desiredId) {
+        const selectedGraph = graphs.find(g => g?._id === desiredId);
+        if (selectedGraph) {
+          textEl.textContent = selectedGraph?.title ?? selectedGraph?._id ?? "Sin título";
+          return;
+        }
+      }
+      textEl.textContent = "Selecciona un grafo";
+    };
+
+    const renderOptions = (graphs) => {
+      optionsEl.innerHTML = "";
+
+      if (!graphs || graphs.length === 0) {
+        const empty = document.createElement("span");
+        empty.className = "filters-empty";
+        empty.textContent = "No graphs available";
+        optionsEl.appendChild(empty);
+        return;
+      }
+
+      graphs.forEach((graph) => {
+        const option = document.createElement("div");
+        option.className = "custom-dropdown-option";
+        option.dataset.value = graph?._id ?? "";
+        option.textContent = graph?.title ?? graph?._id ?? "Sin título";
+
+        const desiredId = currentGraphId || initialGraphId;
+        if (graph?._id === desiredId) {
+          option.classList.add("selected");
+        }
+
+        option.addEventListener("click", () => {
+          redirectToGraph(graph?._id);
+        });
+
+        optionsEl.appendChild(option);
+      });
+
+      applySelectionState(graphs);
+    };
+
+    const redirectToGraph = (graphId) => {
+      const baseUrl = pathname;
+      if (!graphId) {
+        window.location.href = baseUrl;
+        return;
+      }
+
+      const nextParams = new URLSearchParams();
+      nextParams.set("graph_id", graphId);
+      window.location.href = `${baseUrl}?${nextParams.toString()}`;
+    };
+
+    const closeAllCustomDropdowns = () => {
+      document.querySelectorAll('.custom-dropdown.open').forEach(dropdown => {
+        if (dropdown !== dropdownEl) {
+          dropdown.classList.remove('open');
+        }
+      });
+    };
+
+    toggleEl.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const wasOpen = dropdownEl.classList.contains("open");
+      closeAllCustomDropdowns();
+      if (!wasOpen) {
+        dropdownEl.classList.add("open");
+      } else {
+        dropdownEl.classList.remove("open");
+      }
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!dropdownEl.contains(event.target)) {
+        closeDropdown();
+      }
+    });
+
+    const fetchAvailableGraphs = async () => {
+      const token = requireToken();
+      try {
+        const response = await fetch("/api/graphs", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.status === 401) {
           window.location.href = "/login";
-          throw new Error("Authentication required");
+          return;
         }
-        return token;
-      };
-
-      const getInitialGraphId = () => {
-        const graphDataEl = document.getElementById("graph-data");
-        if (!graphDataEl) return null;
-        try {
-          const parsed = JSON.parse(graphDataEl.textContent || "{}");
-          return parsed?._id ?? parsed?.id ?? null;
-        } catch (error) {
-          console.warn("Unable to parse initial graph data", error);
-          return null;
+        if (!response.ok) {
+          throw new Error(`Unexpected status ${response.status}`);
         }
-      };
 
-      (function initGraphTagSelector() {
-        const dropdownEl = document.getElementById("graph-tag-select");
-        const statusEl = document.getElementById("graph-tag-status");
-        if (!dropdownEl || !statusEl) return;
+        const payload = await response.json();
+        const graphs = Array.isArray(payload) ? payload : [];
 
-        const toggleEl = dropdownEl.querySelector(".custom-dropdown-toggle");
-        const optionsEl = dropdownEl.querySelector(".custom-dropdown-options");
-        if (!toggleEl || !optionsEl) return;
+        if (!Array.isArray(graphs) || graphs.length === 0) {
+          throw new Error("No available graphs returned.");
+        }
 
-        const { search, pathname } = window.location;
-        const params = new URLSearchParams(search);
-        const currentGraphId = params.get("graph_id");
-        const initialGraphId = getInitialGraphId();
+        renderOptions(graphs);
+        setStatus("Select a graph to load it.");
+      } catch (error) {
+        console.error("Failed to load graphs", error);
+        renderOptions([]);
+        setStatus(
+          "Unable to load available graphs. Please try again.",
+          true
+        );
+      }
+    };
 
-        const setStatus = (message, isError = false) => {
-          statusEl.textContent = message;
-          statusEl.style.color = isError ? "#f87171" : "#6b7280";
-        };
-
-        const closeDropdown = () => {
-          dropdownEl.classList.remove("open");
-        };
-
-        const applySelectionState = (graphs) => {
-          const textEl = toggleEl.querySelector('.custom-dropdown-toggle-text');
-          if (!textEl) return;
-
-          const desiredId = currentGraphId || initialGraphId;
-          if (desiredId) {
-            const selectedGraph = graphs.find(g => g?._id === desiredId);
-            if (selectedGraph) {
-              textEl.textContent = selectedGraph?.title ?? selectedGraph?._id ?? "Sin título";
-              return;
-            }
-          }
-          textEl.textContent = "Selecciona un grafo";
-        };
-
-        const renderOptions = (graphs) => {
-          optionsEl.innerHTML = "";
-
-          if (!graphs || graphs.length === 0) {
-            const empty = document.createElement("span");
-            empty.className = "filters-empty";
-            empty.textContent = "No graphs available";
-            optionsEl.appendChild(empty);
-            return;
-          }
-
-          graphs.forEach((graph) => {
-            const option = document.createElement("div");
-            option.className = "custom-dropdown-option";
-            option.dataset.value = graph?._id ?? "";
-            option.textContent = graph?.title ?? graph?._id ?? "Sin título";
-
-            const desiredId = currentGraphId || initialGraphId;
-            if (graph?._id === desiredId) {
-              option.classList.add("selected");
-            }
-
-            option.addEventListener("click", () => {
-              redirectToGraph(graph?._id);
-            });
-
-            optionsEl.appendChild(option);
-          });
-
-          applySelectionState(graphs);
-        };
-
-        const redirectToGraph = (graphId) => {
-          const baseUrl = pathname;
-          if (!graphId) {
-            window.location.href = baseUrl;
-            return;
-          }
-
-          const nextParams = new URLSearchParams();
-          nextParams.set("graph_id", graphId);
-          window.location.href = `${baseUrl}?${nextParams.toString()}`;
-        };
-
-        const closeAllCustomDropdowns = () => {
-          document.querySelectorAll('.custom-dropdown.open').forEach(dropdown => {
-            if (dropdown !== dropdownEl) {
-              dropdown.classList.remove('open');
-            }
-          });
-        };
-
-        toggleEl.addEventListener("click", (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          const wasOpen = dropdownEl.classList.contains("open");
-          closeAllCustomDropdowns();
-          if (!wasOpen) {
-            dropdownEl.classList.add("open");
-          } else {
-            dropdownEl.classList.remove("open");
-          }
-        });
-
-        document.addEventListener("click", (event) => {
-          if (!dropdownEl.contains(event.target)) {
-            closeDropdown();
-          }
-        });
-
-        const fetchAvailableGraphs = async () => {
-          const token = requireToken();
-          try {
-            const response = await fetch("/api/graphs", {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-            if (response.status === 401) {
-              window.location.href = "/login";
-              return;
-            }
-            if (!response.ok) {
-              throw new Error(`Unexpected status ${response.status}`);
-            }
-
-            const payload = await response.json();
-            const graphs = Array.isArray(payload) ? payload : [];
-
-            if (!Array.isArray(graphs) || graphs.length === 0) {
-              throw new Error("No available graphs returned.");
-            }
-
-            renderOptions(graphs);
-            setStatus("Select a graph to load it.");
-          } catch (error) {
-            console.error("Failed to load graphs", error);
-            renderOptions([]);
-            setStatus(
-              "Unable to load available graphs. Please try again.",
-              true
-            );
-          }
-        };
-
-        fetchAvailableGraphs();
-      })();
-    </script>
-    <script type="module" src="/static/js/graph.js"></script>
-  </body>
-</html>
+    fetchAvailableGraphs();
+  })();
+</script>
+<script type="module" src="/static/js/graph.js"></script>
+{% endblock %}
