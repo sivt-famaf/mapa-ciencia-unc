@@ -2,13 +2,6 @@
 
 {% block extra_head %}
 <style>
-  .container {
-    min-height: calc(100vh - 94px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-  }
   .section {
     max-width: 1200px;
     width: 100%;
@@ -86,8 +79,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
-  <div class="section">
+<div class="content-wrapper">
+  <main>
+    <div class="section">
     <div class="text-content">
       <h1>Mapa Ciencia UNC</h1>
       <p>
@@ -97,10 +91,11 @@
       </p>
     </div>
 
-    <div class="card">
-      <h2>Producción Científica</h2>
-      <a href="/graph" class="cta-button">Ver Red de Investigadores</a>
+      <div class="card">
+        <h2>Producción Científica</h2>
+        <a href="/graph" class="cta-button">Ver Red de Investigadores</a>
+      </div>
     </div>
-  </div>
+  </main>
 </div>
 {% endblock %}

@@ -103,8 +103,7 @@ function generateResearchTopicPalette(count) {
   // Use chroma.scale to generate visually distinct colors
   // Using a cubehelix scale for better perceptual uniformity
   return chroma.scale([
-      chroma('pink').saturate(2).hex(),
-      '#2A4858'
+      '#ef476f', '#f78c6b', '#06d6a0', '#118ab2', '#073b4c'
     ])
     .mode('lch')
     .colors(count);

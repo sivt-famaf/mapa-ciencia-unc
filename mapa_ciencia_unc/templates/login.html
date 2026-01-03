@@ -82,10 +82,11 @@
 
 {% block content %}
 <div class="content-wrapper">
-  <div class="card">
-    <h1>Acceso</h1>
-    <p>Ingresá tu usuario y contraseña para continuar.</p>
-  <form id="login-form">
+  <main>
+    <div class="card">
+      <h1>Acceso</h1>
+      <p>Ingresá tu usuario y contraseña para continuar.</p>
+      <form id="login-form">
     <label for="username">Usuario</label>
     <input id="username" name="username" type="text" autocomplete="username" required />
 
@@ -101,10 +102,11 @@
     <button id="submit-btn" type="submit">Ingresar</button>
     <div id="error" class="error"></div>
   </form>
-    <div class="helper">
-      Guardamos el token de sesión en tu navegador para futuras peticiones protegidas.
+      <div class="helper">
+        Guardamos el token de sesión en tu navegador para futuras peticiones protegidas.
+      </div>
     </div>
-  </div>
+  </main>
 </div>
 {% endblock %}
 
