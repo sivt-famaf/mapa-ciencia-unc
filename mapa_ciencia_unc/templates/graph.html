@@ -355,31 +355,99 @@
     color: #ccc;
     user-select: none;
   }
+  .advanced-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1rem;
+    background: #0f0f0f;
+    border: 1px solid #fff;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: auto;
+  }
+  .advanced-button:hover {
+    background: #262626;
+  }
+  .advanced-button .icon {
+    font-size: 1.5rem;
+  }
+  #advancedModal .modal-content {
+    background: #1a1a1a;
+    margin: 10% auto;
+    padding: 2rem;
+    width: min(720px, 90%);
+    border-radius: 8px;
+    border: 2px solid #fff;
+    color: #fff;
+  }
+  #advancedModal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  #advancedModal .modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+  #advancedModal .close {
+    color: #fff;
+    font-size: 28px;
+    font-weight: normal;
+    line-height: 1;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  #advancedModal .close:hover {
+    color: #ccc;
+  }
+  #advancedModal .modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  #advancedModal .graph-info {
+    padding: 1rem;
+    background: #0f0f0f;
+    border-radius: 4px;
+    border: 1px solid #2a2a2a;
+  }
+  #advancedModal .graph-info strong {
+    color: #b3b3b3;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  #advancedModal .graph-info p {
+    margin: 0.5rem 0 0 0;
+    font-size: 1.1rem;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="content-wrapper">
   <main>
-  <h1>Researcher Network</h1>
-  <p>
-    Explore the relationships between researchers, collaborators, and
-    thematic clusters. Click any node to jump into its detailed profile.
-  </p>
-  <p>
-    graph: {{ graph.title }}
-  </p>
-  <div class="controls">
-    <label for="graph-tag-select">Graph dataset (optional)</label>
-    <div id="graph-tag-select" class="custom-dropdown">
-      <button type="button" class="custom-dropdown-toggle">
-        <span class="custom-dropdown-toggle-text">Selecciona un grafo</span>
-      </button>
-      <div class="custom-dropdown-options">
-        <span class="filters-empty">Loading available graphs…</span>
-      </div>
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 2rem;">
+    <div>
+      <h1>Researcher Network</h1>
+      <p style="margin-bottom: 0;">
+        Explore the relationships between researchers, collaborators, and
+        thematic clusters. Click any node to jump into its detailed profile.
+      </p>
     </div>
-    <small id="graph-tag-status">Loading available graphs…</small>
+    <button type="button" class="advanced-button" id="open-advanced-modal" style="margin-left: 0; flex-shrink: 0; margin-top: 0.5rem;">
+      <span class="icon">⚙</span>
+      <span>Advanced</span>
+    </button>
   </div>
   <div class="controls">
     <label for="filter-controls">Filters</label>
@@ -388,9 +456,9 @@
     </div>
   </div>
   <div class="controls" id="color-scheme-controls">
-    <label for="color-scheme-select">Color scheme</label>
-    <div style="display: flex; align-items: center; gap: 1rem;">
-      <div id="color-scheme-select" class="custom-dropdown">
+    <label>Color scheme & Display</label>
+    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+      <div id="color-scheme-select" class="custom-dropdown" style="display: none;">
         <button type="button" class="custom-dropdown-toggle">
           <span class="custom-dropdown-toggle-text">Research Topic</span>
         </button>
@@ -402,6 +470,7 @@
           <div class="custom-dropdown-option" data-value="single">Single Color</div>
         </div>
       </div>
+      <span id="no-color-schemes" class="filters-empty" style="display: none;">No color selection available</span>
       <div class="topic-labels-toggle-wrapper">
         <label class="topic-labels-toggle">
           <input type="checkbox" id="topic-labels-toggle" checked>
@@ -422,6 +491,32 @@
   <div class="modal-content">
     <span id="closeModal" class="close">&times;</span>
     <p id="modalText"></p>
+  </div>
+</div>
+<div id="advancedModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Advanced Settings</h2>
+      <button class="close" id="close-advanced-modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="graph-info">
+        <strong>Current Graph</strong>
+        <p>{{ graph.title }}</p>
+      </div>
+      <div class="controls">
+        <label for="graph-tag-select-modal">Graph dataset</label>
+        <div id="graph-tag-select-modal" class="custom-dropdown">
+          <button type="button" class="custom-dropdown-toggle">
+            <span class="custom-dropdown-toggle-text">Selecciona un grafo</span>
+          </button>
+          <div class="custom-dropdown-options">
+            <span class="filters-empty">Loading available graphs…</span>
+          </div>
+        </div>
+        <small id="graph-tag-status-modal">Loading available graphs…</small>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
@@ -463,6 +558,210 @@
   (function initGraphTagSelector() {
     const dropdownEl = document.getElementById("graph-tag-select");
     const statusEl = document.getElementById("graph-tag-status");
+    if (!dropdownEl || !statusEl) return;
+
+    const toggleEl = dropdownEl.querySelector(".custom-dropdown-toggle");
+    const optionsEl = dropdownEl.querySelector(".custom-dropdown-options");
+    if (!toggleEl || !optionsEl) return;
+
+    const { search, pathname } = window.location;
+    const params = new URLSearchParams(search);
+    const currentGraphId = params.get("graph_id");
+    const initialGraphId = getInitialGraphId();
+
+    const setStatus = (message, isError = false) => {
+      statusEl.textContent = message;
+      statusEl.style.color = isError ? "#f87171" : "#6b7280";
+    };
+
+    const closeDropdown = () => {
+      dropdownEl.classList.remove("open");
+    };
+
+    const applySelectionState = (graphs) => {
+      const textEl = toggleEl.querySelector('.custom-dropdown-toggle-text');
+      if (!textEl) return;
+
+      const desiredId = currentGraphId || initialGraphId;
+      if (desiredId) {
+        const selectedGraph = graphs.find(g => g?._id === desiredId);
+        if (selectedGraph) {
+          textEl.textContent = selectedGraph?.title ?? selectedGraph?._id ?? "Sin título";
+          return;
+        }
+      }
+      textEl.textContent = "Selecciona un grafo";
+    };
+
+    const renderOptions = (graphs) => {
+      optionsEl.innerHTML = "";
+
+      if (!graphs || graphs.length === 0) {
+        const empty = document.createElement("span");
+        empty.className = "filters-empty";
+        empty.textContent = "No graphs available";
+        optionsEl.appendChild(empty);
+        return;
+      }
+
+      graphs.forEach((graph) => {
+        const option = document.createElement("div");
+        option.className = "custom-dropdown-option";
+        option.dataset.value = graph?._id ?? "";
+        option.textContent = graph?.title ?? graph?._id ?? "Sin título";
+
+        const desiredId = currentGraphId || initialGraphId;
+        if (graph?._id === desiredId) {
+          option.classList.add("selected");
+        }
+
+        option.addEventListener("click", () => {
+          redirectToGraph(graph?._id);
+        });
+
+        optionsEl.appendChild(option);
+      });
+
+      applySelectionState(graphs);
+    };
+
+    const redirectToGraph = (graphId) => {
+      const baseUrl = pathname;
+      if (!graphId) {
+        window.location.href = baseUrl;
+        return;
+      }
+
+      const nextParams = new URLSearchParams();
+      nextParams.set("graph_id", graphId);
+      window.location.href = `${baseUrl}?${nextParams.toString()}`;
+    };
+
+    const closeAllCustomDropdowns = () => {
+      document.querySelectorAll('.custom-dropdown.open').forEach(dropdown => {
+        if (dropdown !== dropdownEl) {
+          dropdown.classList.remove('open');
+        }
+      });
+    };
+
+    toggleEl.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const wasOpen = dropdownEl.classList.contains("open");
+      closeAllCustomDropdowns();
+      if (!wasOpen) {
+        dropdownEl.classList.add("open");
+      } else {
+        dropdownEl.classList.remove("open");
+      }
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!dropdownEl.contains(event.target)) {
+        closeDropdown();
+      }
+    });
+
+    const fetchAvailableGraphs = async () => {
+      const token = requireToken();
+      try {
+        const response = await fetch("/api/graphs", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
+        if (!response.ok) {
+          throw new Error(`Unexpected status ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const graphs = Array.isArray(payload) ? payload : [];
+
+        if (!Array.isArray(graphs) || graphs.length === 0) {
+          throw new Error("No available graphs returned.");
+        }
+
+        renderOptions(graphs);
+        setStatus("Select a graph to load it.");
+      } catch (error) {
+        console.error("Failed to load graphs", error);
+        renderOptions([]);
+        setStatus(
+          "Unable to load available graphs. Please try again.",
+          true
+        );
+      }
+    };
+
+    fetchAvailableGraphs();
+  })();
+
+  // Color Scheme Section Initialization
+  window.updateColorSchemeAvailability = function(hasSchemes) {
+    const dropdown = document.getElementById("color-scheme-select");
+    const noSchemesMsg = document.getElementById("no-color-schemes");
+    const statusEl = document.getElementById("color-scheme-status");
+
+    if (!dropdown || !noSchemesMsg) return;
+
+    if (hasSchemes) {
+      dropdown.style.display = "";
+      noSchemesMsg.style.display = "none";
+      if (statusEl) statusEl.textContent = "Select a color scheme to apply to the graph.";
+    } else {
+      dropdown.style.display = "none";
+      noSchemesMsg.style.display = "inline";
+      if (statusEl) statusEl.textContent = "Color schemes require metadata in the graph dataset.";
+    }
+  };
+
+  (function initColorSchemeSection() {
+    const dropdown = document.getElementById("color-scheme-select");
+    if (!dropdown) return;
+
+    // Check if there are any color scheme options available
+    const options = dropdown.querySelectorAll(".custom-dropdown-option");
+    const hasOptions = options && options.length > 0;
+
+    // Initialize the display state
+    window.updateColorSchemeAvailability(hasOptions);
+
+    // Note: The color scheme section, topic labels toggle, and advanced button
+    // are always visible regardless of whether color schemes are available
+  })();
+
+  // Advanced Modal Handlers
+  (function initAdvancedModal() {
+    const modal = document.getElementById("advancedModal");
+    const openBtn = document.getElementById("open-advanced-modal");
+    const closeBtn = document.getElementById("close-advanced-modal");
+
+    if (!modal || !openBtn || !closeBtn) return;
+
+    openBtn.addEventListener("click", () => {
+      modal.style.display = "block";
+    });
+
+    closeBtn.addEventListener("click", () => {
+      modal.style.display = "none";
+    });
+
+    window.addEventListener("click", (event) => {
+      if (event.target === modal) {
+        modal.style.display = "none";
+      }
+    });
+  })();
+
+  // Graph selector in modal (duplicate of the main selector logic)
+  (function initGraphTagSelectorModal() {
+    const dropdownEl = document.getElementById("graph-tag-select-modal");
+    const statusEl = document.getElementById("graph-tag-status-modal");
     if (!dropdownEl || !statusEl) return;
 
     const toggleEl = dropdownEl.querySelector(".custom-dropdown-toggle");

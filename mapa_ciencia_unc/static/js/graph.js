@@ -485,7 +485,7 @@ rawData.nodes?.forEach((node) => {
 
   const nodeAttributes = {
     label: node.label,
-    size: isResearchTopic ? 0 : 5 * (node.metadata?.size_multiplier || 1), // No dot for topics
+    size: isResearchTopic ? 0 : 3 * (node.metadata?.size_multiplier || 1), // No dot for topics
     color: node.color || "#000000",
     x: node.x,
     y: node.y,
@@ -539,6 +539,7 @@ if (!container) {
 }
 
 renderer = new SigmaRenderer(graph, container, {
+  labelSize: 10, // Smaller default label size for researcher nodes
   labelRenderer: (context, data, settings) => {
     const { label, x, y, size, nodeType, topicName } = data;
     if (!label) return;
