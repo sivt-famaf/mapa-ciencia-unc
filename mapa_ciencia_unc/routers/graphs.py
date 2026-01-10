@@ -20,9 +20,26 @@ router = APIRouter(
 
 @router.get("", response_model=List[ResearcherGraphListItem])
 async def get_available_graphs():
-    graphs = await ResearcherGraph.find_all(
-        projection_model=ResearcherGraphListItem
-    ).to_list()
+    """
+    Get all available graphs with their metadata and node counts.
+
+    Returns:
+    - List of graphs with id, title, summary, embedding, strategy, and node_count
+    """
+    pipeline = [
+        {
+            "$project": {
+                "_id": 1,
+                "title": 1,
+                "summary": 1,
+                "embedding": 1,
+                "strategy": 1,
+                "node_count": {"$size": "$nodes"},
+            }
+        }
+    ]
+
+    graphs = await ResearcherGraph.aggregate(pipeline).to_list()
     return graphs
 
 
@@ -222,4 +239,49 @@ async def compute_graph_data(request: ResearcherGraphCreate):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error computing graph: {str(e)}",
+        )
+
+
+@router.delete("/{graph_id}", status_code=status.HTTP_200_OK)
+async def delete_graph(graph_id: str):
+    """
+    Delete a graph by its ID.
+
+    **Path Parameters:**
+    - `graph_id`: The unique identifier of the graph to delete
+
+    **Returns:**
+    - Success message with the deleted graph ID
+
+    **Raises:**
+    - `400 Bad Request`: If graph_id format is invalid
+    - `404 Not Found`: If graph with the given ID doesn't exist
+    - `500 Internal Server Error`: If deletion fails unexpectedly
+    """
+    try:
+        # Convert string ID to PydanticObjectId
+        object_id = PydanticObjectId(graph_id)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid graph ID format: '{graph_id}'",
+        )
+
+    graph = await ResearcherGraph.get(object_id)
+    if not graph:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Graph with id '{graph_id}' not found.",
+        )
+
+    try:
+        await graph.delete()
+        return {
+            "message": "Graph deleted successfully",
+            "graph_id": graph_id,
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting graph: {str(e)}",
         )
