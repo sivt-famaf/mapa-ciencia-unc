@@ -138,6 +138,49 @@ async def list_embeddings():
     return query
 
 
+class SummaryModelTagResponse(BaseModel):
+    model: str
+    tag: str
+    count: int
+
+
+@router.get("/list_summaries", response_model=List[SummaryModelTagResponse])
+async def list_summaries():
+    """
+    List all summary versions by:
+    - model
+    - tag
+    - count (How many researchers have this summary)
+    """
+    pipeline = [
+        # Flatten the summaries array
+        {"$unwind": "$summaries"},
+        # Group by unique pair
+        {
+            "$group": {
+                "_id": {"model": "$summaries.model", "tag": "$summaries.tag"},
+                # Count occurrences
+                "count": {"$sum": 1},
+            }
+        },
+        # Reshape for output
+        {
+            "$project": {
+                "_id": 0,
+                "model": "$_id.model",
+                "tag": "$_id.tag",
+                "count": 1,
+            }
+        },
+        # Sort by model name and then tag
+        {"$sort": {"model": 1, "tag": 1}},
+    ]
+
+    query = await Researcher.aggregate(pipeline).to_list()
+
+    return query
+
+
 @router.get("/{researcher_id}", response_model=Researcher)
 async def get_researcher(researcher_id: str):
     try:

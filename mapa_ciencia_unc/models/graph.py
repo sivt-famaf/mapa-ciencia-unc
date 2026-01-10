@@ -95,6 +95,7 @@ class ResearcherGraphCreate(ResearcherGraphBase):
 class ResearcherGraphListItem(ResearcherGraphBase):
     id: PydanticObjectId = Field(alias="_id")
     title: str
+    node_count: int = Field(default=0, description="Number of nodes in the graph")
 
     class Config:
         # This allows the model to accept either 'id' or '_id'
