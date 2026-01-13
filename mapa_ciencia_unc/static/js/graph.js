@@ -636,11 +636,41 @@ const state = {
   selectedNode: null,
 };
 
+// Tooltip element
+const tooltipEl = document.getElementById("node-tooltip");
+
+// Track mouse position for tooltip
+let mouseX = 0;
+let mouseY = 0;
+
+container.addEventListener("mousemove", (event) => {
+  mouseX = event.clientX;
+  mouseY = event.clientY;
+
+  // Update tooltip position if visible
+  if (tooltipEl && tooltipEl.classList.contains("visible")) {
+    tooltipEl.style.left = `${mouseX + 15}px`;
+    tooltipEl.style.top = `${mouseY + 15}px`;
+  }
+});
+
 renderer.on("enterNode", ({ node }) => {
   if (state.selectedNode) return;
   state.hoveredNode = node;
   state.hoveredNeighbors = new Set(graph.neighbors(node));
   renderer.refresh();
+
+  // Show tooltip for researcher nodes
+  const nodeType = graph.getNodeAttribute(node, "nodeType");
+  if (nodeType === "researcher" && tooltipEl) {
+    const description = graph.getNodeAttribute(node, "description");
+    if (description) {
+      tooltipEl.textContent = description;
+      tooltipEl.style.left = `${mouseX + 15}px`;
+      tooltipEl.style.top = `${mouseY + 15}px`;
+      tooltipEl.classList.add("visible");
+    }
+  }
 });
 
 renderer.on("leaveNode", () => {
@@ -648,6 +678,11 @@ renderer.on("leaveNode", () => {
   state.hoveredNode = null;
   state.hoveredNeighbors = new Set();
   renderer.refresh();
+
+  // Hide tooltip
+  if (tooltipEl) {
+    tooltipEl.classList.remove("visible");
+  }
 });
 
 renderer.on("clickNode", ({ node }) => {

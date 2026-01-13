@@ -427,6 +427,24 @@
     margin: 0.5rem 0 0 0;
     font-size: 1.1rem;
   }
+  .node-tooltip {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    max-width: 250px;
+    white-space: normal;
+    line-height: 1.4;
+  }
+  .node-tooltip.visible {
+    opacity: 1;
+  }
 </style>
 {% endblock %}
 
@@ -481,6 +499,7 @@
   <div id="graph-wrapper">
     <div id="container"></div>
     <div id="color-legend" class="color-legend"></div>
+    <div id="node-tooltip" class="node-tooltip"></div>
   </div>
   </main>
 </div>
