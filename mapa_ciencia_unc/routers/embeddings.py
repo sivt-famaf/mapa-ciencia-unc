@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from beanie import PydanticObjectId
 
 from mapa_ciencia_unc.auth import require_auth
@@ -10,6 +10,7 @@ from mapa_ciencia_unc.models.embedding import (
     EmbeddingDocument,
 )
 from mapa_ciencia_unc.llms.embedding_generator import EmbeddingGenerator
+from mapa_ciencia_unc.services.embedding_index import get_embedding_index_manager
 
 router = APIRouter(
     prefix="/api/embeddings", tags=["embeddings"], dependencies=[Depends(require_auth)]
@@ -326,3 +327,153 @@ async def delete_embeddings_by_tag(tag: str):
         "deleted_count": deleted_count,
         "researchers_affected": researchers_affected,
     }
+
+
+@router.get("/indexes", response_model=dict)
+async def list_loaded_indexes():
+    """
+    Get information about currently loaded FAISS indexes in memory.
+
+    Returns details about each loaded index including:
+    - tag: Embedding tag identifier
+    - model: Model used to generate embeddings
+    - num_vectors: Number of vectors in the index
+    - loaded_at: When the index was loaded
+
+    This is useful for monitoring which indexes are available for fast similarity search.
+
+    Returns:
+    ```json
+    {
+        "loaded_indexes": [
+            {
+                "tag": "v1_embeddings",
+                "model": "gemini-embedding-001",
+                "num_vectors": 1523,
+                "loaded_at": "2024-01-13T10:30:00"
+            }
+        ],
+        "total_indexes": 1
+    }
+    ```
+    """
+    index_manager = get_embedding_index_manager()
+    loaded = index_manager.get_loaded_indexes()
+
+    indexes_info = [
+        {
+            "tag": tag,
+            "model": model,
+            "num_vectors": num_vectors,
+            "loaded_at": loaded_at.isoformat(),
+        }
+        for tag, model, num_vectors, loaded_at in loaded
+    ]
+
+    return {"loaded_indexes": indexes_info, "total_indexes": len(indexes_info)}
+
+
+@router.post("/indexes/rebuild", response_model=dict)
+async def rebuild_index(tag: str, model: str):
+    """
+    Manually rebuild a FAISS index from the database.
+
+    This is useful when:
+    - New embeddings have been added
+    - Embeddings have been updated
+    - You want to refresh the in-memory index
+
+    The index will be reloaded from MongoDB and cached in memory.
+
+    Query Parameters:
+    - tag: Tag identifier for the index to rebuild
+    - model: Model identifier for the index to rebuild
+
+    Returns:
+    ```json
+    {
+        "message": "Index rebuilt successfully",
+        "tag": "v1_embeddings",
+        "model": "gemini-embedding-001",
+        "num_vectors": 1523
+    }
+    ```
+    """
+    index_manager = get_embedding_index_manager()
+
+    try:
+        await index_manager.rebuild_index(tag, model)
+
+        # Get updated info
+        loaded = index_manager.get_loaded_indexes()
+        matching = [
+            (t, m, n, la) for t, m, n, la in loaded if t == tag and m == model
+        ]
+
+        if matching:
+            _, _, num_vectors, _ = matching[0]
+            return {
+                "message": "Index rebuilt successfully",
+                "tag": tag,
+                "model": model,
+                "num_vectors": num_vectors,
+            }
+        else:
+            return {
+                "message": "Index rebuilt but not found in loaded indexes",
+                "tag": tag,
+                "model": model,
+            }
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to rebuild index: {str(e)}",
+        )
+
+
+@router.delete("/indexes/clear")
+async def clear_index(tag: str, model: str):
+    """
+    Clear a specific FAISS index from memory.
+
+    This removes the index from memory but doesn't delete the embeddings
+    from the database. The index can be reloaded later if needed.
+
+    Useful for:
+    - Freeing up memory
+    - Managing memory usage in production
+
+    Query Parameters:
+    - tag: Tag identifier for the index to clear
+    - model: Model identifier for the index to clear
+
+    Returns:
+    ```json
+    {
+        "message": "Index cleared from memory",
+        "tag": "v1_embeddings",
+        "model": "gemini-embedding-001"
+    }
+    ```
+    """
+    index_manager = get_embedding_index_manager()
+
+    cleared = index_manager.clear_index(tag, model)
+
+    if cleared:
+        return {
+            "message": "Index cleared from memory",
+            "tag": tag,
+            "model": model,
+        }
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No index found for tag='{tag}' and model='{model}'",
+        )

@@ -30,6 +30,7 @@ dependencies = [
     "jose>=1.0.0",
     "google-genai>=1.56.0",
     "umap-learn>=0.5.9.post2",
+    "faiss-cpu>=1.7.4",
 ]
 
 [project.optional-dependencies]
