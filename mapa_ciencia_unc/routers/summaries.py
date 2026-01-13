@@ -131,7 +131,7 @@ async def generate_summaries(req: SummaryRequest):
     if not isinstance(content, str):
         content = json.dumps(content)
 
-    new_summary = Summary(
+    new_summary = Summary.from_content(
         model=req.model,
         tag=req.tag,
         content=content,
@@ -204,7 +204,7 @@ async def upload_multiple_summaries(payload: MultipleSummariesCreate):
                 logger.warning(f"Researcher with identifier '{identifier}' not found")
                 continue
 
-            summary = Summary(
+            summary = Summary.from_content(
                 model=payload.model,
                 tag=payload.tag,
                 content=content,
@@ -275,7 +275,7 @@ async def delete_summaries_by_tag(tag: str):
     }
     ```
     """
-    researchers = await Researcher.find_all().to_list()
+    researchers = await Researcher.find({}).to_list()
 
     deleted_count = 0
     researchers_affected = 0
