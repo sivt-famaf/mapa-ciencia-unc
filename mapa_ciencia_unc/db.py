@@ -8,6 +8,7 @@ from mapa_ciencia_unc.models.project import Project, ProjectExtractedIntro
 from mapa_ciencia_unc.models.agreement import Agreement
 from mapa_ciencia_unc.models.research_topic import ResearchTopic
 from mapa_ciencia_unc.models.graph import ResearcherGraph
+from mapa_ciencia_unc.models.embedding import EmbeddingDocument
 
 
 async def init_db():
@@ -29,5 +30,6 @@ async def init_db():
             Agreement,
             ResearchTopic,
             ResearcherGraph,
+            EmbeddingDocument,
         ],
     )

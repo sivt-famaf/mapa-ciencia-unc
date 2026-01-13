@@ -11,6 +11,7 @@ from mapa_ciencia_unc.models.researcher import Researcher
 from mapa_ciencia_unc.models.research_topic import ResearchTopic
 from mapa_ciencia_unc.models.project import ProjectExtractedIntro
 from mapa_ciencia_unc.models.article import Article
+from mapa_ciencia_unc.models.embedding import EmbeddingDocument
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import umap
@@ -44,7 +45,7 @@ async def get_researcher_embedding(
     """
     Retrieve researchers and their embedding vectors for a specific tag and model.
 
-    Uses MongoDB aggregation to efficiently filter researchers who have embeddings
+    Queries the EmbeddingDocument collection to efficiently find embeddings
     matching the specified tag and model. For each researcher, returns the most
     recently created embedding.
 
@@ -59,44 +60,62 @@ async def get_researcher_embedding(
 
         Both lists are aligned by index (researchers[i] corresponds to vectors[i])
     """
+    # Use aggregation to get the most recent embedding per researcher
     pipeline = [
-        # 1. First, find the researchers who have at least one matching embedding
-        {"$match": {"embeddings": {"$elemMatch": {"tag": tag, "model": model}}}},
-        # 2. Redefine the 'embeddings' field to only contain the matches
+        # Match embeddings with the specified tag and model
+        {"$match": {"tag": tag, "model": model}},
+        # Sort by created_at descending to get most recent first
+        {"$sort": {"created_at": -1}},
+        # Group by researcher_id and take the first (most recent) embedding
         {
-            "$addFields": {
-                "embeddings": {
-                    "$filter": {
-                        "input": "$embeddings",
-                        "as": "emb",
-                        "cond": {
-                            "$and": [
-                                {"$eq": ["$$emb.tag", tag]},
-                                {"$eq": ["$$emb.model", model]},
-                            ]
-                        },
-                    }
-                }
+            "$group": {
+                "_id": "$researcher_id",
+                "vector": {"$first": "$vector"},
+                "created_at": {"$first": "$created_at"},
             }
         },
     ]
 
-    researchers = await Researcher.aggregate(
-        pipeline, projection_model=Researcher
+    embedding_results = await EmbeddingDocument.aggregate(pipeline).to_list()
+
+    if not embedding_results:
+        logger.warning(
+            f"No embeddings found for tag='{tag}' and model='{model}'"
+        )
+        return [], []
+
+    # Extract researcher IDs and vectors
+    researcher_ids = [result["_id"] for result in embedding_results]
+    vectors = [result["vector"] for result in embedding_results]
+
+    # Fetch corresponding researchers
+    researchers = await Researcher.find(
+        {"_id": {"$in": researcher_ids}}, fetch_links=False
     ).to_list()
 
-    # Filter embeddings per researcher and get the most recent one
-    vectors = []
-    for researcher in researchers:
-        embeddings_sorted = sorted(
-            researcher.embeddings,
-            key=lambda emb: emb.created_at,
-            reverse=True,
-        )
-        latest_embedding = embeddings_sorted[0]
-        vectors.append(latest_embedding.vector)
+    # Create a mapping from researcher_id to researcher for alignment
+    researcher_map = {str(r.id): r for r in researchers}
 
-    return researchers, vectors
+    # Align researchers and vectors by researcher_id order
+    aligned_researchers = []
+    aligned_vectors = []
+
+    for researcher_id, vector in zip(researcher_ids, vectors):
+        researcher_id_str = str(researcher_id)
+        if researcher_id_str in researcher_map:
+            aligned_researchers.append(researcher_map[researcher_id_str])
+            aligned_vectors.append(vector)
+        else:
+            logger.warning(
+                f"Researcher with id {researcher_id_str} not found, skipping"
+            )
+
+    logger.info(
+        f"Retrieved {len(aligned_researchers)} researchers with embeddings "
+        f"for tag='{tag}' and model='{model}'"
+    )
+
+    return aligned_researchers, aligned_vectors
 
 
 async def get_research_topics_and_mapping(

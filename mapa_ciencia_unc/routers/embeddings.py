@@ -4,10 +4,10 @@ from beanie import PydanticObjectId
 from mapa_ciencia_unc.auth import require_auth
 from mapa_ciencia_unc.models.researcher import Researcher
 from mapa_ciencia_unc.models.embedding import (
-    Embedding,
     EmbeddingCreate,
     EmbeddingRequest,
     MultipleEmbeddingsUpload,
+    EmbeddingDocument,
 )
 from mapa_ciencia_unc.llms.embedding_generator import EmbeddingGenerator
 
@@ -107,28 +107,30 @@ async def generate_researcher_embedding(
             detail="Failed to generate embedding.",
         )
 
-    # Remove existing embeddings with the same tag
-    researcher.embeddings = [
-        e for e in researcher.embeddings if e.tag != req.embedding_tag
-    ]
+    # Remove existing embeddings with the same tag and model
+    await EmbeddingDocument.find(
+        EmbeddingDocument.researcher_id == researcher.id,
+        EmbeddingDocument.tag == req.embedding_tag,
+        EmbeddingDocument.model == req.model,
+    ).delete()
 
-    embedding = Embedding(
-        model=req.model,
+    # Create new embedding document
+    embedding_doc = EmbeddingDocument(
+        researcher_id=researcher.id,
         vector=vector,
-        dimensions=len(vector),
         tag=req.embedding_tag,
+        model=req.model,
+        dimensions=len(vector),
     )
 
-    researcher.embeddings.append(embedding)
-
-    await researcher.save()
+    await embedding_doc.insert()
 
     return {
         "researcher_id": str(researcher.id),
         "summary_tag": req.summary_tag,
         "embedding_tag": req.embedding_tag,
         "model": req.model,
-        "dimensions": embedding.dimensions,
+        "dimensions": embedding_doc.dimensions,
     }
 
 
@@ -194,37 +196,35 @@ async def upload_multiple_embeddings(payload: MultipleEmbeddingsUpload):
                 failed_embeddings.append(identifier)
                 continue
 
-            embedding = Embedding(
-                model=payload.model,
-                vector=vector,
-                dimensions=len(vector),
-                tag=payload.tag,
-            )
-
             if not payload.overwrite:
                 # Check if an embedding with the same model and tag already exists
-                existing_embedding = next(
-                    (
-                        e
-                        for e in researcher.embeddings
-                        if e.model == payload.model and e.tag == payload.tag
-                    ),
-                    None,
+                existing_embedding = await EmbeddingDocument.find_one(
+                    EmbeddingDocument.researcher_id == researcher.id,
+                    EmbeddingDocument.model == payload.model,
+                    EmbeddingDocument.tag == payload.tag,
                 )
                 if existing_embedding:
                     skipped_embeddings[identifier] = "Embedding with tag already exists"
                     continue  # Skip creating this embedding
+
             if payload.overwrite:
                 # Remove existing embeddings with the same model and tag
-                researcher.embeddings = [
-                    e
-                    for e in researcher.embeddings
-                    if not (e.model == payload.model and e.tag == payload.tag)
-                ]
+                await EmbeddingDocument.find(
+                    EmbeddingDocument.researcher_id == researcher.id,
+                    EmbeddingDocument.model == payload.model,
+                    EmbeddingDocument.tag == payload.tag,
+                ).delete()
 
-            researcher.embeddings.append(embedding)
+            # Create new embedding document
+            embedding_doc = EmbeddingDocument(
+                researcher_id=researcher.id,
+                vector=vector,
+                tag=payload.tag,
+                model=payload.model,
+                dimensions=len(vector),
+            )
 
-            await researcher.save()
+            await embedding_doc.insert()
             created_embeddings += 1
         except Exception:
             failed_embeddings.append(identifier)
@@ -236,8 +236,24 @@ async def upload_multiple_embeddings(payload: MultipleEmbeddingsUpload):
     }
 
 
-@router.post("/researcher/{researcher_id}/upload", response_model=Researcher)
+@router.post("/researcher/{researcher_id}/upload", response_model=dict)
 async def create_researcher_embedding(researcher_id: str, payload: EmbeddingCreate):
+    """
+    Upload a pre-computed embedding for a researcher.
+
+    Creates an embedding document in the database for the specified researcher.
+
+    **Request Body:**
+    - `model`: Model name used to generate the embedding
+    - `vector`: The embedding vector (list of floats)
+    - `tag`: Tag to assign to this embedding
+
+    **Returns:**
+    - `researcher_id`: ID of the researcher
+    - `tag`: Tag assigned to the embedding
+    - `model`: Model used for the embedding
+    - `dimensions`: Dimensionality of the vector
+    """
     researcher = await Researcher.get(
         PydanticObjectId(researcher_id), fetch_links=False
     )
@@ -247,15 +263,23 @@ async def create_researcher_embedding(researcher_id: str, payload: EmbeddingCrea
             detail="Researcher not found.",
         )
 
-    embedding = Embedding(
-        **payload.model_dump(),
+    # Create new embedding document
+    embedding_doc = EmbeddingDocument(
+        researcher_id=researcher.id,
+        vector=payload.vector,
+        tag=payload.tag,
+        model=payload.model,
         dimensions=len(payload.vector),
     )
 
-    researcher.embeddings.append(embedding)
+    await embedding_doc.insert()
 
-    await researcher.save()
-    return researcher
+    return {
+        "researcher_id": str(researcher.id),
+        "tag": payload.tag,
+        "model": payload.model,
+        "dimensions": embedding_doc.dimensions,
+    }
 
 
 @router.delete("/tag/{tag}")
@@ -263,7 +287,7 @@ async def delete_embeddings_by_tag(tag: str):
     """
     Delete all embeddings with the specified tag across all researchers.
 
-    Finds all researchers with embeddings matching the given tag and removes them.
+    Finds all embeddings matching the given tag and removes them from the database.
     Useful for cleanup or regenerating embeddings with different parameters.
 
     Args:
@@ -271,7 +295,7 @@ async def delete_embeddings_by_tag(tag: str):
 
     Returns:
         - deleted_count: Number of embeddings deleted
-        - researchers_affected: Number of researchers that had embeddings removed
+        - researchers_affected: Number of unique researchers that had embeddings removed
 
     Example:
     ```
@@ -286,28 +310,17 @@ async def delete_embeddings_by_tag(tag: str):
     }
     ```
     """
-    researchers = await Researcher.find_all().to_list()
+    # Find all embeddings with this tag
+    embeddings_to_delete = await EmbeddingDocument.find(
+        EmbeddingDocument.tag == tag
+    ).to_list()
 
-    deleted_count = 0
-    researchers_affected = 0
+    # Count unique researchers
+    researchers_affected = len(set(e.researcher_id for e in embeddings_to_delete))
+    deleted_count = len(embeddings_to_delete)
 
-    for researcher in researchers:
-        # Count embeddings with this tag
-        embeddings_before = len(researcher.embeddings)
-
-        # Remove embeddings with the specified tag
-        researcher.embeddings = [
-            e for e in researcher.embeddings if e.tag != tag
-        ]
-
-        embeddings_after = len(researcher.embeddings)
-        embeddings_removed = embeddings_before - embeddings_after
-
-        # Save if embeddings were removed
-        if embeddings_removed > 0:
-            await researcher.save()
-            deleted_count += embeddings_removed
-            researchers_affected += 1
+    # Delete all embeddings with this tag
+    await EmbeddingDocument.find(EmbeddingDocument.tag == tag).delete()
 
     return {
         "deleted_count": deleted_count,

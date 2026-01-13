@@ -9,6 +9,7 @@ from mapa_ciencia_unc.models.researcher import (
     Researcher,
     ResearcherCreate,
 )
+from mapa_ciencia_unc.models.embedding import EmbeddingDocument
 
 
 router = APIRouter(
@@ -106,15 +107,13 @@ async def list_embeddings():
     - count (How many researchers have this embedding)
     """
     pipeline = [
-        # Flatten the embeddings array
-        {"$unwind": "$embeddings"},
-        # Group by unique pair
+        # Group by unique (model, tag) pair
         {
             "$group": {
-                "_id": {"model": "$embeddings.model", "tag": "$embeddings.tag"},
+                "_id": {"model": "$model", "tag": "$tag"},
                 # Take dimensions from the first document found in this group
-                "dimensions": {"$first": "$embeddings.dimensions"},
-                # Still counting occurrences
+                "dimensions": {"$first": "$dimensions"},
+                # Count unique researchers with this embedding
                 "count": {"$sum": 1},
             }
         },
@@ -132,8 +131,7 @@ async def list_embeddings():
         {"$sort": {"model": 1, "tag": 1}},
     ]
 
-    # 1. Prepare the query (No I/O happens here)
-    query = await Researcher.aggregate(pipeline).to_list()
+    query = await EmbeddingDocument.aggregate(pipeline).to_list()
 
     return query
 
