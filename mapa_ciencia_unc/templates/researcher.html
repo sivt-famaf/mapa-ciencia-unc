@@ -377,7 +377,7 @@
   <header>
     <div class="title">
       <h1>{{ researcher.name }} {{ researcher.last_name }}</h1>
-      <p class="breadcrumb">Researcher profile overview</p>
+      <p class="breadcrumb">{{ researcher.research_center }}</p>
     </div>
     {% if researcher.tag %}
     <span class="tag-pill">tag: {{ researcher.tag }} model: {{ researcher.model }}</span>
@@ -389,10 +389,6 @@
       <h3>Research Area</h3>
       <p id="research-area-text">{{ researcher.research_area }}</p>
     </article>
-    <article class="info-card" onclick="openModal('Center', `{{ researcher.research_center }}`)">
-      <h3>Center</h3>
-      <p id="center-text">{{ researcher.research_center }}</p>
-    </article>
     <article class="info-card" onclick="openModal('Latest Project', `{{ researcher.last_project_title }}`)">
       <h3>Latest Project</h3>
       <p id="project-text">{{ researcher.last_project_title }}</p>
@@ -401,7 +397,7 @@
 
   {% if researcher.summary %}
   <section class="summary">
-    <h2>Summary{% if researcher.tag %} · {{ researcher.tag }} {% endif %}{% if researcher.model %} · {{ researcher.model }}{% endif %}</h2>
+    <h2>Resumen</h2>
     <div class="summary-content" id="summaryContent">{{ researcher.summary }}</div>
   </section>
   {% elif researcher.tag %}
@@ -426,7 +422,7 @@
             {{ project.intro }}
           </p>
           <div class="project-meta">
-            <span>Project code: {{ project.codigo_tramite }}</span>
+            <span>Código de trámite: {{ project.codigo_tramite }}</span>
           </div>
         </div>
         <div class="project-actions">
@@ -437,7 +433,7 @@
             data-code="{{ project.codigo_tramite }}"
             aria-label="Preview intro"
           >
-            🔍
+            <iconify-icon icon="heroicons:eye" width="20" height="20"></iconify-icon>
           </button>
           <a
             class="download-btn"
@@ -446,20 +442,20 @@
             rel="noopener"
             title="Download {{ project.codigo_tramite }}"
           >
-            &#8681;
+            <iconify-icon icon="heroicons:arrow-down-tray" width="20" height="20"></iconify-icon>
           </a>
         </div>
       </li>
       {% endfor %}
     </ul>
     {% else %}
-    <div class="summary-empty">No projects available.</div>
+    <div class="summary-empty">No hay projectos disponibles.</div>
     {% endif %}
   </section>
 
   {% set article_list = articles|default([], true) %}
   <section class="articles">
-    <h2>Articles ({{ article_list|length }})</h2>
+    <h2>Artículos ({{ article_list|length }})</h2>
     {% if article_list %}
     <ul class="article-list">
       {% for article in article_list %}
@@ -481,14 +477,14 @@
             data-title="{{ article.titulo }}"
             aria-label="Preview article summary"
           >
-            🔍
+            <iconify-icon icon="heroicons:eye" width="20" height="20"></iconify-icon>
           </button>
         </div>
       </li>
       {% endfor %}
     </ul>
     {% else %}
-    <div class="summary-empty">No articles available.</div>
+    <div class="summary-empty">No hay artículos disponibles.</div>
     {% endif %}
   </section>
 
@@ -509,9 +505,9 @@
 
   <div class="actions">
     <a href="/graph{% if graph_id %}?graph_id={{ graph_id }}{% elif graph_key %}?graph_id={{ graph_key }}{% elif researcher.tag and researcher.model %}?graph_id={{ researcher.tag }}_{{ researcher.model }}{% endif %}">
-      Back to Graph
+      Volver al Grafo
     </a>
-    <a href="/">Return Home</a>
+    <a href="/">Volver al inicio</a>
   </div>
   </main>
 </div>
