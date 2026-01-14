@@ -127,24 +127,42 @@
     padding: 0;
     margin: 0;
     display: grid;
-    gap: 0.6rem;
+    gap: 1rem;
+  }
+  .similar-item {
+    display: block;
   }
   .similar-item a {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
+    display: block;
+    padding: 1rem 1.25rem;
     border-radius: 4px;
     background: #111;
-    border: 1px solid #fff;
+    border: 1px solid #2a2a2a;
     color: #fff;
     text-decoration: none;
     transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
   }
   .similar-item a:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     background: #1c1c1c;
-    border-color: #fff;
+    border-color: #3a3a3a;
+  }
+  .similar-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #fff;
+    margin-bottom: 0.35rem;
+  }
+  .similar-unit {
+    font-size: 0.9rem;
+    color: #b3b3b3;
+    margin-bottom: 0.5rem;
+  }
+  .similar-brief {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #e6e6e6;
+    margin-bottom: 0.75rem;
   }
   .download-list {
     list-style: none;
@@ -495,8 +513,17 @@
       {% for sim in similar_researchers %}
       <li class="similar-item">
         <a href="/researcher/{{ sim.researcher_id }}{% if graph_id %}?graph_id={{ graph_id }}{% endif %}">
-          {{ sim.last_name }}, {{ sim.name }} ({{ sim.research_center }})
-          <br>{{ sim.research_area }}
+          <div class="similar-name">{{ sim.name }} {{ sim.last_name }}</div>
+          <div class="similar-unit">
+            {% if sim.academic_units %}
+              {{ sim.academic_units|join(', ') }}
+            {% else %}
+              {{ sim.research_center }}
+            {% endif %}
+          </div>
+          {% if sim.summary_brief %}
+          <div class="similar-brief">{{ sim.summary_brief }}</div>
+          {% endif %}
         </a>
       </li>
       {% endfor %}

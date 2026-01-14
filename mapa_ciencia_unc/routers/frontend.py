@@ -177,6 +177,8 @@ async def researcher_view(
         tag=graph.embedding.tag,
         model=graph.embedding.model,
         n=3,
+        summary_tag=graph.summary.tag,
+        summary_model=graph.summary.model,
     )
 
     return templates.TemplateResponse(
@@ -190,6 +192,14 @@ async def researcher_view(
             "graph_id": graph_id,
         },
     )
+
+
+@router.get("/search", response_class=HTMLResponse)
+async def search_page(request: Request):
+    """Page for searching researchers by profile characteristics."""
+    if not _token_is_valid(request):
+        return REDIRECT_TO_LOGIN
+    return templates.TemplateResponse("search.html", {"request": request})
 
 
 @router.get("/login", response_class=HTMLResponse, include_in_schema=False)

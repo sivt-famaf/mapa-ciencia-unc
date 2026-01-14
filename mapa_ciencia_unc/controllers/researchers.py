@@ -8,7 +8,14 @@ from beanie import PydanticObjectId
 logger = logging.getLogger(__name__)
 
 
-async def get_similar_researchers(cuit: str, tag: str, model: str, n: int = 3):
+async def get_similar_researchers(
+    cuit: str,
+    tag: str,
+    model: str,
+    n: int = 3,
+    summary_tag: str | None = None,
+    summary_model: str | None = None,
+):
     """
     Find researchers similar to the target researcher using FAISS-based vector search.
 
@@ -23,6 +30,8 @@ async def get_similar_researchers(cuit: str, tag: str, model: str, n: int = 3):
         tag: Embedding tag to use for similarity search
         model: Embedding model to use for similarity search
         n: Number of similar researchers to return (default: 3)
+        summary_tag: Optional tag for the summary to include (default: None)
+        summary_model: Optional model for the summary to include (default: None)
 
     Returns:
         List of dictionaries containing similar researcher information:
@@ -31,7 +40,9 @@ async def get_similar_researchers(cuit: str, tag: str, model: str, n: int = 3):
                 "name": "Juan",
                 "last_name": "Pérez",
                 "research_center": "CIEM",
-                "researcher_id": "507f1f77bcf86cd799439011"
+                "research_area": "Inteligencia Artificial",
+                "researcher_id": "507f1f77bcf86cd799439011",
+                "summary": "Researcher working on..." (if summary_tag/model provided)
             },
             ...
         ]
@@ -99,15 +110,35 @@ async def get_similar_researchers(cuit: str, tag: str, model: str, n: int = 3):
     for researcher_id, distance in filtered_results:
         if researcher_id in researcher_map:
             researcher = researcher_map[researcher_id]
-            result.append(
-                {
-                    "name": researcher.name,
-                    "last_name": researcher.last_name,
-                    "research_center": researcher.research_center,
-                    "researcher_id": researcher_id,
-                    "research_area": researcher.research_area,
-                }
-            )
+
+            # Build basic researcher info
+            researcher_info = {
+                "name": researcher.name,
+                "last_name": researcher.last_name,
+                "research_center": researcher.research_center,
+                "researcher_id": researcher_id,
+                "research_area": researcher.research_area,
+                "academic_units": researcher.academic_units,
+            }
+
+            # Add summary if tag and model are provided
+            if summary_tag and summary_model:
+                summary_obj = next(
+                    (
+                        s
+                        for s in researcher.summaries
+                        if s.tag == summary_tag and s.model == summary_model
+                    ),
+                    None,
+                )
+                if summary_obj:
+                    researcher_info["summary_brief"] = summary_obj.brief
+                    researcher_info["summary_full"] = summary_obj.content
+                else:
+                    researcher_info["summary_brief"] = None
+                    researcher_info["summary_full"] = None
+
+            result.append(researcher_info)
 
     logger.info(f"Found {len(result)} similar researchers for {cuit}")
     return result
