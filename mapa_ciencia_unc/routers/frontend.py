@@ -59,6 +59,7 @@ class ResearcherSearchResult(BaseModel):
     last_name: str = Field(description="Researcher's last name")
     research_center: str = Field(description="Research center affiliation")
     research_area: str | None = Field(description="Research area")
+    summary_brief: str | None = Field(description="Brief summary of researcher")
     distance: float = Field(description="Distance from query (lower is more similar)")
     similarity_score: float = Field(description="Similarity score (0-1, higher is more similar)")
 
@@ -215,6 +216,8 @@ async def semantic_search(
     tag: str = Query("embeddings_v1", description="Embedding tag to search in"),
     n: int = Query(10, ge=1, le=100, description="Number of results to return (1-100)"),
     output_dim: int = Query(512, ge=128, le=2048, description="Embedding dimensionality"),
+    summary_tag: str = Query("complete", description="Summary tag to retrieve"),
+    summary_model: str = Query("gemini-2.5-pro", description="Summary model to retrieve"),
 ):
     """
     Perform semantic search to find researchers similar to a text query.
@@ -320,6 +323,19 @@ async def semantic_search(
             # Using inverse distance: similarity = 1 / (1 + distance)
             similarity_score = 1.0 / (1.0 + distance)
 
+            # Extract summary brief if available
+            summary_brief_text = None
+            summary_obj = next(
+                (
+                    s
+                    for s in researcher.summaries
+                    if s.tag == summary_tag and s.model == summary_model
+                ),
+                None,
+            )
+            if summary_obj:
+                summary_brief_text = summary_obj.brief
+
             results.append(
                 ResearcherSearchResult(
                     researcher_id=researcher_id,
@@ -327,6 +343,7 @@ async def semantic_search(
                     last_name=researcher.last_name,
                     research_center=researcher.research_center,
                     research_area=researcher.research_area,
+                    summary_brief=summary_brief_text,
                     distance=float(distance),
                     similarity_score=float(similarity_score),
                 )
