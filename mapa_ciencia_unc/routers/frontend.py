@@ -211,10 +211,10 @@ async def login_page(request: Request):
 async def semantic_search(
     request: Request,
     query: str = Query(..., description="Search query text", min_length=1),
-    model: str = Query(..., description="Embedding model name (e.g., 'gemini-embedding-001')"),
-    tag: str = Query(..., description="Embedding tag to search in"),
+    model: str = Query("gemini-embedding-001", description="Embedding model name"),
+    tag: str = Query("embeddings_v1", description="Embedding tag to search in"),
     n: int = Query(10, ge=1, le=100, description="Number of results to return (1-100)"),
-    output_dim: int = Query(512, ge=128, le=2048, description="Embedding dimensionality (default: 768)"),
+    output_dim: int = Query(512, ge=128, le=2048, description="Embedding dimensionality"),
 ):
     """
     Perform semantic search to find researchers similar to a text query.

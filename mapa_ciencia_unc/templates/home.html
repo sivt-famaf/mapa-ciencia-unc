@@ -5,13 +5,10 @@
   .section {
     max-width: 1200px;
     width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 60px;
-    align-items: center;
   }
   .text-content {
-    padding-right: 20px;
+    text-align: center;
+    margin-bottom: 3rem;
   }
   .text-content h1 {
     font-size: 3rem;
@@ -22,6 +19,13 @@
     font-size: 1.2rem;
     line-height: 1.6;
     color: #ccc;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
   }
   .card {
     background: #1a1a1a;
@@ -36,9 +40,15 @@
     transform: translateY(-5px);
   }
   .card h2 {
-    font-size: 2.5rem;
-    margin-bottom: 2rem;
+    font-size: 2rem;
+    margin-bottom: 1rem;
     color: #fff;
+  }
+  .card p {
+    font-size: 1rem;
+    color: #b3b3b3;
+    margin-bottom: 2rem;
+    line-height: 1.5;
   }
   .cta-button {
     display: inline-block;
@@ -57,13 +67,9 @@
     transform: scale(1.05);
   }
   @media (max-width: 768px) {
-    .section {
+    .cards-grid {
       grid-template-columns: 1fr;
-      gap: 40px;
-    }
-    .text-content {
-      padding-right: 0;
-      text-align: center;
+      gap: 1.5rem;
     }
     .text-content h1 {
       font-size: 2rem;
@@ -82,18 +88,27 @@
 <div class="content-wrapper">
   <main>
     <div class="section">
-    <div class="text-content">
-      <h1>Mapa Ciencia UNC</h1>
-      <p>
-        Explorá la red de investigación de la Universidad Nacional de Córdoba.
-        Descubrí conexiones entre investigadores, publicaciones y áreas de conocimiento
-        para impulsar la colaboración científica.
-      </p>
-    </div>
+      <div class="text-content">
+        <h1>Mapa Ciencia UNC</h1>
+        <p>
+          Explorá la red de investigación de la Universidad Nacional de Córdoba.
+          Descubrí conexiones entre investigadores, publicaciones y áreas de conocimiento
+          para impulsar la colaboración científica.
+        </p>
+      </div>
 
-      <div class="card">
-        <h2>Producción Científica</h2>
-        <a href="/graph" class="cta-button">Ver Red de Investigadores</a>
+      <div class="cards-grid">
+        <div class="card">
+          <h2>Red de Investigadores</h2>
+          <p>Visualizá las conexiones entre investigadores y áreas de conocimiento</p>
+          <a href="/graph" class="cta-button">Ver Red</a>
+        </div>
+
+        <div class="card">
+          <h2>Búsqueda de Perfiles</h2>
+          <p>Encontrá investigadores según las características que buscás</p>
+          <a href="/search" class="cta-button">Buscar</a>
+        </div>
       </div>
     </div>
   </main>
