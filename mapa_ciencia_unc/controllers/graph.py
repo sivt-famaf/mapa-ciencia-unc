@@ -422,7 +422,7 @@ async def compute_graph(
     nodes = []
     for researcher, (x, y) in zip(researchers, researcher_positions):
         if researcher.research_area:
-            description = f"{researcher.research_area} at {researcher.research_center}"
+            description = f"{researcher.research_center} - {researcher.research_area}"
         else:
             description = f"{researcher.research_center}"
 

@@ -496,6 +496,7 @@
       <li class="similar-item">
         <a href="/researcher/{{ sim.researcher_id }}{% if graph_id %}?graph_id={{ graph_id }}{% endif %}">
           {{ sim.last_name }}, {{ sim.name }} ({{ sim.research_center }})
+          <br>{{ sim.research_area }}
         </a>
       </li>
       {% endfor %}
