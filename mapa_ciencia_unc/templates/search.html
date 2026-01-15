@@ -80,6 +80,28 @@
     min-height: 100px;
     resize: vertical;
   }
+  .search-type-selector {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+  }
+  .radio-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: #e6e6e6;
+    font-size: 1rem;
+  }
+  .radio-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #fff;
+  }
+  .radio-option:hover {
+    color: #fff;
+  }
   .search-button {
     width: 100%;
     padding: 0.85rem 1.5rem;
@@ -383,15 +405,46 @@
       </div>
 
       <form class="search-form" id="searchForm">
+      <!-- Search type selector -->
       <div class="form-group">
-        <label class="form-label" for="queryInput">Características de los perfiles a buscar</label>
-        <textarea
-          class="form-input form-textarea"
-          id="queryInput"
-          name="query"
-          placeholder="Ej: Investigadores que trabajan en inteligencia artificial aplicada a medicina..."
-          required
-        ></textarea>
+        <label class="form-label">Tipo de búsqueda</label>
+        <div class="search-type-selector">
+          <label class="radio-option">
+            <input type="radio" name="searchType" value="semantic" checked />
+            <span>Búsqueda semántica</span>
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="searchType" value="name" />
+            <span>Búsqueda por nombre</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Semantic search fields -->
+      <div id="semanticFields">
+        <div class="form-group">
+          <label class="form-label" for="queryInput">Características de los perfiles a buscar</label>
+          <textarea
+            class="form-input form-textarea"
+            id="queryInput"
+            name="query"
+            placeholder="Ej: Investigadores que trabajan en inteligencia artificial aplicada a medicina..."
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Name search fields -->
+      <div id="nameFields" style="display: none;">
+        <div class="form-group">
+          <label class="form-label" for="nameQueryInput">Nombre o apellido del investigador</label>
+          <input
+            type="text"
+            class="form-input"
+            id="nameQueryInput"
+            name="nameQuery"
+            placeholder="Ej: Juan Pérez, María González..."
+          />
+        </div>
       </div>
 
       <div class="form-group">
@@ -479,7 +532,26 @@
 <script>
   let selectedResearchers = new Map(); // Store researcher data: id -> {name, last_name, research_center, etc.}
   let currentResults = [];
-  let defaultGraphId = null; // Store default graph ID for researcher links
+
+  // Handle search type toggle
+  document.querySelectorAll('input[name="searchType"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      const semanticFields = document.getElementById('semanticFields');
+      const nameFields = document.getElementById('nameFields');
+
+      if (e.target.value === 'semantic') {
+        semanticFields.style.display = 'block';
+        nameFields.style.display = 'none';
+        document.getElementById('queryInput').required = true;
+        document.getElementById('nameQueryInput').required = false;
+      } else {
+        semanticFields.style.display = 'none';
+        nameFields.style.display = 'block';
+        document.getElementById('queryInput').required = false;
+        document.getElementById('nameQueryInput').required = true;
+      }
+    });
+  });
 
   // Get authentication token from cookie
   function getAuthToken() {
@@ -571,12 +643,27 @@
   document.getElementById('searchForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const query = document.getElementById('queryInput').value.trim();
+    const searchType = document.querySelector('input[name="searchType"]:checked').value;
     const limit = document.getElementById('limitInput').value;
 
-    if (!query) {
-      showError('Por favor ingresa las características que buscas');
-      return;
+    let query, endpoint, params;
+
+    if (searchType === 'semantic') {
+      query = document.getElementById('queryInput').value.trim();
+      if (!query) {
+        showError('Por favor ingresa las características que buscas');
+        return;
+      }
+      endpoint = '/api/search/semantic';
+      params = new URLSearchParams({ query, n: limit });
+    } else {
+      query = document.getElementById('nameQueryInput').value.trim();
+      if (!query) {
+        showError('Por favor ingresa un nombre o apellido');
+        return;
+      }
+      endpoint = '/api/search/by-name';
+      params = new URLSearchParams({ name: query, n: limit });
     }
 
     // Show loading, hide results and error
@@ -586,12 +673,7 @@
     document.getElementById('searchButton').disabled = true;
 
     try {
-      const params = new URLSearchParams({
-        query,
-        n: limit
-      });
-
-      const response = await fetch(`/api/search/semantic?${params}`, {
+      const response = await fetch(`${endpoint}?${params}`, {
         headers: getAuthHeaders()
       });
 
@@ -668,7 +750,7 @@
     document.querySelectorAll('.result-checkbox').forEach((checkbox, index) => {
       checkbox.addEventListener('change', (e) => {
         const researcherId = e.target.dataset.researcherId;
-        const researcher = data.results[index];
+        const researcher = currentResults[index];
 
         if (e.target.checked) {
           addResearcher(researcher);
@@ -747,6 +829,7 @@
   document.getElementById('clearSearchButton').addEventListener('click', () => {
     // Clear the search form
     document.getElementById('queryInput').value = '';
+    document.getElementById('nameQueryInput').value = '';
     document.getElementById('limitInput').value = '10';
 
     // Hide results section
@@ -760,8 +843,13 @@
     // Just scroll to top of page
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Focus on query input
-    document.getElementById('queryInput').focus();
+    // Focus on appropriate input based on search type
+    const searchType = document.querySelector('input[name="searchType"]:checked').value;
+    if (searchType === 'semantic') {
+      document.getElementById('queryInput').focus();
+    } else {
+      document.getElementById('nameQueryInput').focus();
+    }
   });
 </script>
 {% endblock %}

@@ -198,6 +198,84 @@ async def search_page(request: Request):
     return templates.TemplateResponse("search.html", {"request": request})
 
 
+@router.get("/api/search/by-name", response_model=SemanticSearchResponse)
+async def search_by_name(
+    request: Request,
+    name: str = Query(..., description="Name or last name to search", min_length=1),
+    n: int = Query(10, ge=1, le=100, description="Number of results to return (1-100)"),
+    summary_tag: str = Query("complete", description="Summary tag to retrieve"),
+    summary_model: str = Query("gemini-2.5-pro", description="Summary model to retrieve"),
+):
+    """
+    Search researchers by name or last name.
+
+    This endpoint searches for researchers whose name or last name contains the search term.
+    Results are sorted alphabetically by last name, then by name.
+
+    **Query Parameters:**
+    - `name`: Text to search in researcher names (case-insensitive)
+    - `n`: How many results to return (default: 10, max: 100)
+    - `summary_tag`: Which summary tag to retrieve
+    - `summary_model`: Which summary model to retrieve
+
+    **Returns:**
+    Similar format to semantic search, but with distance and similarity_score set to 0.
+    """
+    # Search for researchers by name (case-insensitive)
+    # Use regex for case-insensitive search
+    search_pattern = {"$regex": name, "$options": "i"}
+
+    researchers = await Researcher.find(
+        {
+            "$or": [
+                {"name": search_pattern},
+                {"last_name": search_pattern},
+            ]
+        },
+        fetch_links=False
+    ).sort([("last_name", 1), ("name", 1)]).limit(n).to_list()
+
+    # Build response
+    results = []
+    for researcher in researchers:
+        # Extract summary brief and content if available
+        summary_brief_text = None
+        summary_content_text = None
+        summary_obj = next(
+            (
+                s
+                for s in researcher.summaries
+                if s.tag == summary_tag and s.model == summary_model
+            ),
+            None,
+        )
+        if summary_obj:
+            summary_brief_text = summary_obj.brief
+            summary_content_text = summary_obj.content
+
+        results.append(
+            ResearcherSearchResult(
+                researcher_id=str(researcher.id),
+                name=researcher.name,
+                last_name=researcher.last_name,
+                research_center=researcher.research_center,
+                research_area=researcher.research_area,
+                summary_brief=summary_brief_text,
+                summary_content=summary_content_text,
+                distance=0.0,  # Not applicable for name search
+                similarity_score=1.0,  # Not applicable for name search
+            )
+        )
+
+    return SemanticSearchResponse(
+        query=name,
+        model="N/A",  # Not applicable for name search
+        tag="N/A",  # Not applicable for name search
+        results=results,
+        total_results=len(results),
+    )
+
+
 @router.get("/login", response_class=HTMLResponse, include_in_schema=False)
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
