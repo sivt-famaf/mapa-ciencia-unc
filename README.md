@@ -117,6 +117,18 @@ JWT_SECRET=your_jwt_secret_key_here
 
 # Application Settings
 API_PORT=8000
+
+# Model keys
+GEMINI_API_KEY=
+GEMINI_API_URL=
+INTERNAL_SWAGGER_KEY=
+
+# Ollama Configuration (for remote Ollama service)
+# Base URL of the remote Ollama server (e.g., http://192.168.1.100:11434 or http://ollama-server.example.com:11434)
+OLLAMA_HOST=https://chat.ccad.unc.edu.ar/
+OLLAMA_API_KEY=
+
+LOCAL_EMBEDDING_HOST=http://localhost:2904
 ```
 
 ## Set up MongoDB Database
