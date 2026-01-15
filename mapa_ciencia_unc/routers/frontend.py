@@ -60,6 +60,7 @@ class ResearcherSearchResult(BaseModel):
     research_center: str = Field(description="Research center affiliation")
     research_area: str | None = Field(description="Research area")
     summary_brief: str | None = Field(description="Brief summary of researcher")
+    summary_content: str | None = Field(description="Full summary content of researcher")
     distance: float = Field(description="Distance from query (lower is more similar)")
     similarity_score: float = Field(description="Similarity score (0-1, higher is more similar)")
 
@@ -119,7 +120,10 @@ async def other(request: Request):
 async def researcher_view(
     request: Request,
     researcher_id: str,
-    graph_id: str | None = None,
+    summary_tag: str = Query("complete", description="Summary tag to retrieve"),
+    summary_model: str = Query("gemini-2.5-pro", description="Summary model to retrieve"),
+    embedding_tag: str = Query("embeddings_v1", description="Embedding tag for similar researchers"),
+    embedding_model: str = Query("gemini-embedding-001", description="Embedding model for similar researchers"),
 ):
     if not _token_is_valid(request):
         return REDIRECT_TO_LOGIN
@@ -128,20 +132,8 @@ async def researcher_view(
     if not researcher_doc:
         return HTMLResponse(content="Researcher not found", status_code=404)
 
-    graph = (
-        await ResearcherGraph.find_one(
-            {"_id": PydanticObjectId(graph_id)},
-            projection_model=ResearcherGraphListItem,
-        )
-        if graph_id
-        else None
-    )
-
-    if not graph:
-        return HTMLResponse(content="Graph id not found", status_code=404)
-
     researcher_public_view = ResearcherPublicView.from_researcher(
-        researcher_doc, summary_tag=graph.summary.tag, summary_model=graph.summary.model
+        researcher_doc, summary_tag=summary_tag, summary_model=summary_model
     )
 
     project_files = await ProjectExtractedIntro.find(
@@ -175,11 +167,11 @@ async def researcher_view(
 
     similar_researchers = await get_similar_researchers(
         cuit=researcher_doc.cuit,
-        tag=graph.embedding.tag,
-        model=graph.embedding.model,
+        tag=embedding_tag,
+        model=embedding_model,
         n=3,
-        summary_tag=graph.summary.tag,
-        summary_model=graph.summary.model,
+        summary_tag=summary_tag,
+        summary_model=summary_model,
     )
 
     return templates.TemplateResponse(
@@ -190,7 +182,10 @@ async def researcher_view(
             "projects": projects,
             "articles": articles_list,
             "similar_researchers": similar_researchers,
-            "graph_id": graph_id,
+            "summary_tag": summary_tag,
+            "summary_model": summary_model,
+            "embedding_tag": embedding_tag,
+            "embedding_model": embedding_model,
         },
     )
 
@@ -323,8 +318,9 @@ async def semantic_search(
             # Using inverse distance: similarity = 1 / (1 + distance)
             similarity_score = 1.0 / (1.0 + distance)
 
-            # Extract summary brief if available
+            # Extract summary brief and content if available
             summary_brief_text = None
+            summary_content_text = None
             summary_obj = next(
                 (
                     s
@@ -335,6 +331,7 @@ async def semantic_search(
             )
             if summary_obj:
                 summary_brief_text = summary_obj.brief
+                summary_content_text = summary_obj.content
 
             results.append(
                 ResearcherSearchResult(
@@ -344,6 +341,7 @@ async def semantic_search(
                     research_center=researcher.research_center,
                     research_area=researcher.research_area,
                     summary_brief=summary_brief_text,
+                    summary_content=summary_content_text,
                     distance=float(distance),
                     similarity_score=float(similarity_score),
                 )
