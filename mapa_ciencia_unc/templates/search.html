@@ -14,8 +14,10 @@
     grid-template-columns: 60% 40%;
     gap: 2rem;
     align-items: flex-start;
+    max-width: 1600px;
+    margin: 0 auto;
   }
-  .search-column {
+  .portfolio-column {
     min-width: 0;
   }
   .selected-column {
@@ -391,19 +393,434 @@
     background: #1c1c1c;
     border-color: #fff;
   }
+  .add-researchers-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: #fff;
+    color: #000;
+    border: 2px solid #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 2rem;
+  }
+  .add-researchers-button:hover {
+    background: #e6e6e6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+  }
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    overflow: auto;
+  }
+  .modal.active {
+    display: block;
+  }
+  .modal-content {
+    background-color: #000;
+    margin: 2% auto;
+    padding: 0;
+    border: 2px solid #fff;
+    width: 90%;
+    max-width: 1400px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #2a2a2a;
+    background: #0a0a0a;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #fff;
+  }
+  .modal-close {
+    background: transparent;
+    border: 1px solid #666;
+    color: #999;
+    font-size: 1.5rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  .modal-close:hover {
+    background: #ff4444;
+    border-color: #ff4444;
+    color: #fff;
+  }
+  .modal-body {
+    padding: 2rem;
+  }
+  .main-selected-section {
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 4px;
+    padding: 2rem;
+  }
+  .main-selected-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  .main-selected-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #fff;
+  }
+  .main-selected-count {
+    font-size: 1.1rem;
+    color: #b3b3b3;
+  }
+  .main-selected-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1rem;
+  }
+  .main-selected-item {
+    padding: 1.25rem 1.5rem;
+    border-radius: 4px;
+    background: #111;
+    border: 1px solid #2a2a2a;
+    transition: all 0.2s ease;
+  }
+  .main-selected-item:hover {
+    background: #161616;
+    border-color: #3a3a3a;
+  }
+  .main-selected-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .main-selected-item-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #fff;
+    flex: 1;
+  }
+  .main-selected-item-name a {
+    color: #fff;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  .main-selected-item-name a:hover {
+    color: #e6e6e6;
+    text-decoration: underline;
+  }
+  .main-selected-item-unit {
+    font-size: 0.95rem;
+    color: #b3b3b3;
+  }
+  .main-selected-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #666;
+    font-size: 1.1rem;
+  }
+  .main-selected-actions {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #2a2a2a;
+    display: flex;
+    gap: 1rem;
+  }
+  .main-action-button {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    background: #fff;
+    color: #000;
+    border: 1px solid #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .main-action-button:hover {
+    background: #e6e6e6;
+    transform: translateY(-2px);
+  }
+  .main-action-button.secondary {
+    background: #0f0f0f;
+    color: #fff;
+    border-color: #3a3a3a;
+  }
+  .main-action-button.secondary:hover {
+    background: #1c1c1c;
+    border-color: #fff;
+  }
+  .portfolio-section {
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 4px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+  .portfolio-header {
+    margin-bottom: 1.5rem;
+  }
+  .portfolio-header h2 {
+    font-size: 1.5rem;
+    margin: 0 0 0.5rem 0;
+    color: #fff;
+  }
+  .portfolio-header p {
+    margin: 0;
+    color: #b3b3b3;
+    font-size: 0.95rem;
+  }
+  .portfolio-form {
+    margin-bottom: 2rem;
+  }
+  .portfolio-prompt-group {
+    margin-bottom: 1rem;
+  }
+  .portfolio-prompt-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #e6e6e6;
+  }
+  .portfolio-prompt-input {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+    line-height: 1.6;
+    min-height: 120px;
+    background: #000;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    color: #fff;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+  .portfolio-prompt-input:focus {
+    outline: none;
+    border-color: #fff;
+    background: #0a0a0a;
+  }
+  .portfolio-prompt-input::placeholder {
+    color: #666;
+  }
+  .generate-portfolio-button {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: #fff;
+    color: #000;
+    border: 2px solid #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .generate-portfolio-button:hover {
+    background: #e6e6e6;
+    transform: translateY(-2px);
+  }
+  .generate-portfolio-button:disabled {
+    background: #333;
+    color: #666;
+    border-color: #333;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .portfolio-output {
+    display: none;
+  }
+  .portfolio-output.active {
+    display: block;
+  }
+  .portfolio-output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  .portfolio-output-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #fff;
+  }
+  .portfolio-output-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .portfolio-action-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    background: #0f0f0f;
+    color: #fff;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .portfolio-action-button:hover {
+    background: #1c1c1c;
+    border-color: #fff;
+  }
+  .portfolio-content {
+    padding: 1.5rem;
+    background: #000;
+    border: 1px solid #2a2a2a;
+    border-radius: 4px;
+    color: #e6e6e6;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    font-size: 0.95rem;
+  }
+  .portfolio-loading {
+    display: none;
+    text-align: center;
+    padding: 3rem;
+    color: #b3b3b3;
+  }
+  .portfolio-loading.active {
+    display: block;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="content-wrapper">
   <main>
-    <!-- Left Column: Search -->
-    <div class="search-column">
+    <!-- Left Column: Portfolio Generator -->
+    <div class="portfolio-column">
       <div class="search-header">
-        <h1>Búsqueda de Perfiles</h1>
-        <p>Encuentra investigadores según las características que buscas</p>
+        <h1>Generador de Portfolio</h1>
+        <p>Crea un portfolio personalizado para los investigadores seleccionados</p>
       </div>
 
+      <!-- Portfolio Generator Section -->
+      <div class="portfolio-section">
+        <div class="portfolio-header">
+          <h2>Configurar Portfolio</h2>
+        </div>
+
+        <form class="portfolio-form" id="portfolioForm">
+          <div class="portfolio-prompt-group">
+            <label class="portfolio-prompt-label" for="portfolioPrompt">
+              Instrucciones para el portfolio
+            </label>
+            <textarea
+              class="portfolio-prompt-input"
+              id="portfolioPrompt"
+              name="portfolioPrompt"
+            >Genera un portfolio destacando las publicaciones más recientes y las áreas de investigación principales...</textarea>
+          </div>
+
+          <button type="submit" class="generate-portfolio-button" id="generatePortfolioButton">
+            <iconify-icon icon="mdi:file-document-edit" width="24" height="24"></iconify-icon>
+            Generar Portfolio
+          </button>
+        </form>
+
+        <!-- Loading State -->
+        <div class="portfolio-loading" id="portfolioLoading">
+          <iconify-icon icon="svg-spinners:3-dots-fade" width="48" height="48"></iconify-icon>
+          <p>Generando portfolio...</p>
+        </div>
+
+        <!-- Portfolio Output -->
+        <div class="portfolio-output" id="portfolioOutput">
+          <div class="portfolio-output-header">
+            <span class="portfolio-output-title">Portfolio Generado</span>
+            <div class="portfolio-output-actions">
+              <button type="button" class="portfolio-action-button" id="copyPortfolioButton">
+                Copiar
+              </button>
+              <button type="button" class="portfolio-action-button" id="downloadPortfolioButton">
+                Descargar
+              </button>
+            </div>
+          </div>
+          <div class="portfolio-content" id="portfolioContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Selected Researchers -->
+    <div class="selected-column">
+      <button type="button" class="add-researchers-button" id="openModalButton">
+        <iconify-icon icon="mdi:plus-circle" width="24" height="24"></iconify-icon>
+        Agregar Investigadores
+      </button>
+
+      <!-- Main Selected Researchers Section -->
+      <div class="main-selected-section">
+        <div class="main-selected-header">
+          <span class="main-selected-title">Perfiles Seleccionados</span>
+          <span class="main-selected-count" id="mainSelectedCount">0</span>
+        </div>
+
+        <div id="mainSelectedEmpty" class="main-selected-empty">
+          Haz clic en "Agregar Investigadores" para buscar y seleccionar perfiles
+        </div>
+
+        <ul class="main-selected-list" id="mainSelectedList" style="display: none;"></ul>
+
+        <div class="main-selected-actions" id="mainSelectedActions" style="display: none;">
+          <button type="button" class="main-action-button" id="mainExportButton">
+            Exportar Selección
+          </button>
+          <button type="button" class="main-action-button secondary" id="mainClearSelectedButton">
+            Limpiar Todo
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal for Search -->
+<div id="searchModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Buscar Investigadores</h2>
+      <button type="button" class="modal-close" id="closeModalButton">&times;</button>
+    </div>
+    <div class="modal-body">
       <form class="search-form" id="searchForm">
       <!-- Search type selector -->
       <div class="form-group">
@@ -500,31 +917,28 @@
     </div>
     </div>
 
-    <!-- Right Column: Selected Researchers -->
-    <div class="selected-column">
-      <div class="selected-section">
-        <div class="selected-header">
-          <span class="selected-title">Perfiles Seleccionados</span>
-          <span class="selected-count" id="selectedCount">0</span>
-        </div>
+    <!-- Selected Researchers Preview in Modal (Optional) -->
+    <div class="selected-section" style="margin-top: 2rem;">
+      <div class="selected-header">
+        <span class="selected-title">Seleccionados en esta sesión</span>
+        <span class="selected-count" id="selectedCount">0</span>
+      </div>
 
-        <div id="selectedEmpty" class="selected-empty">
-          Selecciona investigadores para agregarlos aquí
-        </div>
+      <div id="selectedEmpty" class="selected-empty">
+        Selecciona investigadores para agregarlos
+      </div>
 
-        <ul class="selected-list" id="selectedList" style="display: none;"></ul>
+      <ul class="selected-list" id="selectedList" style="display: none;"></ul>
 
-        <div class="selected-actions" id="selectedActions" style="display: none;">
-          <button type="button" class="selected-action-button" id="exportButton">
-            Exportar Selección
-          </button>
-          <button type="button" class="selected-action-button secondary" id="clearSelectedButton">
-            Limpiar Todo
-          </button>
-        </div>
+      <div class="selected-actions" id="selectedActions" style="display: none;">
+        <button type="button" class="selected-action-button secondary" id="clearSelectedButton">
+          Limpiar selección de esta sesión
+        </button>
       </div>
     </div>
-  </main>
+
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -532,6 +946,29 @@
 <script>
   let selectedResearchers = new Map(); // Store researcher data: id -> {name, last_name, research_center, etc.}
   let currentResults = [];
+
+  // Modal controls
+  const modal = document.getElementById('searchModal');
+  const openModalButton = document.getElementById('openModalButton');
+  const closeModalButton = document.getElementById('closeModalButton');
+
+  openModalButton.addEventListener('click', () => {
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+  });
+
+  closeModalButton.addEventListener('click', () => {
+    modal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+  });
+
+  // Close modal when clicking outside
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
+  });
 
   // Handle search type toggle
   document.querySelectorAll('input[name="searchType"]').forEach(radio => {
@@ -577,8 +1014,9 @@
     return headers;
   }
 
-  // Update the selected researchers panel
+  // Update the selected researchers panel (both modal and main)
   function updateSelectedPanel() {
+    // Update modal panel
     const selectedList = document.getElementById('selectedList');
     const selectedEmpty = document.getElementById('selectedEmpty');
     const selectedActions = document.getElementById('selectedActions');
@@ -590,30 +1028,76 @@
       selectedList.style.display = 'none';
       selectedActions.style.display = 'none';
       selectedEmpty.style.display = 'block';
+    } else {
+      selectedEmpty.style.display = 'none';
+      selectedList.style.display = 'flex';
+      selectedActions.style.display = 'flex';
+
+      // Build the selected list HTML for modal
+      selectedList.innerHTML = Array.from(selectedResearchers.values()).map(researcher => `
+        <li class="selected-item">
+          <div class="selected-item-header">
+            <div class="selected-item-name">
+              <a href="/researcher/${researcher.researcher_id}?summary_tag=complete&summary_model=gemini-2.5-pro&embedding_tag=embeddings_v1&embedding_model=gemini-embedding-001" target="_blank">
+                ${researcher.name} ${researcher.last_name}
+              </a>
+            </div>
+            <button class="remove-button" data-researcher-id="${researcher.researcher_id}">×</button>
+          </div>
+          <div class="selected-item-unit">${researcher.research_center}</div>
+        </li>
+      `).join('');
+
+      // Add remove button event listeners
+      document.querySelectorAll('.remove-button').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const researcherId = e.target.dataset.researcherId;
+          removeResearcher(researcherId);
+        });
+      });
+    }
+
+    // Update main panel
+    updateMainSelectedPanel();
+  }
+
+  // Update main selected panel
+  function updateMainSelectedPanel() {
+    const mainSelectedList = document.getElementById('mainSelectedList');
+    const mainSelectedEmpty = document.getElementById('mainSelectedEmpty');
+    const mainSelectedActions = document.getElementById('mainSelectedActions');
+    const mainSelectedCount = document.getElementById('mainSelectedCount');
+
+    mainSelectedCount.textContent = selectedResearchers.size;
+
+    if (selectedResearchers.size === 0) {
+      mainSelectedList.style.display = 'none';
+      mainSelectedActions.style.display = 'none';
+      mainSelectedEmpty.style.display = 'block';
       return;
     }
 
-    selectedEmpty.style.display = 'none';
-    selectedList.style.display = 'flex';
-    selectedActions.style.display = 'flex';
+    mainSelectedEmpty.style.display = 'none';
+    mainSelectedList.style.display = 'grid';
+    mainSelectedActions.style.display = 'flex';
 
-    // Build the selected list HTML
-    selectedList.innerHTML = Array.from(selectedResearchers.values()).map(researcher => `
-      <li class="selected-item">
-        <div class="selected-item-header">
-          <div class="selected-item-name">
-            <a href="/researcher/${researcher.researcher_id}?summary_tag=complete&summary_model=gemini-2.5-pro&embedding_tag=embeddings_v1&embedding_model=gemini-embedding-001">
+    // Build the main selected list HTML
+    mainSelectedList.innerHTML = Array.from(selectedResearchers.values()).map(researcher => `
+      <li class="main-selected-item">
+        <div class="main-selected-item-header">
+          <div class="main-selected-item-name">
+            <a href="/researcher/${researcher.researcher_id}?summary_tag=complete&summary_model=gemini-2.5-pro&embedding_tag=embeddings_v1&embedding_model=gemini-embedding-001" target="_blank">
               ${researcher.name} ${researcher.last_name}
             </a>
           </div>
           <button class="remove-button" data-researcher-id="${researcher.researcher_id}">×</button>
         </div>
-        <div class="selected-item-unit">${researcher.research_center}</div>
+        <div class="main-selected-item-unit">${researcher.research_center}</div>
       </li>
     `).join('');
 
-    // Add remove button event listeners
-    document.querySelectorAll('.remove-button').forEach(button => {
+    // Add remove button event listeners for main panel
+    mainSelectedList.querySelectorAll('.remove-button').forEach(button => {
       button.addEventListener('click', (e) => {
         const researcherId = e.target.dataset.researcherId;
         removeResearcher(researcherId);
@@ -781,7 +1265,7 @@
   });
 
   // Export selected researchers
-  document.getElementById('exportButton').addEventListener('click', () => {
+  document.getElementById('mainExportButton').addEventListener('click', () => {
     const researchers = Array.from(selectedResearchers.values());
 
     // Helper function to escape CSV values
@@ -850,6 +1334,88 @@
     } else {
       document.getElementById('nameQueryInput').focus();
     }
+  });
+
+  // Main panel clear button
+  document.getElementById('mainClearSelectedButton').addEventListener('click', () => {
+    if (confirm('¿Estás seguro de que deseas limpiar toda la selección?')) {
+      selectedResearchers.clear();
+      updateSelectedPanel();
+
+      // Uncheck all checkboxes in modal
+      document.querySelectorAll('.result-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+      });
+    }
+  });
+
+  // Portfolio Generator
+  document.getElementById('portfolioForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const prompt = document.getElementById('portfolioPrompt').value.trim();
+
+    if (!prompt) {
+      alert('Por favor ingresa las instrucciones para el portfolio');
+      return false;
+    }
+
+    if (selectedResearchers.size === 0) {
+      alert('Por favor selecciona al menos un investigador');
+      return false;
+    }
+
+    // Show loading, hide output and form
+    document.getElementById('portfolioLoading').classList.add('active');
+    document.getElementById('portfolioOutput').classList.remove('active');
+    document.getElementById('generatePortfolioButton').disabled = true;
+
+    try {
+      // TODO: Implement portfolio generation
+      // For now, just simulate a delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Placeholder response
+      const portfolioText = "Portfolio generado exitosamente.\n\n[Aquí irá el contenido del portfolio generado]";
+
+      document.getElementById('portfolioContent').textContent = portfolioText;
+      document.getElementById('portfolioOutput').classList.add('active');
+
+    } catch (error) {
+      console.error('Portfolio generation error:', error);
+      alert('Error al generar el portfolio: ' + (error.message || 'Error desconocido'));
+    } finally {
+      document.getElementById('portfolioLoading').classList.remove('active');
+      document.getElementById('generatePortfolioButton').disabled = false;
+    }
+
+    return false;
+  });
+
+  // Copy portfolio to clipboard
+  document.getElementById('copyPortfolioButton').addEventListener('click', () => {
+    const content = document.getElementById('portfolioContent').textContent;
+    navigator.clipboard.writeText(content).then(() => {
+      const button = document.getElementById('copyPortfolioButton');
+      const originalText = button.textContent;
+      button.textContent = 'Copiado!';
+      setTimeout(() => {
+        button.textContent = originalText;
+      }, 2000);
+    }).catch(err => {
+      console.error('Error copying to clipboard:', err);
+      alert('Error al copiar al portapapeles');
+    });
+  });
+
+  // Download portfolio as text file
+  document.getElementById('downloadPortfolioButton').addEventListener('click', () => {
+    const content = document.getElementById('portfolioContent').textContent;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `portfolio_${new Date().toISOString().split('T')[0]}.txt`;
+    link.click();
   });
 </script>
 {% endblock %}
