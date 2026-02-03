@@ -707,8 +707,69 @@
     border-radius: 4px;
     color: #e6e6e6;
     line-height: 1.8;
-    white-space: pre-wrap;
     font-size: 0.95rem;
+  }
+  .portfolio-content h1,
+  .portfolio-content h2,
+  .portfolio-content h3,
+  .portfolio-content h4,
+  .portfolio-content h5,
+  .portfolio-content h6 {
+    color: #fff;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+  }
+  .portfolio-content h1 { font-size: 1.75rem; border-bottom: 1px solid #2a2a2a; padding-bottom: 0.35em; }
+  .portfolio-content h2 { font-size: 1.4rem; }
+  .portfolio-content h3 { font-size: 1.15rem; }
+  .portfolio-content p {
+    margin: 0.75em 0;
+  }
+  .portfolio-content ul,
+  .portfolio-content ol {
+    margin: 0.75em 0;
+    padding-left: 1.75em;
+  }
+  .portfolio-content li {
+    margin-bottom: 0.35em;
+  }
+  .portfolio-content code {
+    background: #1c1c1c;
+    border: 1px solid #3a3a3a;
+    border-radius: 3px;
+    padding: 0.15em 0.4em;
+    font-size: 0.9em;
+    color: #e6e6e6;
+  }
+  .portfolio-content pre {
+    background: #1c1c1c;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    padding: 1rem;
+    overflow-x: auto;
+  }
+  .portfolio-content pre code {
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  .portfolio-content blockquote {
+    border-left: 3px solid #666;
+    margin: 0.75em 0;
+    padding: 0.25em 1em;
+    color: #999;
+  }
+  .portfolio-content hr {
+    border: none;
+    border-top: 1px solid #2a2a2a;
+    margin: 1.5em 0;
+  }
+  .portfolio-content a {
+    color: #fff;
+    text-decoration: underline;
+  }
+  .portfolio-content strong {
+    color: #fff;
   }
   .portfolio-loading {
     display: none;
@@ -720,6 +781,7 @@
     display: block;
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -747,7 +809,10 @@
               class="portfolio-prompt-input"
               id="portfolioPrompt"
               name="portfolioPrompt"
-            >Genera un portfolio destacando las publicaciones más recientes y las áreas de investigación principales...</textarea>
+            >Eres un experto en redacción de portfolios académicos e científicos.
+            A partir de la información de los investigadores proporcionada más abajo,
+            genera un portfolio cohesivo que cumpla con las siguientes instrucciones del usuario.
+</textarea>
           </div>
 
           <button type="submit" class="generate-portfolio-button" id="generatePortfolioButton">
@@ -946,6 +1011,7 @@
 <script>
   let selectedResearchers = new Map(); // Store researcher data: id -> {name, last_name, research_center, etc.}
   let currentResults = [];
+  let lastPortfolioMarkdown = ""; // Raw markdown of the last generated portfolio
 
   // Modal controls
   const modal = document.getElementById('searchModal');
@@ -1371,14 +1437,29 @@
     document.getElementById('generatePortfolioButton').disabled = true;
 
     try {
-      // TODO: Implement portfolio generation
-      // For now, just simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Prepare the request body
+      const requestBody = {
+        prompt: prompt,
+        researcher_ids: Array.from(selectedResearchers.keys())
+      };
 
-      // Placeholder response
-      const portfolioText = "Portfolio generado exitosamente.\n\n[Aquí irá el contenido del portfolio generado]";
+      // Call the portfolio generation endpoint
+      const response = await fetch('/api/portfolio/generate', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(requestBody)
+      });
 
-      document.getElementById('portfolioContent').textContent = portfolioText;
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Portfolio generation failed');
+      }
+
+      const data = await response.json();
+
+      // Display the generated portfolio rendered as markdown
+      lastPortfolioMarkdown = data.portfolio_text;
+      document.getElementById('portfolioContent').innerHTML = marked.parse(lastPortfolioMarkdown);
       document.getElementById('portfolioOutput').classList.add('active');
 
     } catch (error) {
@@ -1394,7 +1475,7 @@
 
   // Copy portfolio to clipboard
   document.getElementById('copyPortfolioButton').addEventListener('click', () => {
-    const content = document.getElementById('portfolioContent').textContent;
+    const content = lastPortfolioMarkdown;
     navigator.clipboard.writeText(content).then(() => {
       const button = document.getElementById('copyPortfolioButton');
       const originalText = button.textContent;
@@ -1410,7 +1491,7 @@
 
   // Download portfolio as text file
   document.getElementById('downloadPortfolioButton').addEventListener('click', () => {
-    const content = document.getElementById('portfolioContent').textContent;
+    const content = lastPortfolioMarkdown;
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);

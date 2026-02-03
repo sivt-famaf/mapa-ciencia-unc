@@ -1,0 +1,12 @@
+{{ user_prompt }}
+
+---
+
+Información de los investigadores:
+
+{% for ctx in researcher_contexts %}
+--- Investigador {{ loop.index }} ---
+{{ ctx }}
+
+{% endfor %}
+---

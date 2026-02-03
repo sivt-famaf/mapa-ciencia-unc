@@ -1,14 +1,10 @@
-import json
 import logging
 import requests
 
 from pathlib import Path
-from jinja2 import Environment, FileSystemLoader
-from google import genai
-from google.genai import types
 
-from mapa_ciencia_unc.llms.utils import render_prompt, clean_and_parse_json
-from mapa_ciencia_unc.config import GEMINI_API_KEY, OLLAMA_HOST, OLLAMA_API_KEY
+from mapa_ciencia_unc.llms.utils import render_prompt
+from mapa_ciencia_unc.config import OLLAMA_HOST, OLLAMA_API_KEY
 
 
 logger = logging.getLogger(__name__)
@@ -121,21 +117,32 @@ class PortfolioGeneratorOllama:
     @classmethod
     def generate_portfolio(
         cls,
-        context: str,
+        user_prompt: str,
+        researcher_contexts: list[str],
         prompt_path: Path,
         model_name: str = "gemma3:4b",
-    ) -> dict:
+    ) -> str:
         """
-        Generate structured researcher portfolio using Ollama models via remote HTTP API.
+        Generate a portfolio using an Ollama model via remote HTTP API.
 
         Args:
-            context: Full concatenated information about the researcher.
-            prompt_path: Path object pointing to the .jinja prompt template
-                (combined prompt for Ollama).
-            model_name: Name identifier.
+            user_prompt: The user's instructions for the portfolio.
+            researcher_contexts: List of per-researcher context strings
+                (as returned by get_portfolio_context).
+            prompt_path: Path to the .jinja prompt template.
+            model_name: Ollama model identifier.
 
         Returns:
-            Dictionary containing the generated portfolio.
+            The generated portfolio as plain text.
         """
-        # TODO: Implement portfolio generation logic
-        pass
+        _, full_prompt = render_prompt(
+            system_path=None,
+            prompt_path=prompt_path,
+            context={
+                "user_prompt": user_prompt,
+                "researcher_contexts": researcher_contexts,
+            },
+        )
+
+        response = cls.generate_completion(prompt=full_prompt, model=model_name)
+        return cls.extract_response(response)
