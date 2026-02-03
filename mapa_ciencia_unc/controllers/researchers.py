@@ -22,9 +22,6 @@ async def get_similar_researchers(
     This function uses the FAISS index for fast similarity search instead of
     manually computing cosine similarity for all researchers.
 
-    Performance improvement: 10-100x faster than the old implementation,
-    especially for large datasets.
-
     Args:
         cuit: CUIT identifier of the target researcher
         tag: Embedding tag to use for similarity search

@@ -7,6 +7,8 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 from mapa_ciencia_unc.controllers.researchers import get_similar_researchers
+from mapa_ciencia_unc.controllers.portfolio import get_portfolio_context
+from mapa_ciencia_unc.llms.portfolio_generator import PortfolioGeneratorOllama
 from mapa_ciencia_unc.models.researcher import Researcher, ResearcherPublicView
 from mapa_ciencia_unc.models.project import ProjectExtractedIntro
 from mapa_ciencia_unc.models.article import Article
@@ -431,6 +433,92 @@ async def semantic_search(
         tag=tag,
         results=results,
         total_results=len(results),
+    )
+
+
+class PortfolioGenerateRequest(BaseModel):
+    """Request body for portfolio generation."""
+    prompt: str = Field(description="Instructions for portfolio generation", min_length=1)
+    researcher_ids: List[str] = Field(description="List of researcher IDs to include", min_items=1)
+
+
+class PortfolioGenerateResponse(BaseModel):
+    """Response from portfolio generation."""
+    portfolio_text: str = Field(description="The generated portfolio text")
+    researcher_count: int = Field(description="Number of researchers included")
+    prompt: str = Field(description="The original prompt used")
+
+
+@router.post("/api/portfolio/generate", response_model=PortfolioGenerateResponse)
+async def generate_portfolio(
+    request: Request,
+    body: PortfolioGenerateRequest,
+):
+    """
+    Generate a portfolio based on a prompt and list of researcher IDs.
+
+    This endpoint will generate a customized portfolio document for the selected researchers
+    based on the provided instructions.
+
+    **Request Body:**
+    ```json
+    {
+        "prompt": "Generate a portfolio highlighting recent publications and research areas...",
+        "researcher_ids": ["507f1f77bcf86cd799439011", "507f1f77bcf86cd799439012"]
+    }
+    ```
+
+    **Returns:**
+    ```json
+    {
+        "portfolio_text": "Generated portfolio content...",
+        "researcher_count": 2,
+        "prompt": "Generate a portfolio highlighting..."
+    }
+    ```
+
+    **Notes:**
+    - Authentication required
+    - Uses Ollama to generate the portfolio text
+    """
+    if not _token_is_valid(request):
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    # Validate researcher ID formats
+    for rid in body.researcher_ids:
+        try:
+            PydanticObjectId(rid)
+        except Exception:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid researcher ID format: {rid}"
+            )
+
+    # Build per-researcher context texts (preserves input order)
+    contexts = await get_portfolio_context(body.researcher_ids)
+
+    # All contexts empty means none of the researchers were found or had summaries
+    if all(ctx == "" for ctx in contexts):
+        raise HTTPException(
+            status_code=404,
+            detail="No valid researcher data found for the provided IDs"
+        )
+
+    # Filter out empty contexts (missing researchers / missing summaries)
+    valid_contexts = [ctx for ctx in contexts if ctx]
+
+    # Call Ollama
+    prompt_path = BASE_DIR / "prompts" / "portfolio" / "prompt.jinja"
+    portfolio_text = PortfolioGeneratorOllama.generate_portfolio(
+        user_prompt=body.prompt,
+        researcher_contexts=valid_contexts,
+        prompt_path=prompt_path,
+    )
+
+    return PortfolioGenerateResponse(
+        portfolio_text=portfolio_text,
+        researcher_count=len(valid_contexts),
+        prompt=body.prompt,
     )
 
 
