@@ -120,7 +120,6 @@ API_PORT=8000
 
 # Model keys
 GEMINI_API_KEY=
-GEMINI_API_URL=
 INTERNAL_SWAGGER_KEY=
 
 # Ollama Configuration (for remote Ollama service)

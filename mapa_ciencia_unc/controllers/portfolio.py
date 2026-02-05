@@ -66,9 +66,15 @@ async def get_portfolio_context(
             continue
 
         keywords = ", ".join(summary_obj.areas) if summary_obj.areas else "N/A"
+        academic_units = ", ".join(researcher.academic_units) if researcher.academic_units else "N/A"
 
         context = (
             f"Name: {researcher.name} {researcher.last_name}\n"
+            f"Research Area: {researcher.research_area or 'N/A'}\n"
+            f"Highest Position: {researcher.highest_position}\n"
+            f"Academic Units: {academic_units}\n"
+            f"Last Project Title: {researcher.last_project_title or 'N/A'}\n"
+            f"International Research Links: {'Sí' if researcher.international_research_links else 'No'}\n"
             f"Keywords: {keywords}\n"
             f"Summary: {summary_obj.content}"
         )

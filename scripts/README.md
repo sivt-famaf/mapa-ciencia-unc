@@ -549,9 +549,9 @@ python scripts/02_1_filter_enrolled_users.py \
 ```
 
 ### 03_01_upload_sample_to_db.py
-Script to upload the sample .json files to the database.
+Script to upload the researcher files to the database.
 
-Files to upload:
+The script takes a directory with files
 - articles.json
 - projects.json
 - agreements.json

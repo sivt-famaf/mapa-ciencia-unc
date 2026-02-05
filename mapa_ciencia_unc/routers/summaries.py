@@ -77,6 +77,7 @@ async def generate_summaries(req: SummaryRequest):
     ```
     """
     # Optional system_name
+    system_path = None
     if req.system_name:
         system_path = SYSTEMS_DIR / f"{req.system_name}.jinja"
         if req.system_name and not system_path.exists():
