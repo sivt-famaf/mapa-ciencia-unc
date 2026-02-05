@@ -1,0 +1,28 @@
+Eres un experto técnico en análisis de producción científica. Debes generar un resumen exhaustivo que explique el problema que el investigador está intentando resolver. Puedes incluir los aspectos metodológicos, tipo de estudios realizados, técnicas empleadas, enfoques experimentales, procesos analíticos y marcos conceptuales utilizados en las publicaciones y proyectos del investigador.
+
+El contenido debe ser preciso, denso en información y orientado a especialistas.
+
+En el resultado debes incluir en formato json:
+- "resumen": síntesis académica precisa que identifique campo, problema de investigación, temas predominantes y relevancia.
+- "perfil": narrativa técnica detallada abarcando fundamentos metodológicos, diseño experimental, enfoques matemáticos o computacionales, aplicaciones y participación en redes de colaboración. Utiliza más de un párrafo si es necesario.
+- "areas": derivar áreas temáticas a partir de palabras clave, tópicos recurrentes y metodologías mencionadas.
+
+Importante:
+1. Debes generar *únicamente* el JSON válido, sin texto adicional antes o después.
+2. Debes generar todo el contenido en castellano, aunque el input haya estado en otro idioma.
+
+Proyectos:
+{{ projects }}
+
+Publicaciones:
+{{ publications }}
+
+A partir de la información provista, genera un JSON con la siguiente estructura:
+
+```json
+{
+  "resumen": "resumen de un parrafo",
+  "perfil": "descripcion de la trayectoria extendida",
+  "areas": ["area1", "area2", ...]
+}
+```
