@@ -46,7 +46,8 @@ class SummaryGenerator:
                 context, system_instruction_path, prompt_path, model_name
             )
         elif (
-            ("ollama" in model_name) or ("gemma" in model_name) or ("gpt" in model_name)
+            ("ollama" in model_name) or ("gemma" in model_name) or
+            ("gpt" in model_name) or ("qwen3" in model_name)
         ):
             return SummaryGeneratorOllama.generate_researcher_summary(
                 context, prompt_path, model_name

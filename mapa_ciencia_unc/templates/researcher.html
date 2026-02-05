@@ -426,7 +426,7 @@
 
   {% set project_list = projects|default([], true) %}
   <section class="downloads">
-    <h2>Project files ({{ project_list|length }})</h2>
+    <h2>Archivos de proyectos ({{ project_list|length }})</h2>
     {% if project_list %}
     <ul class="download-list">
       {% for project in project_list %}
@@ -508,7 +508,7 @@
 
   {% if similar_researchers %}
   <section class="similar">
-    <h2>Similar researchers</h2>
+    <h2>Investigadores similares</h2>
     <ul class="similar-list">
       {% for sim in similar_researchers %}
       <li class="similar-item">
