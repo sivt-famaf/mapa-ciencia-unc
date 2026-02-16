@@ -20,3 +20,10 @@ OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY")
 
 # Local Embedding Server Configuration
 LOCAL_EMBEDDING_HOST = os.getenv("LOCAL_EMBEDDING_HOST")
+
+# Default visualization tags and models
+DEFAULT_EMBEDDING_TAG = os.getenv("DEFAULT_EMBEDDING_TAG", "embeddings_v1")
+DEFAULT_EMBEDDING_MODEL = os.getenv("DEFAULT_EMBEDDING_MODEL", "gemini-embedding-001")
+DEFAULT_SUMMARY_TAG = os.getenv("DEFAULT_SUMMARY_TAG", "complete")
+DEFAULT_SUMMARY_MODEL = os.getenv("DEFAULT_SUMMARY_MODEL", "gemini-2.5-pro")
+DEFAULT_GRAPH_TAG = os.getenv("DEFAULT_GRAPH_TAG", "graph_v1")

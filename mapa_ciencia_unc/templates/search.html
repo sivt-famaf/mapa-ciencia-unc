@@ -1012,6 +1012,12 @@ genera un portfolio cohesivo que cumpla con las siguientes instrucciones:
 
 {% block extra_scripts %}
 <script>
+  const DEFAULT_EMBEDDING_TAG = "{{ default_embedding_tag }}";
+  const DEFAULT_EMBEDDING_MODEL = "{{ default_embedding_model }}";
+  const DEFAULT_SUMMARY_TAG = "{{ default_summary_tag }}";
+  const DEFAULT_SUMMARY_MODEL = "{{ default_summary_model }}";
+  const DEFAULT_GRAPH_TAG = "{{ default_graph_tag }}";
+
   let selectedResearchers = new Map(); // Store researcher data: id -> {name, last_name, research_center, etc.}
   let currentResults = [];
   let lastPortfolioMarkdown = ""; // Raw markdown of the last generated portfolio
@@ -1107,7 +1113,7 @@ genera un portfolio cohesivo que cumpla con las siguientes instrucciones:
         <li class="selected-item">
           <div class="selected-item-header">
             <div class="selected-item-name">
-              <a href="/researcher/${researcher.researcher_id}?summary_tag=complete&summary_model=gemini-2.5-pro&embedding_tag=embeddings_v1&embedding_model=gemini-embedding-001" target="_blank">
+              <a href="/researcher/${researcher.researcher_id}?summary_tag=${DEFAULT_SUMMARY_TAG}&summary_model=${DEFAULT_SUMMARY_MODEL}&embedding_tag=${DEFAULT_EMBEDDING_TAG}&embedding_model=${DEFAULT_EMBEDDING_MODEL}" target="_blank">
                 ${researcher.name} ${researcher.last_name}
               </a>
             </div>
@@ -1155,7 +1161,7 @@ genera un portfolio cohesivo que cumpla con las siguientes instrucciones:
       <li class="main-selected-item">
         <div class="main-selected-item-header">
           <div class="main-selected-item-name">
-            <a href="/researcher/${researcher.researcher_id}?summary_tag=complete&summary_model=gemini-2.5-pro&embedding_tag=embeddings_v1&embedding_model=gemini-embedding-001" target="_blank">
+            <a href="/researcher/${researcher.researcher_id}?summary_tag=${DEFAULT_SUMMARY_TAG}&summary_model=${DEFAULT_SUMMARY_MODEL}&embedding_tag=${DEFAULT_EMBEDDING_TAG}&embedding_model=${DEFAULT_EMBEDDING_MODEL}" target="_blank">
               ${researcher.name} ${researcher.last_name}
             </a>
           </div>
@@ -1285,7 +1291,7 @@ genera un portfolio cohesivo que cumpla con las siguientes instrucciones:
         />
         <div class="result-content">
           <div class="result-name">
-            <a href="/researcher/${researcher.researcher_id}?summary_tag=complete&summary_model=gemini-2.5-pro&embedding_tag=embeddings_v1&embedding_model=gemini-embedding-001" target="_blank">
+            <a href="/researcher/${researcher.researcher_id}?summary_tag=${DEFAULT_SUMMARY_TAG}&summary_model=${DEFAULT_SUMMARY_MODEL}&embedding_tag=${DEFAULT_EMBEDDING_TAG}&embedding_model=${DEFAULT_EMBEDDING_MODEL}" target="_blank">
               ${researcher.name} ${researcher.last_name}
             </a>
           </div>

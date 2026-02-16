@@ -12,11 +12,18 @@ from mapa_ciencia_unc.llms.portfolio_generator import PortfolioGeneratorOllama
 from mapa_ciencia_unc.models.researcher import Researcher, ResearcherPublicView
 from mapa_ciencia_unc.models.project import ProjectExtractedIntro
 from mapa_ciencia_unc.models.article import Article
-from mapa_ciencia_unc.models.graph import ResearcherGraph, ResearcherGraphListItem
+from mapa_ciencia_unc.models.graph import ResearcherGraph
 from beanie import PydanticObjectId
 from mapa_ciencia_unc.auth import verify_jwt_token
 from mapa_ciencia_unc.services.embedding_index import get_embedding_index_manager
 from mapa_ciencia_unc.llms.embedding_generator import EmbeddingGenerator
+from mapa_ciencia_unc.config import (
+    DEFAULT_EMBEDDING_TAG,
+    DEFAULT_EMBEDDING_MODEL,
+    DEFAULT_SUMMARY_TAG,
+    DEFAULT_SUMMARY_MODEL,
+    DEFAULT_GRAPH_TAG,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -122,10 +129,10 @@ async def other(request: Request):
 async def researcher_view(
     request: Request,
     researcher_id: str,
-    summary_tag: str = Query("complete", description="Summary tag to retrieve"),
-    summary_model: str = Query("gemini-2.5-pro", description="Summary model to retrieve"),
-    embedding_tag: str = Query("embeddings_v1", description="Embedding tag for similar researchers"),
-    embedding_model: str = Query("gemini-embedding-001", description="Embedding model for similar researchers"),
+    summary_tag: str = Query(DEFAULT_SUMMARY_TAG, description="Summary tag to retrieve"),
+    summary_model: str = Query(DEFAULT_SUMMARY_MODEL, description="Summary model to retrieve"),
+    embedding_tag: str = Query(DEFAULT_EMBEDDING_TAG, description="Embedding tag for similar researchers"),
+    embedding_model: str = Query(DEFAULT_EMBEDDING_MODEL, description="Embedding model for similar researchers"),
 ):
     if not _token_is_valid(request):
         return REDIRECT_TO_LOGIN
@@ -197,7 +204,14 @@ async def search_page(request: Request):
     """Page for searching researchers by profile characteristics."""
     if not _token_is_valid(request):
         return REDIRECT_TO_LOGIN
-    return templates.TemplateResponse("search.html", {"request": request})
+    return templates.TemplateResponse("search.html", {
+        "request": request,
+        "default_embedding_tag": DEFAULT_EMBEDDING_TAG,
+        "default_embedding_model": DEFAULT_EMBEDDING_MODEL,
+        "default_summary_tag": DEFAULT_SUMMARY_TAG,
+        "default_summary_model": DEFAULT_SUMMARY_MODEL,
+        "default_graph_tag": DEFAULT_GRAPH_TAG,
+    })
 
 
 @router.get("/api/search/by-name", response_model=SemanticSearchResponse)
@@ -287,12 +301,12 @@ async def login_page(request: Request):
 async def semantic_search(
     request: Request,
     query: str = Query(..., description="Search query text", min_length=1),
-    model: str = Query("gemini-embedding-001", description="Embedding model name"),
-    tag: str = Query("embeddings_v1", description="Embedding tag to search in"),
+    model: str = Query(DEFAULT_EMBEDDING_MODEL, description="Embedding model name"),
+    tag: str = Query(DEFAULT_EMBEDDING_TAG, description="Embedding tag to search in"),
     n: int = Query(10, ge=1, le=100, description="Number of results to return (1-100)"),
     output_dim: int = Query(512, ge=128, le=2048, description="Embedding dimensionality"),
-    summary_tag: str = Query("complete", description="Summary tag to retrieve"),
-    summary_model: str = Query("gemini-2.5-pro", description="Summary model to retrieve"),
+    summary_tag: str = Query(DEFAULT_SUMMARY_TAG, description="Summary tag to retrieve"),
+    summary_model: str = Query(DEFAULT_SUMMARY_MODEL, description="Summary model to retrieve"),
 ):
     """
     Perform semantic search to find researchers similar to a text query.

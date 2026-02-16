@@ -80,7 +80,14 @@ class EmbeddingIndexManager:
         embedding_results = await EmbeddingDocument.aggregate(pipeline).to_list()
 
         if not embedding_results:
-            raise ValueError(f"No embeddings found for tag='{tag}' and model='{model}'")
+            available = await get_all_embedding_tags_models()
+            available_str = ", ".join(
+                f"(tag='{t}', model='{m}')" for t, m in available
+            ) if available else "none"
+            raise ValueError(
+                f"No embeddings found for tag='{tag}' and model='{model}'. "
+                f"Available combinations: {available_str}"
+            )
 
         # Extract vectors and researcher IDs
         vectors = []

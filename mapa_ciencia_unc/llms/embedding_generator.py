@@ -127,14 +127,18 @@ class EmbeddingGeneratorGemini:
                 "Variable GEMINI_API_KEY not set. Provide a value in .env file"
             )
 
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        config = types.EmbedContentConfig(output_dimensionality=output_dim)
+        try:
+            client = genai.Client(api_key=GEMINI_API_KEY)
+            config = types.EmbedContentConfig(output_dimensionality=output_dim)
 
-        response = client.models.embed_content(
-            model=model_name,
-            contents=text,
-            config=config,
-        )
+            response = client.models.embed_content(
+                model=model_name,
+                contents=text,
+                config=config,
+            )
+        except Exception as e:
+            logger.error(f"Error processing {model_name}, {config}")
+            raise e
 
         return response.embeddings[0].values
 
