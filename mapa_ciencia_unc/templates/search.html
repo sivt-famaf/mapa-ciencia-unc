@@ -599,16 +599,35 @@
   }
   .portfolio-header {
     margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
   .portfolio-header h2 {
     font-size: 1.5rem;
-    margin: 0 0 0.5rem 0;
+    margin: 0;
     color: #fff;
+    white-space: nowrap;
   }
   .portfolio-header p {
     margin: 0;
     color: #b3b3b3;
     font-size: 0.95rem;
+  }
+  .model-select {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.9rem;
+    background: #000;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    color: #fff;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+  }
+  .model-select:focus {
+    outline: none;
+    border-color: #fff;
   }
   .portfolio-form {
     margin-bottom: 2rem;
@@ -671,6 +690,21 @@
     border-color: #333;
     cursor: not-allowed;
     transform: none;
+  }
+  .portfolio-error {
+    display: none;
+    padding: 1.25rem 1.5rem;
+    background: #1a0000;
+    border: 1px solid #ff4444;
+    border-radius: 4px;
+    color: #ff6666;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .portfolio-error.active {
+    display: block;
   }
   .portfolio-output {
     display: none;
@@ -803,12 +837,15 @@
 
         <div class="portfolio-header">
           <h2>Configurar Portfolio</h2>
+          <select class="model-select" id="portfolioModelSelect">
+            <option value="" disabled selected>Cargando modelos...</option>
+          </select>
         </div>
 
         <form class="portfolio-form" id="portfolioForm">
           <div class="portfolio-prompt-group">
             <label class="portfolio-prompt-label" for="portfolioPrompt">
-              Instrucciones para el portfolio
+              Describe las características del portfolio a generar y cómo organizar el perfil de los investigadores seleccionados dentro del mismo
             </label>
             <textarea
               class="portfolio-prompt-input"
@@ -834,6 +871,9 @@ genera un portfolio cohesivo que cumpla con las siguientes instrucciones:
           <iconify-icon icon="svg-spinners:3-dots-fade" width="48" height="48"></iconify-icon>
           <p>Generando portfolio...</p>
         </div>
+
+        <!-- Error State -->
+        <div class="portfolio-error" id="portfolioError"></div>
 
         <!-- Portfolio Output -->
         <div class="portfolio-output" id="portfolioOutput">
@@ -1029,6 +1069,19 @@ genera un portfolio cohesivo que cumpla con las siguientes instrucciones:
   let currentResults = [];
   let lastPortfolioMarkdown = ""; // Raw markdown of the last generated portfolio
 
+  // Populate model dropdown from API
+  async function loadPortfolioModels() {
+    const select = document.getElementById('portfolioModelSelect');
+    try {
+      const response = await fetch('/api/portfolio/models', { headers: getAuthHeaders() });
+      const data = await response.json();
+      select.innerHTML = data.models.map(m => `<option value="${m}">${m}</option>`).join('');
+    } catch (err) {
+      console.error('Error loading portfolio models:', err);
+      select.innerHTML = '<option value="" disabled selected>Error al cargar modelos</option>';
+    }
+  }
+
   // Modal controls
   const modal = document.getElementById('searchModal');
   const openModalButton = document.getElementById('openModalButton');
@@ -1095,6 +1148,8 @@ genera un portfolio cohesivo que cumpla con las siguientes instrucciones:
     }
     return headers;
   }
+
+  loadPortfolioModels();
 
   // Update the selected researchers panel (both modal and main)
   function updateSelectedPanel() {
@@ -1447,16 +1502,18 @@ genera un portfolio cohesivo que cumpla con las siguientes instrucciones:
       return false;
     }
 
-    // Show loading, hide output and form
+    // Show loading, hide output and error
     document.getElementById('portfolioLoading').classList.add('active');
     document.getElementById('portfolioOutput').classList.remove('active');
+    document.getElementById('portfolioError').classList.remove('active');
     document.getElementById('generatePortfolioButton').disabled = true;
 
     try {
       // Prepare the request body
       const requestBody = {
         prompt: prompt,
-        researcher_ids: Array.from(selectedResearchers.keys())
+        researcher_ids: Array.from(selectedResearchers.keys()),
+        model: document.getElementById('portfolioModelSelect').value
       };
 
       // Call the portfolio generation endpoint
@@ -1480,7 +1537,9 @@ genera un portfolio cohesivo que cumpla con las siguientes instrucciones:
 
     } catch (error) {
       console.error('Portfolio generation error:', error);
-      alert('Error al generar el portfolio: ' + (error.message || 'Error desconocido'));
+      const portfolioError = document.getElementById('portfolioError');
+      portfolioError.textContent = 'Error al generar el portfolio:\n\n' + (error.message || 'Error desconocido');
+      portfolioError.classList.add('active');
     } finally {
       document.getElementById('portfolioLoading').classList.remove('active');
       document.getElementById('generatePortfolioButton').disabled = false;

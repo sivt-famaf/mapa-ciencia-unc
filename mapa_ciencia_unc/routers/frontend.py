@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from mapa_ciencia_unc.controllers.researchers import get_similar_researchers
 from mapa_ciencia_unc.controllers.portfolio import get_portfolio_context
-from mapa_ciencia_unc.llms.portfolio_generator import PortfolioGeneratorOllama
+from mapa_ciencia_unc.llms.portfolio_generator import PortfolioGenerator
 from mapa_ciencia_unc.models.researcher import Researcher, ResearcherPublicView
 from mapa_ciencia_unc.models.project import ProjectExtractedIntro
 from mapa_ciencia_unc.models.article import Article
@@ -58,7 +58,7 @@ def _token_is_valid(request: Request) -> bool:
 
 
 REDIRECT_TO_LOGIN = RedirectResponse(url="/login", status_code=303)
-router = APIRouter(tags=["frontend"], dependencies=[Depends(require_auth)])
+router = APIRouter(tags=["frontend"])
 
 
 class ResearcherSearchResult(BaseModel):
@@ -237,6 +237,8 @@ async def search_by_name(
     **Returns:**
     Similar format to semantic search, but with distance and similarity_score set to 0.
     """
+    if not _token_is_valid(request):
+        raise HTTPException(status_code=401, detail="Authentication required")
     # Search for researchers by name (case-insensitive)
     # Use regex for case-insensitive search
     search_pattern = {"$regex": name, "$options": "i"}
@@ -454,6 +456,7 @@ class PortfolioGenerateRequest(BaseModel):
     """Request body for portfolio generation."""
     prompt: str = Field(description="Instructions for portfolio generation", min_length=1)
     researcher_ids: List[str] = Field(description="List of researcher IDs to include", min_items=1)
+    model: str = Field(description="Model name to use for generation")
 
 
 class PortfolioGenerateResponse(BaseModel):
@@ -523,7 +526,11 @@ async def generate_portfolio(
             )
 
     # Build per-researcher context texts (preserves input order)
-    contexts = await get_portfolio_context(body.researcher_ids)
+    contexts = await get_portfolio_context(
+        researcher_ids=body.researcher_ids,
+        summary_tag=DEFAULT_SUMMARY_TAG,
+        summary_model=DEFAULT_SUMMARY_MODEL
+    )
 
     # All contexts empty means none of the researchers were found or had summaries
     if all(ctx == "" for ctx in contexts):
@@ -535,12 +542,12 @@ async def generate_portfolio(
     # Filter out empty contexts (missing researchers / missing summaries)
     valid_contexts = [ctx for ctx in contexts if ctx]
 
-    # Call Ollama
     prompt_path = BASE_DIR / "prompts" / "portfolio" / "prompt.jinja"
-    portfolio_text = PortfolioGeneratorOllama.generate_portfolio(
+    portfolio_text = PortfolioGenerator.generate_portfolio(
         user_prompt=body.prompt,
         researcher_contexts=valid_contexts,
         prompt_path=prompt_path,
+        model_name=body.model,
     )
 
     return PortfolioGenerateResponse(

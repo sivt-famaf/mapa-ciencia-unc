@@ -3,8 +3,11 @@ import requests
 
 from pathlib import Path
 
+from google import genai
+from google.genai import types
+
 from mapa_ciencia_unc.llms.utils import render_prompt
-from mapa_ciencia_unc.config import OLLAMA_HOST, OLLAMA_API_KEY
+from mapa_ciencia_unc.config import GEMINI_API_KEY, OLLAMA_HOST, OLLAMA_API_KEY
 
 
 logger = logging.getLogger(__name__)
@@ -16,33 +19,31 @@ class PortfolioGenerator:
     @classmethod
     def generate_portfolio(
         cls,
-        context: str,
-        system_instruction_path: Path,
+        user_prompt: str,
+        researcher_contexts: list[str],
         prompt_path: Path,
         model_name: str = "gemini-2.5-flash",
-    ):
+    ) -> str:
         """
-        Generate structured researcher portfolio using LLM models + Jinja templates.
+        Generate a portfolio using the appropriate backend based on model_name.
 
         Args:
-            context: Full concatenated information about the researcher.
-            system_instruction_path: Path object pointing to the .jinja system instruction file.
-            prompt_path: Path object pointing to the .jinja prompt template.
-            model_name: Name of the model to use (e.g., "gemini-2.5-flash" or "ollama")
+            user_prompt: The user's instructions for the portfolio.
+            researcher_contexts: List of per-researcher context strings.
+            prompt_path: Path to the .jinja prompt template.
+            model_name: Name of the model to use (e.g., "gemini-2.5-flash", "gemma3:27b")
 
         Returns:
-            Dictionary containing the generated portfolio.
+            The generated portfolio as plain text.
         """
         if "gemini" in model_name:
             return PortfolioGeneratorGemini.generate_portfolio(
-                context, system_instruction_path, prompt_path, model_name
-            )
-        elif ("ollama" in model_name) or ("gemma" in model_name):
-            return PortfolioGeneratorOllama.generate_portfolio(
-                context, prompt_path, model_name
+                user_prompt, researcher_contexts, prompt_path, model_name
             )
         else:
-            raise ValueError(f"Model {model_name} not supported.")
+            return PortfolioGeneratorOllama.generate_portfolio(
+                user_prompt, researcher_contexts, prompt_path, model_name
+            )
 
 
 class PortfolioGeneratorGemini:
@@ -51,25 +52,40 @@ class PortfolioGeneratorGemini:
     @classmethod
     def generate_portfolio(
         cls,
-        context: str,
-        system_instruction_path: Path,
+        user_prompt: str,
+        researcher_contexts: list[str],
         prompt_path: Path,
         model_name: str = "gemini-2.5-flash",
-    ) -> dict:
+    ) -> str:
         """
-        Generate structured researcher portfolio using Gemini models.
+        Generate a portfolio using a Gemini model.
 
         Args:
-            context: Full concatenated information about the researcher.
-            system_instruction_path: Path object pointing to the .jinja system instruction file.
-            prompt_path: Path object pointing to the .jinja prompt template.
+            user_prompt: The user's instructions for the portfolio.
+            researcher_contexts: List of per-researcher context strings.
+            prompt_path: Path to the .jinja prompt template.
             model_name: Name of the Gemini model to use (e.g., "gemini-2.5-flash")
 
         Returns:
-            Dictionary containing the generated portfolio.
+            The generated portfolio as plain text.
         """
-        # TODO: Implement portfolio generation logic
-        pass
+        _, prompt = render_prompt(
+            system_path=None,
+            prompt_path=prompt_path,
+            context={
+                "user_prompt": user_prompt,
+                "researcher_contexts": researcher_contexts,
+            },
+        )
+
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        config = types.GenerateContentConfig(temperature=0.7)
+
+        logger.info(f"Sending request to Gemini API with model {model_name}...")
+        response = client.models.generate_content(
+            model=model_name, contents=prompt, config=config
+        )
+        return response.text
 
 
 class PortfolioGeneratorOllama:
