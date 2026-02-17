@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, Request, HTTPException, Query
+from fastapi import APIRouter, Depends, Request, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
@@ -14,7 +14,7 @@ from mapa_ciencia_unc.models.project import ProjectExtractedIntro
 from mapa_ciencia_unc.models.article import Article
 from mapa_ciencia_unc.models.graph import ResearcherGraph
 from beanie import PydanticObjectId
-from mapa_ciencia_unc.auth import verify_jwt_token
+from mapa_ciencia_unc.auth import require_auth, verify_jwt_token
 from mapa_ciencia_unc.services.embedding_index import get_embedding_index_manager
 from mapa_ciencia_unc.llms.embedding_generator import EmbeddingGenerator
 from mapa_ciencia_unc.config import (
@@ -58,7 +58,7 @@ def _token_is_valid(request: Request) -> bool:
 
 
 REDIRECT_TO_LOGIN = RedirectResponse(url="/login", status_code=303)
-router = APIRouter(tags=["frontend"])
+router = APIRouter(tags=["frontend"], dependencies=[Depends(require_auth)])
 
 
 class ResearcherSearchResult(BaseModel):
