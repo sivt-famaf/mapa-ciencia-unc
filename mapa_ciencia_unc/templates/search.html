@@ -484,11 +484,20 @@
   }
   .main-selected-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 1rem;
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #2a2a2a;
+  }
+  .main-selected-header .add-researchers-button {
+    width: 100%;
+    justify-content: center;
+  }
+  .main-selected-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   .main-selected-title {
     font-size: 1.5rem;
@@ -789,13 +798,9 @@
   <main>
     <!-- Left Column: Portfolio Generator -->
     <div class="portfolio-column">
-      <div class="search-header">
-        <h1>Generador de Portfolio</h1>
-        <p>Crea un portfolio personalizado para los investigadores seleccionados</p>
-      </div>
-
       <!-- Portfolio Generator Section -->
       <div class="portfolio-section">
+
         <div class="portfolio-header">
           <h2>Configurar Portfolio</h2>
         </div>
@@ -850,16 +855,18 @@ genera un portfolio cohesivo que cumpla con las siguientes instrucciones:
 
     <!-- Right Column: Selected Researchers -->
     <div class="selected-column">
-      <button type="button" class="add-researchers-button" id="openModalButton">
-        <iconify-icon icon="mdi:plus-circle" width="24" height="24"></iconify-icon>
-        Agregar Investigadores
-      </button>
 
       <!-- Main Selected Researchers Section -->
       <div class="main-selected-section">
         <div class="main-selected-header">
-          <span class="main-selected-title">Perfiles Seleccionados</span>
-          <span class="main-selected-count" id="mainSelectedCount">0</span>
+          <button type="button" class="add-researchers-button" id="openModalButton">
+            <iconify-icon icon="mdi:plus-circle" width="24" height="24"></iconify-icon>
+            Agregar Investigadores
+          </button>
+          <div class="main-selected-info">
+            <span class="main-selected-title">Perfiles Seleccionados</span>
+            <span class="main-selected-count" id="mainSelectedCount">0</span>
+          </div>
         </div>
 
         <div id="mainSelectedEmpty" class="main-selected-empty">
