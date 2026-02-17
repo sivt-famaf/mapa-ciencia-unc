@@ -463,6 +463,20 @@ class PortfolioGenerateResponse(BaseModel):
     prompt: str = Field(description="The original prompt used")
 
 
+PORTFOLIO_AVAILABLE_MODELS = [
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gpt-oss:20b",
+    "mistral-small3.2:24b",
+    "gemma3:27b"
+]
+
+
+class PortfolioModelsResponse(BaseModel):
+    """Response listing available models for portfolio generation."""
+    models: List[str] = Field(description="List of available model names")
+
+
 @router.post("/api/portfolio/generate", response_model=PortfolioGenerateResponse)
 async def generate_portfolio(
     request: Request,
@@ -534,6 +548,12 @@ async def generate_portfolio(
         researcher_count=len(valid_contexts),
         prompt=body.prompt,
     )
+
+
+@router.get("/api/portfolio/models", response_model=PortfolioModelsResponse)
+async def get_portfolio_models():
+    """Return the list of available models for portfolio generation."""
+    return PortfolioModelsResponse(models=PORTFOLIO_AVAILABLE_MODELS)
 
 
 PROJECT_FILE_DIRECTORY = Path("./project_files").resolve()
