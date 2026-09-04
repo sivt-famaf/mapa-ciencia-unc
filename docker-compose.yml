@@ -12,13 +12,15 @@ services:
     ports:
       - "8123:8000"
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
     networks:
       - appnet
     restart: unless-stopped
 
   mongo:
-    image: mongo:7
+    # Pinned by digest = mongo 7.0.40. Do not bump without testing the dump restore.
+    image: mongo:7@sha256:b6421fd6d1c5ded6377b397d8983e2f82e2100dc5123332dcfda2065a472be5b
     ports:
       - "${MONGO_PORT}:27017"
     environment:
@@ -26,6 +28,12 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     networks:
       - appnet
     restart: unless-stopped
